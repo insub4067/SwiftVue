@@ -14,7 +14,7 @@ async function overflowOffenders(page: Page): Promise<string[]> {
     }
     // The panes the library owns must never scroll sideways; horizontal
     // ScrollViews contain their own overflow and never leak into these.
-    for (const sel of ['.tab-content', '.nav-content']) {
+    for (const sel of ['.tab-content', '.nav-content', '.nav-pane']) {
       for (const el of document.querySelectorAll(sel)) {
         if (el.scrollWidth > el.clientWidth + 1) {
           found.push(`${sel} ${el.scrollWidth} > ${el.clientWidth}`)
@@ -80,6 +80,24 @@ test('NavigationLink pushes and the back button pops', async ({ page }) => {
 
   await expect(page.getByText('This view was pushed onto the NavigationStack')).toBeHidden()
   await expect(page.getByRole('button', { name: /General/ })).toBeVisible()
+})
+
+test('popping restores the previous scroll position', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+
+  // Clicking auto-scrolls the row into view, so the reference point is the
+  // pane's scroll position at the moment of the push.
+  await page.getByRole('button', { name: /General/ }).click()
+  await expect(page.getByText('This view was pushed onto the NavigationStack')).toBeVisible()
+  const atPush = await page.locator('.nav-pane').first().evaluate(el => el.scrollTop)
+  expect(atPush).toBeGreaterThan(0)
+
+  await page.getByLabel('Back').click()
+  await page.waitForTimeout(400) // let the pop transition settle
+
+  const afterPop = await page.locator('.nav-pane').first().evaluate(el => el.scrollTop)
+  expect(afterPop).toBe(atPush)
 })
 
 test('sheet opens and closes', async ({ page }) => {

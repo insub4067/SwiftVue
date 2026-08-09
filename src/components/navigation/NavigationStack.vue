@@ -44,8 +44,9 @@ const backLabel = computed(() => {
   if (depth.value > 1) return stack.value[depth.value - 2].title ?? 'Back'
   return props.title ?? 'Back'
 })
-// A slot closure ignoring its arguments is a valid functional component.
-const topView = computed(() => top.value?.content as unknown as object)
+// index 0 is the root slot; entries follow. A content closure ignoring its
+// arguments is a valid functional component.
+const panes = computed(() => [null, ...stack.value] as Array<NavigationEntry | null>)
 
 // iOS edge-swipe back: begin near the leading edge, travel right, pop.
 let swipeStart: { x: number; y: number } | null = null
@@ -87,14 +88,24 @@ const style = computed(() => ({
       <span v-if="depth > 0" class="nav-back-balance" aria-hidden="true" />
     </header>
     <div class="nav-content">
-      <Transition :name="`swift-nav-${direction}`">
-        <div v-if="depth === 0" key="root" class="nav-pane">
-          <slot />
+      <!--
+        Every pane stays mounted: SwiftUI keeps views below the top alive, so
+        popping must return to the previous view exactly as it was left —
+        scroll position, field contents, local state. Buried panes sit behind
+        the opaque top pane, parallax-shifted and inert.
+      -->
+      <TransitionGroup :name="`swift-nav-${direction}`">
+        <div
+          v-for="(entry, i) in panes"
+          :key="i"
+          class="nav-pane"
+          :class="{ 'nav-pane--under': i < depth }"
+          :inert="i < depth"
+        >
+          <slot v-if="i === 0" />
+          <component :is="entry!.content" v-else />
         </div>
-        <div v-else :key="depth" class="nav-pane">
-          <component :is="topView" />
-        </div>
-      </Transition>
+      </TransitionGroup>
     </div>
   </div>
 </template>
@@ -160,24 +171,17 @@ const style = computed(() => ({
   inset: 0;
   overflow-y: auto;
   background: var(--swift-grouped-background);
-}
-
-/* iOS push/pop: incoming slides from the trailing edge, outgoing parallaxes */
-.swift-nav-push-enter-active,
-.swift-nav-push-leave-active,
-.swift-nav-pop-enter-active,
-.swift-nav-pop-leave-active {
+  /* class-driven: buried panes parallax to -28% and back on pop */
   transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
 }
+.nav-pane--under { transform: translateX(-28%); }
+
+/* iOS push/pop for the pane entering or leaving at the top of the stack */
 .swift-nav-push-enter-from { transform: translateX(100%); }
-.swift-nav-push-leave-to { transform: translateX(-28%); }
-.swift-nav-pop-enter-from { transform: translateX(-28%); }
 .swift-nav-pop-leave-to { transform: translateX(100%); }
+.swift-nav-pop-leave-active { z-index: 1; }
 
 @media (prefers-reduced-motion: reduce) {
-  .swift-nav-push-enter-active,
-  .swift-nav-push-leave-active,
-  .swift-nav-pop-enter-active,
-  .swift-nav-pop-leave-active { transition-duration: 0.01ms; }
+  .nav-pane { transition-duration: 0.01ms; }
 }
 </style>
