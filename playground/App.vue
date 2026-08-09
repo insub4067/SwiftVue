@@ -4,6 +4,8 @@ import { useFocusState } from '../src/composables/useFocusState'
 import { usePreferredColorScheme } from '../src/composables/usePreferredColorScheme'
 import { withAnimation, Animations } from '../src/motion/withAnimation'
 import type { TransitionPreset } from '../src/components/motion/TransitionView.vue'
+import { onChange } from '../src/composables/onChange'
+import { publisher } from '../src/combine/publisher'
 import { version } from '../package.json'
 
 declare const __BUILD_TIME__: string
@@ -37,12 +39,31 @@ function shuffle() {
   shuffled.value = [...shuffled.value].sort(() => Math.random() - 0.5)
 }
 
+const advancedOpen = ref(true)
+const refreshLog = ref<string[]>(['처음 항목 — 아래로 당겨서 새로고침'])
+async function reload() {
+  await new Promise(r => setTimeout(r, 900))
+  refreshLog.value = [`Refreshed at ${new Date().toLocaleTimeString()}`, ...refreshLog.value].slice(0, 6)
+}
+
+const searchInput = ref('')
+const debouncedQuery = ref('')
+const volumeLog = ref('아직 변경 없음')
+publisher(searchInput)
+  .map(s => s.trim())
+  .removeDuplicates()
+  .debounce(400)
+  .sink(q => { debouncedQuery.value = q })
+
 const colorScheme = usePreferredColorScheme()
 const darkMode = computed({
   get: () => colorScheme.value === 'dark',
   set: (v) => { colorScheme.value = v ? 'dark' : 'light' },
 })
 const volume = ref(50)
+onChange(volume, (value, oldValue) => {
+  volumeLog.value = `volume: ${oldValue} → ${value}`
+})
 const brightness = ref(75)
 const count = ref(3)
 const fontSize = ref(17)
@@ -501,6 +522,56 @@ onUnmounted(() => {
 
               <Divider />
 
+              <!-- Section -->
+              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
+                <Text font="title2" foreground-color="primary">Section</Text>
+
+                <Section header="Profile" footer="Header와 footer는 SwiftUI Section 그대로입니다.">
+                  <div class="swift-list-row">
+                    <HStack><Text>Name</Text><Spacer /><Text foreground-color="secondary">Insub</Text></HStack>
+                  </div>
+                  <div class="swift-list-row">
+                    <HStack><Text>Team</Text><Spacer /><Text foreground-color="secondary">iOS</Text></HStack>
+                  </div>
+                </Section>
+
+                <Section v-model:expanded="advancedOpen" header="Advanced" collapsible
+                  footer="collapsible — 헤더를 눌러 접고 펼칩니다. 접혀도 내부 상태는 유지됩니다.">
+                  <div class="swift-list-row">
+                    <HStack>
+                      <Label system-image="🔔">Notifications</Label>
+                      <Spacer />
+                      <Toggle v-model="notifications" label="Notifications" />
+                    </HStack>
+                  </div>
+                  <div class="swift-list-row">
+                    <HStack><Text>Items</Text><Spacer /><Stepper v-model="count" :min="0" :max="99" label="Items" /></HStack>
+                  </div>
+                </Section>
+              </VStack>
+
+              <Divider />
+
+              <!-- Pull to refresh -->
+              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
+                <Text font="title2" foreground-color="primary">Pull to Refresh</Text>
+                <Text font="caption" foreground-color="secondary">
+                  .refreshable — 목록 맨 위에서 아래로 당기면 새로고침됩니다.
+                </Text>
+                <div :style="{ height: '200px', display: 'flex', width: '100%' }" data-testid="refresh-area">
+                  <ScrollView :refreshable="reload" :frame="{ height: '200px' }"
+                    background="secondaryBackground" :corner-radius="12">
+                    <VStack :spacing="0" alignment="leading" :frame="{ width: '100%' }">
+                      <div v-for="(line, i) in refreshLog" :key="`${line}-${i}`" class="swift-list-row" :style="{ width: '100%' }">
+                        <Text font="subheadline">{{ line }}</Text>
+                      </div>
+                    </VStack>
+                  </ScrollView>
+                </div>
+              </VStack>
+
+              <Divider />
+
               <!-- Feedback -->
               <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">Feedback</Text>
@@ -672,6 +743,30 @@ onUnmounted(() => {
                 <VStack :spacing="8" alignment="leading">
                   <Text font="subheadline" foreground-color="secondary">Disabled</Text>
                   <Picker :model-value="'apple'" :options="fruits" picker-style="segmented" disabled />
+                </VStack>
+              </VStack>
+
+              <Divider />
+
+              <!-- Reactive: onChange + publisher -->
+              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
+                <Text font="title2" foreground-color="primary">onChange & Combine</Text>
+
+                <VStack :spacing="4" alignment="leading" :frame="{ width: '100%' }">
+                  <Text font="caption" foreground-color="secondary">
+                    publisher(search).map(trim).removeDuplicates().debounce(400).sink(...)
+                  </Text>
+                  <TextField v-model="searchInput" placeholder="Search..." text-field-style="roundedBorder" />
+                  <Text font="subheadline" data-testid="debounced">
+                    debounced: <Text foreground-color="blue" bold>{{ debouncedQuery || '—' }}</Text>
+                  </Text>
+                </VStack>
+
+                <VStack :spacing="4" alignment="leading" :frame="{ width: '100%' }">
+                  <Text font="caption" foreground-color="secondary">
+                    onChange(volume) — 위 Volume 슬라이더를 움직여보세요
+                  </Text>
+                  <Text font="subheadline" data-testid="volume-log">{{ volumeLog }}</Text>
                 </VStack>
               </VStack>
 
