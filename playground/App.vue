@@ -111,7 +111,7 @@ const completionPercent = computed(() => Math.round((completedCount.value / todo
 
 <template>
   <div class="swift-app playground-shell" :style="{ colorScheme: darkMode ? 'dark' : 'light' }">
-    <TabView :tabs="tabs" v-model="activeTab" :frame="{ height: '100dvh' }">
+    <TabView :tabs="tabs" v-model="activeTab">
 
       <!-- === COMPONENTS TAB === -->
       <template #components>
@@ -823,24 +823,31 @@ body {
 #app,
 .playground-shell {
   width: 100%;
-  height: 100dvh;
-  height: 100vh; /* fallback */
-  height: 100dvh;
+  height: 100%;
+}
+
+html, body {
+  height: 100%;
+}
+
+.playground-shell > div {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.playground-shell .tab-content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .playground-shell .tab-bar {
-  position: sticky;
+  position: fixed;
   bottom: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
-}
-
-.playground-shell .nav-header,
-.playground-shell .nav-content > div > div {
-  width: min(100%, 1080px);
-  margin-inline: auto;
-}
-
-.playground-shell .tab-bar {
   min-height: calc(58px + env(safe-area-inset-bottom, 0px));
   padding-top: 6px;
   padding-bottom: env(safe-area-inset-bottom, 8px);
@@ -849,9 +856,19 @@ body {
   -webkit-backdrop-filter: blur(18px);
 }
 
+.playground-shell .tab-content {
+  padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px));
+}
+
 .playground-shell .tab-item {
   min-width: 44px;
   min-height: 44px;
+}
+
+.playground-shell .nav-header,
+.playground-shell .nav-content > div > div {
+  width: min(100%, 1080px);
+  margin-inline: auto;
 }
 
 @media (min-width: 768px) {
@@ -862,7 +879,9 @@ body {
 
   .playground-shell .tab-bar {
     width: min(calc(100% - 32px), 720px);
-    margin: 0 auto 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 12px;
     border: 1px solid var(--swift-separator);
     border-radius: 18px;
     box-shadow: 0 12px 32px rgb(0 0 0 / 12%);
