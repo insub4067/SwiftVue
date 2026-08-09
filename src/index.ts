@@ -5,6 +5,7 @@ import './styles/swift.css'
 
 // Plugin (global registration)
 export { SwiftVuePlugin } from './plugin'
+export type { SwiftVuePluginOptions } from './plugin'
 
 // Layout
 export { default as VStack } from './components/layout/VStack.vue'

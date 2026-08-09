@@ -20,6 +20,22 @@ import App from './App.vue'
 createApp(App).use(SwiftVuePlugin).mount('#app')
 ```
 
+Components register under their SwiftUI names (`<Text>`, `<Button>`, `<List>` …).
+If those collide with another library in your project, prefix them all:
+
+```ts
+createApp(App).use(SwiftVuePlugin, { prefix: 'SV' })
+```
+
+```vue
+<SVVStack :spacing="16">
+  <SVText font="title">Hello</SVText>
+  <SVTextField v-model="name" />
+</SVVStack>
+```
+
+Named imports (`import { TextField } from 'swiftvue'`) are unaffected either way.
+
 ## SwiftUI vs SwiftVue
 
 | SwiftUI | SwiftVue |
