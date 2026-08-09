@@ -1,8 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
+import { defineComponent, h } from 'vue'
 import NavigationStack from '../../src/components/navigation/NavigationStack.vue'
+import NavigationLink from '../../src/components/navigation/NavigationLink.vue'
 import TabView from '../../src/components/navigation/TabView.vue'
 import Sheet from '../../src/components/navigation/Sheet.vue'
+import { useNavigation } from '../../src/composables/useNavigation'
 
 describe('NavigationStack', () => {
   it('renders title in large mode', () => {
@@ -28,6 +31,112 @@ describe('NavigationStack', () => {
   it('hides header when no title', () => {
     const wrapper = mount(NavigationStack)
     expect(wrapper.find('header').exists()).toBe(false)
+  })
+})
+
+describe('NavigationStack push/pop', () => {
+  // a child that pushes a detail view through useNavigation
+  const Pusher = defineComponent({
+    setup() {
+      const nav = useNavigation()!
+      return () => h('button', {
+        id: 'go',
+        onClick: () => nav.push({ title: 'Detail', content: () => h('p', 'detail-content') }),
+      }, 'go')
+    },
+  })
+
+  function mountStack() {
+    return mount(NavigationStack, {
+      props: { title: 'Home' },
+      slots: { default: () => h(Pusher) },
+    })
+  }
+
+  it('push shows the destination with its title and a back button', async () => {
+    const wrapper = mountStack()
+    await wrapper.find('#go').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('detail-content')
+    expect(wrapper.find('h1').text()).toBe('Detail')
+
+    const back = wrapper.find('[aria-label="Back"]')
+    expect(back.exists()).toBe(true)
+    expect(back.text()).toContain('Home') // back label names the previous view
+  })
+
+  it('the back button pops to the root', async () => {
+    const wrapper = mountStack()
+    await wrapper.find('#go').trigger('click')
+    await wrapper.find('[aria-label="Back"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('h1').text()).toBe('Home')
+    expect(wrapper.find('#go').exists()).toBe(true)
+    expect(wrapper.find('[aria-label="Back"]').exists()).toBe(false)
+  })
+
+  it('popToRoot unwinds a deep stack at once', async () => {
+    const wrapper = mountStack()
+    wrapper.vm.push({ title: 'A', content: () => h('p', 'a') })
+    wrapper.vm.push({ title: 'B', content: () => h('p', 'b') })
+    await flushPromises()
+    expect(wrapper.find('h1').text()).toBe('B')
+    expect(wrapper.find('[aria-label="Back"]').text()).toContain('A')
+
+    wrapper.vm.popToRoot()
+    await flushPromises()
+    expect(wrapper.find('h1').text()).toBe('Home')
+  })
+
+  it('pop on the root is a no-op', async () => {
+    const wrapper = mountStack()
+    wrapper.vm.pop()
+    await flushPromises()
+    expect(wrapper.find('h1').text()).toBe('Home')
+  })
+})
+
+describe('NavigationLink with a destination', () => {
+  function mountWithLink() {
+    return mount(NavigationStack, {
+      props: { title: 'Home' },
+      slots: {
+        default: () => h(NavigationLink, { destinationTitle: 'Settings' }, {
+          default: () => 'Open settings',
+          destination: () => h('p', 'settings-content'),
+        }),
+      },
+    })
+  }
+
+  it('clicking pushes the destination slot', async () => {
+    const wrapper = mountWithLink()
+    await wrapper.find('.nav-link').trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('settings-content')
+    expect(wrapper.find('h1').text()).toBe('Settings')
+  })
+
+  it('activates from the keyboard', async () => {
+    const wrapper = mountWithLink()
+    await wrapper.find('.nav-link').trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+    expect(wrapper.text()).toContain('settings-content')
+  })
+
+  it('is focusable and announced as a button', () => {
+    const wrapper = mountWithLink()
+    const link = wrapper.find('.nav-link')
+    expect(link.attributes('role')).toBe('button')
+    expect(link.attributes('tabindex')).toBe('0')
+  })
+
+  it('without a destination it stays a plain tappable row', async () => {
+    const wrapper = mount(NavigationLink, { slots: { default: () => 'Row' } })
+    await wrapper.trigger('click')
+    expect(wrapper.emitted('tap')).toHaveLength(1)
   })
 })
 

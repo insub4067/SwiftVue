@@ -191,6 +191,12 @@ function onVisible() {
   if (document.visibilityState === 'visible') checkForNewBuild()
 }
 
+// Older iOS Safari ignores touch-action for pinch — block its proprietary
+// gesture events too so the demo stays fixed-scale like a native app.
+function blockGesture(e: Event) {
+  e.preventDefault()
+}
+
 onMounted(() => {
   syncAppHeight()
   window.visualViewport?.addEventListener('resize', syncAppHeight)
@@ -200,6 +206,8 @@ onMounted(() => {
 
   checkForNewBuild()
   document.addEventListener('visibilitychange', onVisible)
+  document.addEventListener('gesturestart', blockGesture)
+  document.addEventListener('gesturechange', blockGesture)
 })
 
 onUnmounted(() => {
@@ -208,6 +216,8 @@ onUnmounted(() => {
   window.removeEventListener('resize', syncAppHeight)
   window.removeEventListener('orientationchange', syncAppHeight)
   document.removeEventListener('visibilitychange', onVisible)
+  document.removeEventListener('gesturestart', blockGesture)
+  document.removeEventListener('gesturechange', blockGesture)
 })
 </script>
 
@@ -414,9 +424,70 @@ onUnmounted(() => {
               <!-- List & Navigation -->
               <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">List & NavigationLink</Text>
+                <Text font="caption" foreground-color="secondary">
+                  처음 두 항목은 실제로 push됩니다 — 뒤로가기 버튼 또는 왼쪽 끝에서
+                  오른쪽으로 스와이프해서 돌아옵니다.
+                </Text>
 
                 <List list-style="insetGrouped" :frame="{ maxWidth: '500px', width: '100%' }">
-                  <NavigationLink v-for="item in menuItems" :key="item.id" @tap="showAlert = true">
+                  <NavigationLink destination-title="General">
+                    <HStack :spacing="12">
+                      <Text font="title3">⚙️</Text>
+                      <VStack :spacing="2" alignment="leading">
+                        <Text font="body">General</Text>
+                        <Text font="caption" foreground-color="secondary">About, Software Update</Text>
+                      </VStack>
+                    </HStack>
+                    <template #destination>
+                      <VStack :spacing="16" :padding="16" alignment="leading">
+                        <List list-style="insetGrouped" :frame="{ width: '100%' }">
+                          <div class="swift-list-row">
+                            <HStack><Text>Name</Text><Spacer /><Text foreground-color="secondary">SwiftVue Demo</Text></HStack>
+                          </div>
+                          <div class="swift-list-row">
+                            <HStack><Text>Version</Text><Spacer /><Text foreground-color="secondary">v{{ version }}</Text></HStack>
+                          </div>
+                          <div class="swift-list-row">
+                            <HStack><Text>Components</Text><Spacer /><Text foreground-color="secondary">27</Text></HStack>
+                          </div>
+                        </List>
+                        <Text font="caption" foreground-color="secondary">
+                          This view was pushed onto the NavigationStack, exactly like
+                          NavigationLink(destination:) in SwiftUI.
+                        </Text>
+                      </VStack>
+                    </template>
+                  </NavigationLink>
+
+                  <NavigationLink destination-title="Display & Brightness">
+                    <HStack :spacing="12">
+                      <Text font="title3">🔆</Text>
+                      <VStack :spacing="2" alignment="leading">
+                        <Text font="body">Display & Brightness</Text>
+                        <Text font="caption" foreground-color="secondary">Text Size, Bold</Text>
+                      </VStack>
+                    </HStack>
+                    <template #destination>
+                      <VStack :spacing="16" :padding="16" alignment="leading">
+                        <VStack :spacing="8" alignment="leading" :padding="16" background="secondaryBackground"
+                          :corner-radius="12" :frame="{ width: '100%' }">
+                          <HStack>
+                            <Text>Brightness</Text>
+                            <Spacer />
+                            <Text foreground-color="secondary">{{ brightness }}%</Text>
+                          </HStack>
+                          <Slider v-model="brightness" :min="0" :max="100" tint="var(--swift-orange)" label="Brightness" />
+                        </VStack>
+                        <HStack :padding="16" background="secondaryBackground" :corner-radius="12" :frame="{ width: '100%' }">
+                          <Label system-image="🌙">Dark Mode</Label>
+                          <Spacer />
+                          <Toggle v-model="darkMode" label="Dark Mode" />
+                        </HStack>
+                      </VStack>
+                    </template>
+                  </NavigationLink>
+
+                  <NavigationLink v-for="item in menuItems.slice(2)" :key="item.id" @tap="showAlert = true">
                     <HStack :spacing="12">
                       <Text font="title3">{{ item.icon }}</Text>
                       <VStack :spacing="2" alignment="leading">
@@ -1072,6 +1143,9 @@ html, body {
   height: 100%;
   overflow: hidden;
   background: var(--swift-grouped-background);
+  /* native-app feel: panning only — no pinch zoom, no double-tap zoom */
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
 }
 
 .playground-shell {

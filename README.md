@@ -113,14 +113,47 @@ const darkMode = useState(false)
 - `List` — styled list (`items`, `listStyle`)
 
 ### Navigation
-- `NavigationStack` — navigation container (`title`, `displayMode`)
-- `NavigationLink` — navigation link (`to`, `@tap`)
+- `NavigationStack` — push/pop stack with back button and edge-swipe back (`title`, `displayMode`)
+- `NavigationLink` — pushes its `#destination` slot; or `to` (router) / `@tap`
 - `TabView` — tab bar (`tabs`, `v-model`)
 - `Sheet` — bottom sheet (`v-model:isPresented`, `detents`)
 
 ### Feedback
 - `Alert` — alert dialog (`v-model:isPresented`, `title`, `message`, `actions`)
 - `ProgressView` — loading indicator (`value`, `total`, `progressViewStyle`)
+
+## Navigation
+
+`NavigationLink` with a `#destination` slot pushes it onto the enclosing
+`NavigationStack` — SwiftUI's `NavigationLink(destination:)`:
+
+```vue
+<NavigationStack title="Settings">
+  <List>
+    <NavigationLink destination-title="General">
+      <Label system-image="⚙️">General</Label>
+      <template #destination>
+        <GeneralSettings />
+      </template>
+    </NavigationLink>
+  </List>
+</NavigationStack>
+```
+
+The stack renders a back button naming the previous view, animates
+push/pop like iOS, and pops on an edge swipe. For programmatic control:
+
+```ts
+import { useNavigation } from 'swiftvue'
+
+const nav = useNavigation()
+nav?.push({ title: 'Detail', content: () => h(DetailView) })
+nav?.pop()
+nav?.popToRoot()
+```
+
+`NavigationLink` with a `to` prop still renders a `router-link` for
+vue-router projects.
 
 ## Motion
 

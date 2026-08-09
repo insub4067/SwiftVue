@@ -65,6 +65,23 @@ test('horizontal ScrollView actually scrolls', async ({ page }) => {
   expect(result.scrolledTo, 'scrollLeft must move').toBe(300)
 })
 
+test('NavigationLink pushes and the back button pops', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+
+  await page.getByRole('button', { name: /General/ }).click()
+  await expect(page.getByText('This view was pushed onto the NavigationStack')).toBeVisible()
+  await expect(page.locator('h1', { hasText: 'General' })).toBeVisible()
+
+  const back = page.getByLabel('Back')
+  await expect(back).toBeVisible()
+  await expect(back).toContainText('Components') // names the previous view
+  await back.click()
+
+  await expect(page.getByText('This view was pushed onto the NavigationStack')).toBeHidden()
+  await expect(page.getByRole('button', { name: /General/ })).toBeVisible()
+})
+
 test('sheet opens and closes', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 780 })
   await page.goto('/')
