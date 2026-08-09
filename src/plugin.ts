@@ -9,21 +9,21 @@ import ScrollView from './components/layout/ScrollView.vue'
 import LazyVGrid from './components/layout/LazyVGrid.vue'
 import LazyHGrid from './components/layout/LazyHGrid.vue'
 
-import SText from './components/text/SText.vue'
-import SLabel from './components/text/SLabel.vue'
+import SVText from './components/text/SVText.vue'
+import SVLabel from './components/text/SVLabel.vue'
 
-import STextField from './components/input/STextField.vue'
+import SVTextField from './components/input/SVTextField.vue'
 import SecureField from './components/input/SecureField.vue'
 import TextEditor from './components/input/TextEditor.vue'
 
-import SButton from './components/controls/SButton.vue'
+import SVButton from './components/controls/SVButton.vue'
 import Toggle from './components/controls/Toggle.vue'
-import SSlider from './components/controls/SSlider.vue'
+import SVSlider from './components/controls/SVSlider.vue'
 import Picker from './components/controls/Picker.vue'
 import Stepper from './components/controls/Stepper.vue'
 
 import ForEach from './components/data/ForEach.vue'
-import SList from './components/data/SList.vue'
+import SVList from './components/data/SVList.vue'
 import Section from './components/data/Section.vue'
 
 import NavigationStack from './components/navigation/NavigationStack.vue'
@@ -31,34 +31,34 @@ import NavigationLink from './components/navigation/NavigationLink.vue'
 import TabView from './components/navigation/TabView.vue'
 import Sheet from './components/navigation/Sheet.vue'
 
-import SAlert from './components/feedback/SAlert.vue'
+import SVAlert from './components/feedback/SVAlert.vue'
 import ProgressView from './components/feedback/ProgressView.vue'
 
 import TransitionView from './components/motion/TransitionView.vue'
 
-/** Registration name → component. S-prefixed sources register under SwiftUI names. */
+/** Registration name → component. SV-prefixed sources register under their SwiftUI names. */
 const components: Record<string, Component> = {
   // Layout
   VStack, HStack, ZStack, Spacer, Divider, ScrollView, LazyVGrid, LazyHGrid,
   // Text
-  Text: SText,
-  Label: SLabel,
+  Text: SVText,
+  Label: SVLabel,
   // Input
-  TextField: STextField,
+  TextField: SVTextField,
   SecureField, TextEditor,
   // Controls
-  Button: SButton,
+  Button: SVButton,
   Toggle,
-  Slider: SSlider,
+  Slider: SVSlider,
   Picker, Stepper,
   // Data — generic components don't satisfy Component structurally
   ForEach: ForEach as unknown as Component,
-  List: SList as unknown as Component,
+  List: SVList as unknown as Component,
   Section,
   // Navigation
   NavigationStack, NavigationLink, TabView, Sheet,
   // Feedback
-  Alert: SAlert,
+  Alert: SVAlert,
   ProgressView,
   // Motion
   TransitionView,

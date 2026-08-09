@@ -18,24 +18,24 @@ export { default as LazyVGrid } from './components/layout/LazyVGrid.vue'
 export { default as LazyHGrid } from './components/layout/LazyHGrid.vue'
 
 // Text
-export { default as Text } from './components/text/SText.vue'
-export { default as Label } from './components/text/SLabel.vue'
+export { default as Text } from './components/text/SVText.vue'
+export { default as Label } from './components/text/SVLabel.vue'
 
 // Input
-export { default as TextField } from './components/input/STextField.vue'
+export { default as TextField } from './components/input/SVTextField.vue'
 export { default as SecureField } from './components/input/SecureField.vue'
 export { default as TextEditor } from './components/input/TextEditor.vue'
 
 // Controls
-export { default as Button } from './components/controls/SButton.vue'
+export { default as Button } from './components/controls/SVButton.vue'
 export { default as Toggle } from './components/controls/Toggle.vue'
-export { default as Slider } from './components/controls/SSlider.vue'
+export { default as Slider } from './components/controls/SVSlider.vue'
 export { default as Picker } from './components/controls/Picker.vue'
 export { default as Stepper } from './components/controls/Stepper.vue'
 
 // Data
 export { default as ForEach } from './components/data/ForEach.vue'
-export { default as List } from './components/data/SList.vue'
+export { default as List } from './components/data/SVList.vue'
 export { default as Section } from './components/data/Section.vue'
 
 // Navigation
@@ -45,7 +45,7 @@ export { default as TabView } from './components/navigation/TabView.vue'
 export { default as Sheet } from './components/navigation/Sheet.vue'
 
 // Feedback
-export { default as Alert } from './components/feedback/SAlert.vue'
+export { default as Alert } from './components/feedback/SVAlert.vue'
 export { default as ProgressView } from './components/feedback/ProgressView.vue'
 
 // Motion
