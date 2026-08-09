@@ -7,10 +7,16 @@ interface Props extends ModifierProps {
   role?: 'destructive' | 'cancel'
   disabled?: boolean
   fullWidth?: boolean
+  /**
+   * A `<button>` with no type submits the enclosing form, so this defaults
+   * to `button`. Opt into `submit` where that is what you actually want.
+   */
+  type?: 'button' | 'submit' | 'reset'
 }
 
 const props = withDefaults(defineProps<Props>(), {
   buttonStyle: 'automatic',
+  type: 'button',
 })
 
 const emit = defineEmits<{ tap: [] }>()
@@ -75,7 +81,7 @@ const style = computed(() => {
 </script>
 
 <template>
-  <button :style="style" :disabled="disabled" @click="emit('tap')">
+  <button :type="type" :style="style" :disabled="disabled" @click="emit('tap')">
     <slot />
   </button>
 </template>

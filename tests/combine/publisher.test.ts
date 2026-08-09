@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, effectScope } from 'vue'
 import { publisher } from '../../src/combine/publisher'
 
 // Fake only what these tests use. The default set also fakes setImmediate
@@ -141,5 +141,47 @@ describe('publisher', () => {
     await tick()
     expect(a).toHaveBeenCalledOnce()
     expect(b).toHaveBeenCalledOnce()
+  })
+})
+
+describe('scope-bound cleanup', () => {
+  it('a pending debounce does not fire after the owning scope is disposed', async () => {
+    const source = ref('')
+    const spy = vi.fn()
+    const scope = effectScope()
+    scope.run(() => { publisher(source).debounce(300).sink(spy) })
+
+    source.value = 'typed'
+    await tick()
+    scope.stop() // the component unmounts with a timer still queued
+
+    vi.advanceTimersByTime(1000)
+    expect(spy).not.toHaveBeenCalled()
+  })
+
+  it('stopping manually inside a scope stays safe when the scope disposes too', async () => {
+    const source = ref('')
+    const spy = vi.fn()
+    const scope = effectScope()
+    let stop!: () => void
+    scope.run(() => { stop = publisher(source).debounce(300).sink(spy) })
+
+    source.value = 'typed'
+    await tick()
+    stop()
+    expect(() => scope.stop()).not.toThrow()
+
+    vi.advanceTimersByTime(1000)
+    expect(spy).not.toHaveBeenCalled()
+  })
+
+  it('works outside any scope, where there is nothing to bind to', async () => {
+    const source = ref(0)
+    const spy = vi.fn()
+    const stop = publisher(source).sink(spy)
+    source.value = 1
+    await tick()
+    expect(spy).toHaveBeenCalledOnce()
+    stop()
   })
 })

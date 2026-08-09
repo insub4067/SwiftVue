@@ -82,6 +82,7 @@ watch(() => props.isPresented, async (val) => {
           </div>
           <div class="alert-actions" :class="{ stacked: actions.length > 2 }">
             <button
+              type="button"
               v-for="action in actions"
               :key="action.label"
               :class="['alert-btn', action.role]"

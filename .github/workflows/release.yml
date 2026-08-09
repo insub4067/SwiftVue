@@ -21,12 +21,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           registry-url: https://registry.npmjs.org
       - run: npm ci
       - run: npm run check
-      - run: npm run build
+      - run: npm run verify:package
 
       - name: Verify tag matches package.json version
         run: |

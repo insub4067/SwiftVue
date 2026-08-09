@@ -1,7 +1,4 @@
 <script lang="ts">
-// module scope so ids stay unique across instances
-let uid = 0
-
 export interface SectionProps {
   header?: string
   footer?: string
@@ -15,7 +12,7 @@ export interface SectionProps {
 </script>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useId, watch } from 'vue'
 
 const props = withDefaults(defineProps<SectionProps>(), {
   expanded: undefined,
@@ -30,7 +27,9 @@ watch(() => props.expanded, (value) => {
 })
 const isExpanded = computed(() => props.expanded ?? internal.value)
 
-const bodyId = `swift-section-body-${uid++}`
+// useId, not a module counter: a counter keeps climbing across SSR requests
+// while the client restarts at zero, so hydration sees different ids.
+const bodyId = `swift-section-body-${useId()}`
 
 function toggle() {
   if (!props.collapsible) return

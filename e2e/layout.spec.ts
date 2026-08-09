@@ -236,11 +236,12 @@ test('debounced publisher settles on the final input', async ({ page }) => {
   await expect(page.getByTestId('debounced')).toContainText('swift', { timeout: 2000 })
 })
 
-test('every demo screen ships a source sample and links to the implementation', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 780 })
-  await page.goto('/')
-
-  for (const tab of TABS) {
+// One test per tab: a single pass over all 27 screens ran past the 30s
+// default, and a failure could not name the tab it happened in.
+for (const tab of TABS) {
+  test(`${tab} screens ship a source sample and link to the implementation`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 780 })
+    await page.goto('/')
     await page.getByRole('tab', { name: tab }).click()
     await page.waitForTimeout(150)
 
@@ -271,7 +272,41 @@ test('every demo screen ships a source sample and links to the implementation', 
       await back.click()
       await page.waitForTimeout(350)
     }
-  }
+  })
+}
+
+test('ZStack places children on the axis the alignment names', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+  await page.getByRole('tab', { name: 'Layout' }).click()
+  await push(page, /ZStack & Spacer/)
+
+  // The avatar ZStack pins its badge to bottomTrailing over a 70px circle.
+  const placed = await page.evaluate(() => {
+    const zstacks = [...document.querySelectorAll('.nav-pane:not(.nav-pane--under) div')]
+      .filter(el => getComputedStyle(el).display === 'grid')
+    return zstacks.map(z => {
+      const cs = getComputedStyle(z)
+      const box = z.getBoundingClientRect()
+      const last = z.lastElementChild!.getBoundingClientRect()
+      return {
+        justifyItems: cs.justifyItems,
+        alignItems: cs.alignItems,
+        // where the topmost child sits inside the stack
+        x: Math.round(last.left - box.left),
+        y: Math.round(last.top - box.top),
+        w: Math.round(box.width - last.width),
+        h: Math.round(box.height - last.height),
+      }
+    })
+  })
+
+  expect(placed.length).toBeGreaterThan(0)
+  const bottomTrailing = placed.find(p => p.justifyItems === 'end' && p.alignItems === 'end')
+  expect(bottomTrailing, 'the avatar stack uses bottomTrailing').toBeTruthy()
+  // end/end means the child sits at the far corner, not the middle
+  expect(bottomTrailing!.x).toBe(bottomTrailing!.w)
+  expect(bottomTrailing!.y).toBe(bottomTrailing!.h)
 })
 
 test.describe('forced light must beat a dark OS', () => {
