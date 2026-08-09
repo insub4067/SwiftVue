@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useAppStorage } from '../src/composables/useAppStorage'
 import { version } from '../package.json'
+
+declare const __BUILD_TIME__: string
+const buildTime = __BUILD_TIME__
 
 const activeTab = ref('components')
 const showSheet = ref(false)
@@ -108,10 +111,35 @@ function simulateProgress() {
 
 const completedCount = computed(() => todos.value.filter(t => t.done).length)
 const completionPercent = computed(() => Math.round((completedCount.value / todos.value.length) * 100))
+
+// iOS Safari positions `fixed` elements against the large viewport, so the
+// bottom edge hides behind the browser toolbar. visualViewport reports the
+// actually-visible height, which we mirror into a CSS variable.
+function syncAppHeight() {
+  const h = window.visualViewport?.height ?? window.innerHeight
+  document.documentElement.style.setProperty('--app-height', `${h}px`)
+}
+
+onMounted(() => {
+  syncAppHeight()
+  window.visualViewport?.addEventListener('resize', syncAppHeight)
+  window.visualViewport?.addEventListener('scroll', syncAppHeight)
+  window.addEventListener('resize', syncAppHeight)
+  window.addEventListener('orientationchange', syncAppHeight)
+})
+
+onUnmounted(() => {
+  window.visualViewport?.removeEventListener('resize', syncAppHeight)
+  window.visualViewport?.removeEventListener('scroll', syncAppHeight)
+  window.removeEventListener('resize', syncAppHeight)
+  window.removeEventListener('orientationchange', syncAppHeight)
+})
 </script>
 
 <template>
   <div class="swift-app playground-shell" :style="{ colorScheme: darkMode ? 'dark' : 'light' }">
+    <div class="version-badge">v{{ version }} · {{ buildTime }}</div>
+
     <TabView :tabs="tabs" v-model="activeTab">
 
       <!-- === COMPONENTS TAB === -->
@@ -830,9 +858,32 @@ html, body {
 
 .playground-shell {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  height: 100svh;
+  height: var(--app-height, 100svh);
   display: flex;
   flex-direction: column;
+}
+
+.version-badge {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 6px);
+  right: 10px;
+  z-index: 200;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-family: var(--swift-font-family);
+  font-size: 10px;
+  line-height: 1.3;
+  color: var(--swift-secondary-label);
+  background: color-mix(in srgb, var(--swift-secondary-background) 85%, transparent);
+  border: 1px solid var(--swift-separator);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  pointer-events: none;
 }
 
 .playground-shell > div {
