@@ -10,6 +10,7 @@ const ALL_NAMES = [
   'ForEach', 'List',
   'NavigationStack', 'NavigationLink', 'TabView', 'Sheet',
   'Alert', 'ProgressView',
+  'TransitionView',
 ]
 
 function appWith(options?: { prefix?: string }) {

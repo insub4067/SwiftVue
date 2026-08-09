@@ -33,6 +33,8 @@ import Sheet from './components/navigation/Sheet.vue'
 import SAlert from './components/feedback/SAlert.vue'
 import ProgressView from './components/feedback/ProgressView.vue'
 
+import TransitionView from './components/motion/TransitionView.vue'
+
 /** Registration name → component. S-prefixed sources register under SwiftUI names. */
 const components: Record<string, Component> = {
   // Layout
@@ -56,6 +58,8 @@ const components: Record<string, Component> = {
   // Feedback
   Alert: SAlert,
   ProgressView,
+  // Motion
+  TransitionView,
 }
 
 export interface SwiftVuePluginOptions {

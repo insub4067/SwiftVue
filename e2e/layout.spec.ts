@@ -76,6 +76,31 @@ test('sheet opens and closes', async ({ page }) => {
   await expect(dialog).toBeHidden()
 })
 
+test('TransitionView shows and hides its content', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+
+  const box = page.getByTestId('transition-box')
+  await expect(box).toBeVisible()
+
+  await page.getByRole('button', { name: 'Hide', exact: true }).click()
+  await expect(box).toBeHidden()
+  await page.getByRole('button', { name: 'Show', exact: true }).click()
+  await expect(box).toBeVisible()
+})
+
+test('withAnimation applies the state change', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+
+  const extra = page.getByText('View Transitions API', { exact: false })
+  await expect(extra).toBeHidden()
+  await page.getByRole('button', { name: 'Expand', exact: true }).click()
+  await expect(extra).toBeVisible()
+  await page.getByRole('button', { name: 'Collapse', exact: true }).click()
+  await expect(extra).toBeHidden()
+})
+
 test.describe('forced light must beat a dark OS', () => {
   test.use({ colorScheme: 'dark' })
 

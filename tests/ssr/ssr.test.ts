@@ -14,8 +14,10 @@ import {
   ForEach, List,
   NavigationStack, NavigationLink, TabView, Sheet,
   Alert, ProgressView,
+  TransitionView,
   useState, useBinding, useAppStorage, useFocusState,
   createEnvironmentKey, provideEnvironment, useEnvironment,
+  withAnimation, usePreferredColorScheme,
 } from '../../src'
 
 const options = [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }]
@@ -62,6 +64,7 @@ const Kitchen = defineComponent({
       h(Sheet, { isPresented: false }, () => h(Text, () => 'sheet')),
       h(Alert, { isPresented: false, title: 'Alert' }),
       h(ProgressView, { value: 30, total: 100, progressViewStyle: 'linear' }),
+      h(TransitionView, { transition: 'moveBottom' }, () => h(Text, () => 'motion')),
     ])
   },
 })
@@ -84,5 +87,18 @@ describe('server-side rendering', () => {
     expect(state.value).toBe(7)
     state.value = 9
     expect(state.value).toBe(9)
+  })
+
+  it('withAnimation applies the mutation without a document', async () => {
+    let ran = false
+    const result = await withAnimation(() => { ran = true; return 'done' })
+    expect(ran).toBe(true)
+    expect(result).toBe('done')
+  })
+
+  it('usePreferredColorScheme hands back inert state without a document', () => {
+    const scheme = usePreferredColorScheme()
+    expect(scheme.value).toBeNull()
+    scheme.value = 'dark' // must not throw
   })
 })
