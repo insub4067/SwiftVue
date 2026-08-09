@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useModifiers, type ModifierProps } from '../../utils/modifiers'
+import { useModifiers, composeStyle, type ModifierProps } from '../../utils/modifiers'
 
 interface Props extends ModifierProps {
   spacing?: number
@@ -20,8 +20,7 @@ const props = withDefaults(defineProps<Props>(), {
 const alignMap = { top: 'flex-start', center: 'center', bottom: 'flex-end', firstTextBaseline: 'baseline' }
 
 const modifierStyle = useModifiers(props)
-const style = computed(() => ({
-  ...modifierStyle.value,
+const style = computed(() => composeStyle(modifierStyle.value, {
   display: 'flex',
   flexDirection: 'row' as const,
   alignItems: alignMap[props.alignment],

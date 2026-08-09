@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useModifiers, type ModifierProps } from '../../utils/modifiers'
+import { useModifiers, composeStyle, type ModifierProps } from '../../utils/modifiers'
 import { useFocusBinding, type FocusStateProps } from '../../composables/useFocusState'
 
 interface Props extends ModifierProps, FocusStateProps {
@@ -20,8 +20,7 @@ const { onFocus, onBlur, focus, blur } = useFocusBinding(props, emit, textareaEl
 defineExpose({ focus, blur })
 
 const modifierStyle = useModifiers(props)
-const style = computed(() => ({
-  ...modifierStyle.value,
+const style = computed(() => composeStyle(modifierStyle.value, {
   fontFamily: 'inherit',
   fontSize: '17px',
   lineHeight: '22px',

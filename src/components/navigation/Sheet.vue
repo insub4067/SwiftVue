@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, watch, nextTick, ref, onUnmounted } from 'vue'
-import { useModifiers, type ModifierProps } from '../../utils/modifiers'
+import { useModifiers, composeStyle, type ModifierProps } from '../../utils/modifiers'
 
 interface Props extends ModifierProps {
   isPresented: boolean
@@ -23,7 +23,11 @@ const sheetHeight = computed(() => {
   return '50%'
 })
 
-const containerStyle = computed(() => ({ ...modifierStyle.value, maxHeight: sheetHeight.value }))
+const containerStyle = computed(() => composeStyle(modifierStyle.value, { maxHeight: sheetHeight.value }))
+
+// `hidden` has to suppress the backdrop too. Hiding only the container would
+// leave a dimmed, un-dismissable page behind it.
+const visible = computed(() => props.isPresented && !props.hidden)
 
 function dismiss() {
   emit('update:isPresented', false)
@@ -74,7 +78,7 @@ function unlockScroll() {
 
 // immediate: a sheet mounted already open must still trap focus and lock
 // scrolling — otherwise the very first render skips both.
-watch(() => props.isPresented, async (val) => {
+watch(visible, async (val) => {
   if (val) {
     previouslyFocused = document.activeElement as HTMLElement
     lockScroll()
@@ -97,7 +101,7 @@ onUnmounted(unlockScroll)
   <Teleport to="body">
     <Transition name="sheet">
       <div
-        v-if="isPresented"
+        v-if="visible"
         class="sheet-overlay"
         role="dialog"
         aria-modal="true"

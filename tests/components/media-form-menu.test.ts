@@ -69,6 +69,24 @@ describe('AsyncImage', () => {
     expect(wrapper.find('.async-image-failed').exists()).toBe(true)
   })
 
+  // A decorative image that fails is still decorative. Announcing "failed to
+  // load" for it puts noise in the screen reader for something the page never
+  // asked the reader to care about.
+  it('announces a failure only for an image that was described', async () => {
+    const described = mount(AsyncImage, { props: { url: '/missing.png', alt: 'A cat' } })
+    await described.find('img').trigger('error')
+    const badge = described.find('.async-image-failed')
+    expect(badge.attributes('role')).toBe('img')
+    expect(badge.attributes('aria-label')).toBe('A cat (failed to load)')
+    expect(badge.attributes('aria-hidden')).toBeUndefined()
+
+    const decorative = mount(AsyncImage, { props: { url: '/missing.png' } })
+    await decorative.find('img').trigger('error')
+    const quiet = decorative.find('.async-image-failed')
+    expect(quiet.attributes('aria-hidden')).toBe('true')
+    expect(quiet.attributes('role')).toBeUndefined()
+  })
+
   it('returns to loading when the url changes', async () => {
     const wrapper = mount(AsyncImage, { props: { url: '/a.png' } })
     await wrapper.find('img').trigger('load')
@@ -89,6 +107,19 @@ describe('Form', () => {
     const wrapper = mount(Form)
     await wrapper.trigger('submit')
     expect(wrapper.emitted('submit')).toHaveLength(1)
+  })
+
+  // The handler needs the event itself: submitter, FormData and modifier keys
+  // all live on it and nothing can recover them after the fact.
+  it('hands the original event to the listener', async () => {
+    const wrapper = mount(Form, { slots: { default: '<input name="email" value="a@b.c" />' } })
+    await wrapper.trigger('submit')
+
+    const [event] = wrapper.emitted('submit')![0] as [SubmitEvent]
+    expect(event, 'the event itself, not a synthesised stand-in').toBeInstanceOf(Event)
+    expect(event.type).toBe('submit')
+    expect(event.defaultPrevented, 'still no navigation').toBe(true)
+    expect(new FormData(event.target as HTMLFormElement).get('email')).toBe('a@b.c')
   })
 
   it('spaces its groups like a grouped list', () => {
@@ -182,6 +213,22 @@ describe('Menu', () => {
 
   it('Escape closes it', async () => {
     const wrapper = await open()
+    await wrapper.find('[role="menu"]').trigger('keydown', { key: 'Escape' })
+    expect(wrapper.find('[role="menu"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  // Keyboard navigation returned early when there was nothing to move focus
+  // between, which left Escape unhandled and the menu impossible to dismiss.
+  it.each([
+    ['no actions at all', []],
+    ['every action disabled', [{ label: 'Rename', disabled: true }]],
+  ])('Escape closes a menu with %s', async (_case, only) => {
+    const wrapper = mount(Menu, { props: { label: 'More', actions: only }, attachTo: document.body })
+    await wrapper.find('.menu-trigger').trigger('click')
+    await nextTick()
+    expect(wrapper.find('[role="menu"]').exists()).toBe(true)
+
     await wrapper.find('[role="menu"]').trigger('keydown', { key: 'Escape' })
     expect(wrapper.find('[role="menu"]').exists()).toBe(false)
     wrapper.unmount()

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, type VNodeChild } from 'vue'
-import { useModifiers, type ModifierProps } from '../../utils/modifiers'
+import { useModifiers, composeStyle, type ModifierProps } from '../../utils/modifiers'
 import { useNavigation } from '../../composables/useNavigation'
 
 interface Props extends ModifierProps {
@@ -45,8 +45,7 @@ function onKeydown(e: KeyboardEvent) {
   }
 }
 
-const style = computed(() => ({
-  ...modifierStyle.value,
+const style = computed(() => composeStyle(modifierStyle.value, {
   display: 'flex',
   alignItems: 'center',
   padding: modifierStyle.value.padding ?? '11px 16px',

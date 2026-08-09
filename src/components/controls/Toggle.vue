@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useModifiers, type ModifierProps } from '../../utils/modifiers'
+import { useModifiers, composeStyle, type ModifierProps } from '../../utils/modifiers'
 
 interface Props extends ModifierProps {
   modelValue?: boolean
@@ -17,8 +17,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
 const modifierStyle = useModifiers(props)
 
-const trackStyle = computed(() => ({
-  ...modifierStyle.value,
+const trackStyle = computed(() => composeStyle(modifierStyle.value, {
   width: '51px',
   height: '31px',
   borderRadius: '15.5px',

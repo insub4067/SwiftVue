@@ -148,6 +148,22 @@ export function useModifiers(props: ModifierProps) {
   return computed(() => buildModifierStyle(props))
 }
 
+/**
+ * Merges a component's own style over the modifier style.
+ *
+ * A component sets its own `display` — flex, grid, block — which would
+ * silently override the one `hidden` produces. Component styles still win
+ * everywhere else, but nothing may un-hide a hidden view.
+ */
+export function composeStyle(
+  modifiers: CSSProperties,
+  own: CSSProperties,
+): CSSProperties {
+  const merged = { ...modifiers, ...own }
+  if (modifiers.display === 'none') merged.display = 'none'
+  return merged
+}
+
 export const modifierPropDefs = {
   padding: { type: [Number, Array] as any, default: undefined },
   paddingHorizontal: { type: Number, default: undefined },

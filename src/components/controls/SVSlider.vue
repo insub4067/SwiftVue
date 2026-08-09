@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useModifiers, type ModifierProps } from '../../utils/modifiers'
+import { useModifiers, composeStyle, type ModifierProps } from '../../utils/modifiers'
 
 interface Props extends ModifierProps {
   modelValue?: number
@@ -23,8 +23,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{ 'update:modelValue': [value: number] }>()
 const modifierStyle = useModifiers(props)
 
-const style = computed(() => ({
-  ...modifierStyle.value,
+const style = computed(() => composeStyle(modifierStyle.value, {
   width: modifierStyle.value.width ?? '100%',
 }))
 

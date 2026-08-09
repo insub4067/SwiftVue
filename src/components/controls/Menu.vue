@@ -18,7 +18,7 @@ export interface MenuProps extends ModifierProps {
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
-import { useModifiers } from '../../utils/modifiers'
+import { useModifiers, composeStyle } from '../../utils/modifiers'
 
 const props = withDefaults(defineProps<MenuProps>(), { actions: () => [] })
 const emit = defineEmits<{ select: [action: MenuAction] }>()
@@ -29,7 +29,10 @@ const menuEl = ref<HTMLElement | null>(null)
 const menuId = `swift-menu-${useId()}`
 
 const modifierStyle = useModifiers(props)
-const style = computed(() => ({ ...modifierStyle.value, position: 'relative' as const, display: 'inline-block' as const }))
+const style = computed(() => composeStyle(modifierStyle.value, {
+  position: 'relative' as const,
+  display: 'inline-block' as const,
+}))
 
 function items() {
   return [...(menuEl.value?.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])') ?? [])]
@@ -54,11 +57,16 @@ function choose(action: MenuAction) {
 // Roving focus through the open menu, Escape to dismiss — the keyboard
 // contract a native menu has.
 function onMenuKeydown(e: KeyboardEvent) {
+  // Escape first: a menu with no enabled items must still be dismissable.
+  if (e.key === 'Escape') { e.preventDefault(); close(); return }
+
   const focusable = items()
-  if (!focusable.length) return
+  if (!focusable.length) {
+    if (e.key === 'Tab') close(false)
+    return
+  }
   const index = focusable.indexOf(document.activeElement as HTMLElement)
 
-  if (e.key === 'Escape') { e.preventDefault(); close(); return }
   if (e.key === 'ArrowDown') { e.preventDefault(); focusable[(index + 1) % focusable.length].focus() }
   else if (e.key === 'ArrowUp') { e.preventDefault(); focusable[(index - 1 + focusable.length) % focusable.length].focus() }
   else if (e.key === 'Home') { e.preventDefault(); focusable[0].focus() }

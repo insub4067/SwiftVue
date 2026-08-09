@@ -122,6 +122,24 @@ test('NavigationLink pushes and the back button pops', async ({ page }) => {
   await expect(page.getByRole('button', { name: /Typography/ })).toBeVisible()
 })
 
+// browser-back is a claim about the real browser, so only a real browser can
+// check it: Back pops instead of leaving the app, and Forward comes back.
+test('browser Back and Forward drive the stack', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+
+  await push(page, /Typography/)
+  await expect(page.locator('h1', { hasText: 'Typography' })).toBeVisible()
+
+  await page.goBack()
+  await expect(page.locator('h1', { hasText: 'Typography' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /Typography/ }), 'still in the app')
+    .toBeVisible()
+
+  await page.goForward()
+  await expect(page.locator('h1', { hasText: 'Typography' })).toBeVisible()
+})
+
 test('popping restores the previous scroll position', async ({ page }) => {
   // shallow viewport so the Components root actually scrolls
   await page.setViewportSize({ width: 390, height: 560 })

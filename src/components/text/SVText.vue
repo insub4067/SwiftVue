@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useModifiers, type ModifierProps } from '../../utils/modifiers'
+import { useModifiers, composeStyle, type ModifierProps } from '../../utils/modifiers'
 import { resolveFont, type SwiftFontStyle } from '../../utils/theme'
 
 interface Props extends ModifierProps {
@@ -22,8 +22,7 @@ const alignMap = { leading: 'left', center: 'center', trailing: 'right' }
 const modifierStyle = useModifiers(props)
 const style = computed(() => {
   const f = resolveFont(props.font!)
-  const s: any = {
-    ...modifierStyle.value,
+  const own: any = {
     fontSize: f.size,
     lineHeight: f.lineHeight,
     fontWeight: props.bold ? '700' : modifierStyle.value.fontWeight ?? f.weight,
@@ -35,12 +34,12 @@ const style = computed(() => {
     textAlign: props.multilineTextAlignment ? alignMap[props.multilineTextAlignment] : undefined,
   }
   if (props.lineLimit) {
-    s.display = '-webkit-box'
-    s.WebkitLineClamp = props.lineLimit
-    s.WebkitBoxOrient = 'vertical'
-    s.overflow = 'hidden'
+    own.display = '-webkit-box'
+    own.WebkitLineClamp = props.lineLimit
+    own.WebkitBoxOrient = 'vertical'
+    own.overflow = 'hidden'
   }
-  return s
+  return composeStyle(modifierStyle.value, own)
 })
 </script>
 

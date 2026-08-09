@@ -14,7 +14,7 @@ export interface PickerProps extends ModifierProps {
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useModifiers, type ModifierProps } from '../../utils/modifiers'
+import { useModifiers, composeStyle, type ModifierProps } from '../../utils/modifiers'
 
 
 const props = withDefaults(defineProps<PickerProps>(), {
@@ -26,8 +26,7 @@ const modifierStyle = useModifiers(props)
 
 const isSegmented = computed(() => props.pickerStyle === 'segmented')
 
-const selectStyle = computed(() => ({
-  ...modifierStyle.value,
+const selectStyle = computed(() => composeStyle(modifierStyle.value, {
   fontFamily: 'inherit',
   fontSize: '17px',
   color: 'var(--swift-label)',
@@ -40,8 +39,7 @@ const selectStyle = computed(() => ({
   cursor: 'pointer',
 }))
 
-const segmentedStyle = computed(() => ({
-  ...modifierStyle.value,
+const segmentedStyle = computed(() => composeStyle(modifierStyle.value, {
   display: 'inline-flex',
   backgroundColor: 'var(--swift-fill)',
   borderRadius: '8px',

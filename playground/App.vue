@@ -198,9 +198,10 @@ const samples: Record<string, { code: string; sources: string[] }> = {
     sources: ['src/components/controls/Menu.vue'],
   },
   navPath: {
-    code: `<!-- mirror the stack into browser history:
-     Back, refresh and a shared URL all behave -->
-<NavigationStack title="Settings" path>
+    code: `<!-- Back and Forward drive the stack, so the system
+     back gesture pops instead of leaving the app.
+     The URL never changes: a reload starts at the root. -->
+<NavigationStack title="Settings" browser-back>
   <NavigationLink destination-title="General">…</NavigationLink>
 </NavigationStack>`,
     sources: ['src/components/navigation/NavigationStack.vue'],
@@ -591,7 +592,7 @@ onUnmounted(() => {
 
       <!-- ============ COMPONENTS TAB ============ -->
       <template #components>
-        <NavigationStack title="Components" display-mode="large">
+        <NavigationStack title="Components" display-mode="large" browser-back>
           <VStack :spacing="24" :padding="[16, 0]" alignment="leading" :frame="{ width: '100%' }">
 
             <Section header="Text">
@@ -977,7 +978,7 @@ onUnmounted(() => {
 
       <!-- ============ CONTROLS TAB ============ -->
       <template #controls>
-        <NavigationStack title="Controls" display-mode="large">
+        <NavigationStack title="Controls" display-mode="large" browser-back>
           <VStack :spacing="24" :padding="[16, 0]" alignment="leading" :frame="{ width: '100%' }">
 
             <Section header="Controls">
@@ -1143,7 +1144,7 @@ onUnmounted(() => {
 
       <!-- ============ LAYOUT TAB ============ -->
       <template #layout>
-        <NavigationStack title="Layout" display-mode="large">
+        <NavigationStack title="Layout" display-mode="large" browser-back>
           <VStack :spacing="24" :padding="[16, 0]" alignment="leading" :frame="{ width: '100%' }">
 
             <Section header="Stacks">
@@ -1385,7 +1386,7 @@ onUnmounted(() => {
 
       <!-- ============ STYLES TAB ============ -->
       <template #styles>
-        <NavigationStack title="Styles" display-mode="large">
+        <NavigationStack title="Styles" display-mode="large" browser-back>
           <VStack :spacing="24" :padding="[16, 0]" alignment="leading" :frame="{ width: '100%' }">
 
             <Section header="Styling">

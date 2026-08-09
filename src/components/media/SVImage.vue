@@ -15,7 +15,7 @@ export interface ImageProps extends ModifierProps {
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useModifiers } from '../../utils/modifiers'
+import { useModifiers, composeStyle } from '../../utils/modifiers'
 
 const props = withDefaults(defineProps<ImageProps>(), {
   contentMode: 'fit',
@@ -25,16 +25,15 @@ const props = withDefaults(defineProps<ImageProps>(), {
 const modifierStyle = useModifiers(props)
 
 const style = computed(() => {
-  const base = { ...modifierStyle.value }
-  if (!props.resizable) return { ...base, display: 'block' as const }
-  return {
-    ...base,
+  const base = modifierStyle.value
+  if (!props.resizable) return composeStyle(base, { display: 'block' as const })
+  return composeStyle(base, {
     display: 'block' as const,
     width: base.width ?? '100%',
     height: base.height ?? '100%',
     // fit letterboxes inside the frame, fill crops to cover it
     objectFit: (props.contentMode === 'fill' ? 'cover' : 'contain') as 'cover' | 'contain',
-  }
+  })
 })
 </script>
 
