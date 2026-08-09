@@ -592,6 +592,60 @@ onUnmounted(() => {
 
               <Divider />
 
+              <!-- LazyVGrid -->
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
+                <Text font="title2" foreground-color="primary">LazyVGrid</Text>
+
+                <Text font="caption" foreground-color="secondary">columns: 3</Text>
+                <LazyVGrid :columns="3" :spacing="8">
+                  <VStack v-for="i in 6" :key="i" :padding="12" :corner-radius="10"
+                    :frame="{ width: '100%' }" background="secondaryBackground">
+                    <Text font="subheadline">{{ i }}</Text>
+                  </VStack>
+                </LazyVGrid>
+
+                <Text font="caption" foreground-color="secondary">
+                  columns: [{ adaptive: { minimum: 100 } }]
+                </Text>
+                <LazyVGrid :columns="[{ adaptive: { minimum: 100 } }]" :spacing="8">
+                  <VStack v-for="i in 5" :key="i" :padding="12" :corner-radius="10"
+                    :frame="{ width: '100%' }" background="secondaryBackground">
+                    <Text font="subheadline">Auto {{ i }}</Text>
+                  </VStack>
+                </LazyVGrid>
+
+                <Text font="caption" foreground-color="secondary">
+                  columns: [{ fixed: 80 }, { flexible: {} }]
+                </Text>
+                <LazyVGrid :columns="[{ fixed: 80 }, { flexible: {} }]" :spacing="8">
+                  <VStack :padding="12" :corner-radius="10" :frame="{ width: '100%' }" background="blue">
+                    <Text font="caption" foreground-color="white">80px</Text>
+                  </VStack>
+                  <VStack :padding="12" :corner-radius="10" :frame="{ width: '100%' }" background="green">
+                    <Text font="caption" foreground-color="white">flexible</Text>
+                  </VStack>
+                </LazyVGrid>
+              </VStack>
+
+              <Divider />
+
+              <!-- LazyHGrid -->
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
+                <Text font="title2" foreground-color="primary">LazyHGrid</Text>
+                <Text font="caption" foreground-color="secondary">rows: 2, inside a horizontal ScrollView</Text>
+                <ScrollView axes="horizontal" :shows-indicators="false" :frame="{ height: '150px' }">
+                  <LazyHGrid :rows="2" :spacing="8">
+                    <VStack v-for="i in 12" :key="i" :padding="[16, 12]" :corner-radius="10"
+                      :frame="{ width: '110px' }"
+                      :style="{ background: colors[(i - 1) % colors.length].var }">
+                      <Text font="caption" foreground-color="white" bold>Item {{ i }}</Text>
+                    </VStack>
+                  </LazyHGrid>
+                </ScrollView>
+              </VStack>
+
+              <Divider />
+
               <!-- Todo List with ForEach in List -->
               <VStack :spacing="12" alignment="leading">
                 <Text font="title2" foreground-color="primary">List + Interactive</Text>
@@ -727,14 +781,14 @@ onUnmounted(() => {
               <Divider />
 
               <!-- Colors -->
-              <VStack :spacing="12" alignment="leading">
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">System Colors</Text>
-                <div class="color-grid">
+                <LazyVGrid :columns="[{ adaptive: { minimum: 80 } }]" :spacing="8">
                   <VStack v-for="c in colors" :key="c.name" :spacing="4" :padding="[16, 8]"
-                    :corner-radius="12" :style="{ background: c.var, minWidth: '70px' }">
+                    :corner-radius="12" :frame="{ width: '100%' }" :style="{ background: c.var }">
                     <Text font="caption" foreground-color="white" bold>{{ c.name }}</Text>
                   </VStack>
-                </div>
+                </LazyVGrid>
               </VStack>
 
               <Divider />
@@ -946,9 +1000,4 @@ html, body {
   }
 }
 
-.color-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
 </style>

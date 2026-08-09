@@ -6,6 +6,8 @@ import ZStack from '../../src/components/layout/ZStack.vue'
 import Spacer from '../../src/components/layout/Spacer.vue'
 import Divider from '../../src/components/layout/Divider.vue'
 import ScrollView from '../../src/components/layout/ScrollView.vue'
+import LazyVGrid from '../../src/components/layout/LazyVGrid.vue'
+import LazyHGrid from '../../src/components/layout/LazyHGrid.vue'
 
 describe('VStack', () => {
   it('renders slot content', () => {
@@ -167,5 +169,86 @@ describe('ScrollView', () => {
     })
     expect(wrapper.element.style.height).toBe('100px')
     expect(wrapper.element.style.padding).toBe('16px')
+  })
+})
+
+describe('LazyVGrid', () => {
+  it('renders slot content in a grid', () => {
+    const wrapper = mount(LazyVGrid, { slots: { default: '<span>Cell</span>' } })
+    expect(wrapper.element.style.display).toBe('grid')
+    expect(wrapper.text()).toBe('Cell')
+  })
+
+  it('accepts a column count', () => {
+    const wrapper = mount(LazyVGrid, { props: { columns: 3 } })
+    expect(wrapper.element.style.gridTemplateColumns).toBe('repeat(3, minmax(0, 1fr))')
+  })
+
+  it('accepts a GridItem array', () => {
+    const wrapper = mount(LazyVGrid, {
+      props: { columns: [{ fixed: 80 }, { flexible: {} }] },
+    })
+    expect(wrapper.element.style.gridTemplateColumns).toBe('80px minmax(0, 1fr)')
+  })
+
+  it('applies spacing as gap', () => {
+    const wrapper = mount(LazyVGrid, { props: { spacing: 20 } })
+    expect(wrapper.element.style.gap).toBe('20px')
+  })
+
+  it('maps alignment onto justifyItems', () => {
+    expect(mount(LazyVGrid).element.style.justifyItems).toBe('center')
+    expect(mount(LazyVGrid, { props: { alignment: 'leading' } }).element.style.justifyItems).toBe('start')
+    expect(mount(LazyVGrid, { props: { alignment: 'trailing' } }).element.style.justifyItems).toBe('end')
+  })
+
+  // Sizing to its own content would inflate ancestors and leave adaptive
+  // tracks nothing to measure against — the ScrollView bug in grid form.
+  it('spans the available width by default', () => {
+    expect(mount(LazyVGrid).element.style.width).toBe('100%')
+    expect(parseFloat(mount(LazyVGrid).element.style.minWidth)).toBe(0)
+  })
+
+  it('lets an explicit frame width win', () => {
+    const wrapper = mount(LazyVGrid, { props: { frame: { width: 300 } } })
+    expect(wrapper.element.style.width).toBe('300px')
+  })
+
+  it('still applies modifier props', () => {
+    const wrapper = mount(LazyVGrid, { props: { padding: 12, cornerRadius: 8 } })
+    expect(wrapper.element.style.padding).toBe('12px')
+    expect(wrapper.element.style.borderRadius).toBe('8px')
+  })
+})
+
+describe('LazyHGrid', () => {
+  it('renders slot content in a grid', () => {
+    const wrapper = mount(LazyHGrid, { slots: { default: '<span>Cell</span>' } })
+    expect(wrapper.element.style.display).toBe('grid')
+    expect(wrapper.text()).toBe('Cell')
+  })
+
+  it('lays rows out and flows into new columns', () => {
+    const wrapper = mount(LazyHGrid, { props: { rows: 2 } })
+    expect(wrapper.element.style.gridTemplateRows).toBe('repeat(2, minmax(0, 1fr))')
+    expect(wrapper.element.style.gridAutoFlow).toBe('column')
+  })
+
+  it('accepts a GridItem array for rows', () => {
+    const wrapper = mount(LazyHGrid, { props: { rows: [{ fixed: 60 }, { adaptive: 40 }] } })
+    expect(wrapper.element.style.gridTemplateRows)
+      .toBe('60px repeat(auto-fill, minmax(40px, 1fr))')
+  })
+
+  it('maps alignment onto alignItems', () => {
+    expect(mount(LazyHGrid).element.style.alignItems).toBe('center')
+    expect(mount(LazyHGrid, { props: { alignment: 'top' } }).element.style.alignItems).toBe('start')
+    expect(mount(LazyHGrid, { props: { alignment: 'bottom' } }).element.style.alignItems).toBe('end')
+  })
+
+  // It is meant to sit inside a horizontal ScrollView, so it must be free to
+  // grow past the viewport rather than being pinned to the parent width.
+  it('does not force a width', () => {
+    expect(mount(LazyHGrid).element.style.width).toBe('')
   })
 })

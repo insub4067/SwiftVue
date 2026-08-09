@@ -6,6 +6,8 @@ import ZStack from './components/layout/ZStack.vue'
 import Spacer from './components/layout/Spacer.vue'
 import Divider from './components/layout/Divider.vue'
 import ScrollView from './components/layout/ScrollView.vue'
+import LazyVGrid from './components/layout/LazyVGrid.vue'
+import LazyHGrid from './components/layout/LazyHGrid.vue'
 
 import SText from './components/text/SText.vue'
 import SLabel from './components/text/SLabel.vue'
@@ -40,6 +42,8 @@ export const SwiftVuePlugin = {
     app.component('Spacer', Spacer)
     app.component('Divider', Divider)
     app.component('ScrollView', ScrollView)
+    app.component('LazyVGrid', LazyVGrid)
+    app.component('LazyHGrid', LazyHGrid)
 
     // Text — registered as "Text" for SwiftUI familiarity
     app.component('Text', SText)
