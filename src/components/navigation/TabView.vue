@@ -1,19 +1,22 @@
-<script setup lang="ts">
-import { computed } from 'vue'
-import { useModifiers, type ModifierProps } from '../../utils/modifiers'
-
-interface Tab {
+<script lang="ts">
+export interface TabItem {
   id: string
   label: string
   icon?: string
 }
 
-interface Props extends ModifierProps {
-  tabs: Tab[]
+export interface TabViewProps extends ModifierProps {
+  tabs: TabItem[]
   modelValue?: string
 }
+</script>
 
-const props = defineProps<Props>()
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useModifiers, type ModifierProps } from '../../utils/modifiers'
+
+
+const props = defineProps<TabViewProps>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 const modifierStyle = useModifiers(props)
 

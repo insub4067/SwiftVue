@@ -96,13 +96,13 @@ const darkMode = useState(false)
 
 ### Text & Input
 - `Text` — text display (`font`, `bold`, `italic`, `lineLimit`, `foregroundColor`)
-- `Label` — icon + text (`systemImage`, `iconColor`)
+- `Label` — icon + text (`systemImage`, `iconColor`); `for` makes it a real form `<label>`
 - `TextField` — text input (`v-model`, `placeholder`, `textFieldStyle`, `v-model:focused`)
 - `SecureField` — password input (`v-model`, `placeholder`, `v-model:focused`)
 - `TextEditor` — multi-line text (`v-model`, `placeholder`, `v-model:focused`)
 
 ### Controls
-- `Button` — button (`@tap`, `buttonStyle`, `role`, `fullWidth`)
+- `Button` — button (`@tap`, `buttonStyle`, `role`, `fullWidth`, `type`)
 - `Toggle` — switch (`v-model`, `tint`)
 - `Slider` — range input (`v-model`, `min`, `max`, `step`)
 - `Picker` — select/segmented (`v-model`, `options`, `pickerStyle`)
@@ -110,7 +110,7 @@ const darkMode = useState(false)
 
 ### Data
 - `ForEach` — list rendering (`items`, `keyPath`, scoped slot)
-- `List` — styled list (`items`, `listStyle`)
+- `List` — styled list (`items`, `listStyle`, `keyPath`)
 - `Section` — grouped card with `header`/`footer`; `collapsible` folds like DisclosureGroup (`defaultExpanded`)
 
 ### Navigation

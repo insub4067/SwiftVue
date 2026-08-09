@@ -8,7 +8,18 @@ import {
   useFocusState, usePreferredColorScheme, useNavigation, onChange, publisher,
   withAnimation, Animations,
   type GridItem, type ColorScheme, type ModifierProps,
+  type AlertAction, type PickerOption, type TabItem, type TransitionPreset,
+  type SectionProps, type ListProps,
 } from 'swiftvue'
+
+// the option/action shapes users write by hand
+const actions: AlertAction[] = [{ label: 'Cancel', role: 'cancel' }, { label: 'OK' }]
+const options: PickerOption[] = [{ value: 'a', label: 'A' }, { value: 1, label: 'One' }]
+const tabs: TabItem[] = [{ id: 'home', label: 'Home', icon: '🏠' }]
+const preset: TransitionPreset = 'moveBottom'
+const sectionProps: SectionProps = { header: 'Group', collapsible: true, defaultExpanded: false }
+const listProps: ListProps<{ id: number }> = { items: [{ id: 1 }], keyPath: 'id' }
+void [actions, options, tabs, preset, sectionProps, listProps]
 
 // h()'s slots argument is loosely typed, so naming a slot there proves
 // nothing. Read the slot off the component's declared type instead — this
@@ -46,7 +57,9 @@ export default defineComponent({
       h(LazyVGrid, { columns, spacing: 8 }, () => h(Text, () => 'cell')),
       h(TransitionView, { transition: 'scale' }, () => h(Text, () => 'x')),
       h(ScrollView, { axes: 'vertical', refreshable: async () => {} }, () => h(Text, () => 'y')),
-      h(List, { items: [1, 2], listStyle: 'insetGrouped' }, { default: () => h(Text, () => 'row') }),
+      // generic components lose inference through h(); the ListProps above
+      // is what actually pins the prop types for consumers
+      h(List as never, listProps, { default: () => h(Text, () => 'row') }),
       h(Text, { font: 'title', ...modifiers }, () => String(scheme)),
       h(Section, {}, { header: sectionHeaderSlot, default: () => h(Text, () => 'row') }),
     ])

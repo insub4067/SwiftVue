@@ -1,19 +1,22 @@
-<script setup lang="ts">
-import { watch, nextTick, ref } from 'vue'
-
-interface AlertAction {
+<script lang="ts">
+export interface AlertAction {
   label: string
   role?: 'cancel' | 'destructive'
 }
 
-interface Props {
+export interface AlertProps {
   isPresented: boolean
   title: string
   message?: string
   actions?: AlertAction[]
 }
+</script>
 
-const props = withDefaults(defineProps<Props>(), {
+<script setup lang="ts">
+import { watch, nextTick, ref } from 'vue'
+
+
+const props = withDefaults(defineProps<AlertProps>(), {
   actions: () => [{ label: 'OK' }],
 })
 
@@ -51,6 +54,7 @@ function onKeydown(e: KeyboardEvent) {
   }
 }
 
+// immediate: an alert mounted already open must still take focus.
 watch(() => props.isPresented, async (val) => {
   if (val) {
     previouslyFocused = document.activeElement as HTMLElement
@@ -61,7 +65,7 @@ watch(() => props.isPresented, async (val) => {
     previouslyFocused?.focus()
     previouslyFocused = null
   }
-})
+}, { immediate: true })
 </script>
 
 <template>
