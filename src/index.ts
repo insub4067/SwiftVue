@@ -34,6 +34,7 @@ export { default as Picker } from './components/controls/Picker.vue'
 export { default as Stepper } from './components/controls/Stepper.vue'
 export { default as DatePicker } from './components/controls/DatePicker.vue'
 export { default as Menu } from './components/controls/Menu.vue'
+export { default as ContextMenu } from './components/controls/ContextMenu.vue'
 
 // Data
 export { default as ForEach } from './components/data/ForEach.vue'
@@ -50,6 +51,7 @@ export { default as Sheet } from './components/navigation/Sheet.vue'
 // Feedback
 export { default as Alert } from './components/feedback/SVAlert.vue'
 export { default as ProgressView } from './components/feedback/ProgressView.vue'
+export { default as Gauge } from './components/feedback/Gauge.vue'
 
 // Component prop/option types users write themselves
 export type { AlertAction, AlertProps } from './components/feedback/SVAlert.vue'
@@ -59,6 +61,8 @@ export type { SectionProps } from './components/data/Section.vue'
 export type { FormProps } from './components/data/Form.vue'
 export type { DatePickerProps } from './components/controls/DatePicker.vue'
 export type { MenuAction, MenuProps } from './components/controls/Menu.vue'
+export type { ContextMenuProps } from './components/controls/ContextMenu.vue'
+export type { GaugeProps } from './components/feedback/Gauge.vue'
 export type { NavigationStackProps } from './components/navigation/NavigationStack.vue'
 export type { ListProps } from './components/data/SVList.vue'
 export type { TransitionPreset } from './components/motion/TransitionView.vue'
@@ -84,7 +88,7 @@ export {
 } from './composables/useEnvironment'
 export { useAppStorage } from './composables/useAppStorage'
 export { useNavigation, navigationKey } from './composables/useNavigation'
-export type { Navigation, NavigationEntry } from './composables/useNavigation'
+export type { Navigation, NavigationEntry, RouteRef, RouteFactory } from './composables/useNavigation'
 export { useFocusState, useFocusBinding } from './composables/useFocusState'
 export type { FocusStateProps } from './composables/useFocusState'
 export { usePreferredColorScheme } from './composables/usePreferredColorScheme'

@@ -52,11 +52,12 @@ for (const width of WIDTHS) {
   })
 }
 
-test('every pushed screen stays within a 320px viewport', async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 780 })
-  await page.goto('/')
-
-  for (const tab of TABS) {
+// One test per tab: walking every screen in all four blows a single test's
+// budget, and a failure should name the tab that broke.
+for (const tab of TABS) {
+  test(`every pushed ${tab} screen stays within a 320px viewport`, async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 780 })
+    await page.goto('/')
     await page.getByRole('tab', { name: tab }).click()
     await page.waitForTimeout(150)
 
@@ -79,8 +80,8 @@ test('every pushed screen stays within a 320px viewport', async ({ page }) => {
         if (await close.isVisible().catch(() => false)) await close.click()
       }
     }
-  }
-})
+  })
+}
 
 test('horizontal ScrollView actually scrolls', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 780 })
@@ -138,6 +139,42 @@ test('browser Back and Forward drive the stack', async ({ page }) => {
 
   await page.goForward()
   await expect(page.locator('h1', { hasText: 'Typography' })).toBeVisible()
+})
+
+// The claim a deep link makes is about a cold load, so the test has to be a
+// cold load — not a push followed by an assertion about the URL.
+test('a shared link reopens the screen it names', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+
+  await push(page, /Typography/)
+  await expect(page).toHaveURL(/components=typography/)
+
+  const shared = page.url()
+  await page.goto('about:blank')
+  await page.goto(shared)
+
+  await expect(page.locator('h1', { hasText: 'Typography' })).toBeVisible()
+  await expect(page.getByLabel('Back'), 'reopened as a pushed screen').toBeVisible()
+})
+
+test('a link into another tab opens that tab', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/?tab=layout&layout=vstack')
+
+  await expect(page.getByRole('tab', { name: 'Layout' })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.locator('h1', { hasText: 'VStack' })).toBeVisible()
+})
+
+// Restoring is where the user already is. If it pushed a history entry,
+// Back would land them on the screen they are already looking at.
+test('Back from a reopened screen leaves it', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/?tab=components&components=typography')
+  await expect(page.locator('h1', { hasText: 'Typography' })).toBeVisible()
+
+  await page.goBack()
+  await expect(page.locator('h1', { hasText: 'Typography' })).toHaveCount(0)
 })
 
 test('popping restores the previous scroll position', async ({ page }) => {
@@ -292,6 +329,50 @@ for (const tab of TABS) {
     }
   })
 }
+
+test('the tab badge tracks its count and disappears at zero', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+  await push(page, /Tab Badge/)
+
+  const badge = page.locator('.tab-badge')
+  await expect(badge).toHaveText('3')
+
+  // The badge lives on the tab bar, outside the pane doing the stepping.
+  const minus = page.locator('.nav-pane:not(.nav-pane--under)').getByRole('button', { name: 'Decrease Unread' })
+  for (let i = 0; i < 3; i++) await minus.click()
+  await expect(badge).toHaveCount(0)
+})
+
+test('a right click opens the context menu at the pointer', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+  await push(page, /Context Menu/)
+
+  await page.locator('.context-menu-target').click({ button: 'right' })
+  const menu = page.getByRole('menu')
+  await expect(menu).toBeVisible()
+
+  await menu.getByRole('menuitem', { name: 'Copy' }).click()
+  await expect(page.getByTestId('context-choice')).toContainText('Copy')
+  await expect(menu).toHaveCount(0)
+})
+
+// The dial is an arc, not a number, so only a real renderer can say whether
+// the value actually moved it.
+test('the gauge sweeps as its value changes', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+  await push(page, /Gauge/)
+
+  const dial = page.locator('.gauge-fill').first()
+  const sweep = () => dial.evaluate(el => Number(el.getAttribute('stroke-dasharray')!.split(' ')[0]))
+  const before = await sweep()
+
+  const slider = page.locator('.nav-pane:not(.nav-pane--under) input[type="range"]').first()
+  await slider.fill('1')
+  await expect.poll(sweep).toBeGreaterThan(before)
+})
 
 test('ZStack places children on the axis the alignment names', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 780 })

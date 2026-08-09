@@ -5,7 +5,7 @@ import { defineComponent, h, ref } from 'vue'
 import {
   NavigationStack, NavigationLink, Section, ScrollView, Button, Text, TextField,
   LazyVGrid, TransitionView, List,
-  Image, AsyncImage, Form, DatePicker, Menu,
+  Image, AsyncImage, Form, DatePicker, Menu, ContextMenu, Gauge,
   useFocusState, usePreferredColorScheme, useNavigation, onChange, publisher,
   withAnimation, Animations,
   type GridItem, type ColorScheme, type ModifierProps,
@@ -13,12 +13,13 @@ import {
   type SectionProps, type ListProps,
   type ImageProps, type AsyncImageProps, type AsyncImagePhase,
   type FormProps, type DatePickerProps, type MenuAction, type NavigationStackProps,
+  type ContextMenuProps, type GaugeProps, type RouteRef, type RouteFactory,
 } from 'swiftvue'
 
 // the option/action shapes users write by hand
 const actions: AlertAction[] = [{ label: 'Cancel', role: 'cancel' }, { label: 'OK' }]
 const options: PickerOption[] = [{ value: 'a', label: 'A' }, { value: 1, label: 'One' }]
-const tabs: TabItem[] = [{ id: 'home', label: 'Home', icon: '🏠' }]
+const tabs: TabItem[] = [{ id: 'home', label: 'Home', icon: '🏠', badge: 3 }]
 const preset: TransitionPreset = 'moveBottom'
 const sectionProps: SectionProps = { header: 'Group', collapsible: true, defaultExpanded: false }
 const listProps: ListProps<{ id: number }> = { items: [{ id: 1 }], keyPath: 'id' }
@@ -28,9 +29,14 @@ const asyncProps: AsyncImageProps = { url: '/b.png', alt: 'B' }
 const phase: AsyncImagePhase = 'success'
 const formProps: FormProps = { spacing: 16 }
 const dateProps: DatePickerProps = { modelValue: '2026-08-09', displayedComponents: 'dateAndTime' }
-const stackProps: NavigationStackProps = { title: 'Home', browserBack: true }
+const stackProps: NavigationStackProps = { title: 'Home', browserBack: true, historyKey: 'app' }
+const contextProps: ContextMenuProps = { actions: menuActions, longPressDelay: 400 }
+const gaugeProps: GaugeProps = { value: 0.5, min: 0, max: 1, gaugeStyle: 'circular', tint: 'green' }
+const route: RouteRef = { id: 'user', param: '42' }
+const buildRoute: RouteFactory = (param) => ({ title: `User ${param}`, content: () => h(Text, () => 'user') })
 void [actions, options, tabs, preset, sectionProps, listProps,
-     menuActions, imageProps, asyncProps, phase, formProps, dateProps, stackProps]
+     menuActions, imageProps, asyncProps, phase, formProps, dateProps, stackProps,
+     contextProps, gaugeProps, route, buildRoute]
 
 // h()'s slots argument is loosely typed, so naming a slot there proves
 // nothing. Read the slot off the component's declared type instead — this
@@ -54,11 +60,14 @@ export default defineComponent({
     publisher(text).map(s => s.trim()).removeDuplicates().debounce(300).sink(q => void q)
     void withAnimation(() => { text.value = 'x' }, Animations.spring)
     nav?.push({ title: 'Detail', content: () => h(Text, () => 'detail') })
+    nav?.pushRoute('user', '42')
+    const stopRoute = nav?.registerRoute('user', buildRoute)
+    void stopRoute
 
     return () => h(NavigationStack, { title: 'Home' }, () => [
       h(Section, { header: 'Group', collapsible: true, defaultExpanded: false }, () => [
         // the slot that was missing from the declarations
-        h(NavigationLink, { destinationTitle: 'Detail' }, {
+        h(NavigationLink, { destinationTitle: 'Detail', route: 'detail', param: '1' }, {
           default: () => h(Text, () => 'Open'),
           destination: destinationSlot,
         }),
@@ -77,6 +86,8 @@ export default defineComponent({
       h(AsyncImage, asyncProps, { placeholder: () => h(Text, () => '…'), error: () => h(Text, () => '!') }),
       h(Form, { ...formProps, onSubmit: () => {} }, () => h(DatePicker, dateProps)),
       h(Menu, { label: 'More', actions: menuActions, onSelect: (a: MenuAction) => void a }),
+      h(ContextMenu, contextProps, () => h(Text, () => 'long press me')),
+      h(Gauge, gaugeProps),
     ])
   },
 })

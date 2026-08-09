@@ -23,6 +23,7 @@ import Picker from './components/controls/Picker.vue'
 import Stepper from './components/controls/Stepper.vue'
 import DatePicker from './components/controls/DatePicker.vue'
 import Menu from './components/controls/Menu.vue'
+import ContextMenu from './components/controls/ContextMenu.vue'
 
 import ForEach from './components/data/ForEach.vue'
 import SVList from './components/data/SVList.vue'
@@ -36,6 +37,7 @@ import Sheet from './components/navigation/Sheet.vue'
 
 import SVAlert from './components/feedback/SVAlert.vue'
 import ProgressView from './components/feedback/ProgressView.vue'
+import Gauge from './components/feedback/Gauge.vue'
 
 import SVImage from './components/media/SVImage.vue'
 import AsyncImage from './components/media/AsyncImage.vue'
@@ -56,7 +58,7 @@ const components: Record<string, Component> = {
   Button: SVButton,
   Toggle,
   Slider: SVSlider,
-  Picker, Stepper, DatePicker, Menu,
+  Picker, Stepper, DatePicker, Menu, ContextMenu,
   // Data — generic components don't satisfy Component structurally
   ForEach: ForEach as unknown as Component,
   List: SVList as unknown as Component,
@@ -67,6 +69,7 @@ const components: Record<string, Component> = {
   // Feedback
   Alert: SVAlert,
   ProgressView,
+  Gauge,
   // Media
   Image: SVImage,
   AsyncImage,

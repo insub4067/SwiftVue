@@ -20,9 +20,11 @@ import Picker from '../../src/components/controls/Picker.vue'
 import Stepper from '../../src/components/controls/Stepper.vue'
 import DatePicker from '../../src/components/controls/DatePicker.vue'
 import Menu from '../../src/components/controls/Menu.vue'
+import ContextMenu from '../../src/components/controls/ContextMenu.vue'
 import SVList from '../../src/components/data/SVList.vue'
 import Form from '../../src/components/data/Form.vue'
 import ProgressView from '../../src/components/feedback/ProgressView.vue'
+import Gauge from '../../src/components/feedback/Gauge.vue'
 import SVImage from '../../src/components/media/SVImage.vue'
 import AsyncImage from '../../src/components/media/AsyncImage.vue'
 import NavigationStack from '../../src/components/navigation/NavigationStack.vue'
@@ -57,9 +59,12 @@ const cases: Array<[string, Component, Record<string, unknown>?, Record<string, 
   ['Stepper', Stepper, { modelValue: 1 }],
   ['DatePicker', DatePicker, { modelValue: '2026-01-01' }],
   ['Menu', Menu, { label: 'More' }],
+  ['ContextMenu', ContextMenu, { label: 'Row' }],
   ['List', SVList],
   ['Form', Form],
   ['ProgressView', ProgressView, { value: 0.5 }],
+  ['Gauge (circular)', Gauge, { value: 0.5 }],
+  ['Gauge (linear)', Gauge, { value: 0.5, gaugeStyle: 'linear' }],
   ['Image', SVImage, { src: 'a.png', alt: 'A' }],
   ['AsyncImage', AsyncImage, { src: 'a.png', alt: 'A' }],
   ['NavigationStack', NavigationStack],

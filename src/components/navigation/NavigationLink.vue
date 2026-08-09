@@ -1,13 +1,20 @@
 <script setup lang="ts">
-import { computed, type VNodeChild } from 'vue'
+import { computed, onBeforeUnmount, onMounted, type VNodeChild } from 'vue'
 import { useModifiers, composeStyle, type ModifierProps } from '../../utils/modifiers'
-import { useNavigation } from '../../composables/useNavigation'
+import { serializeRoute, useNavigation, type NavigationEntry } from '../../composables/useNavigation'
 
 interface Props extends ModifierProps {
   /** vue-router destination — renders a router-link instead of pushing */
   to?: string
   /** header title for the pushed view */
   destinationTitle?: string
+  /**
+   * Names the destination, so an enclosing NavigationStack with a
+   * `historyKey` can write it to the URL and reopen it after a reload.
+   */
+  route?: string
+  /** distinguishes rows that share a route — a record id, a slug */
+  param?: string
 }
 
 const props = defineProps<Props>()
@@ -28,12 +35,27 @@ const modifierStyle = useModifiers(props)
 // enclosing NavigationStack. Without one it is a plain tappable row.
 const pushes = computed(() => !!slots.destination && !!navigation)
 
+const entry = (): NavigationEntry => ({
+  title: props.destinationTitle,
+  content: () => slots.destination!(),
+})
+
+// Registering under `route~param` rather than `route` is what lets a list
+// row be named: every row shares the route, so only the param tells them
+// apart when a URL asks for one back.
+const registryId = computed(() =>
+  props.param == null ? props.route : serializeRoute({ id: props.route!, param: props.param }))
+
+onMounted(() => {
+  if (!props.route || !pushes.value) return
+  const stop = navigation!.registerRoute(registryId.value!, entry)
+  onBeforeUnmount(stop)
+})
+
 function activate() {
   if (pushes.value) {
-    navigation!.push({
-      title: props.destinationTitle,
-      content: () => slots.destination!(),
-    })
+    if (props.route) navigation!.pushRoute(props.route, props.param)
+    else navigation!.push(entry())
   }
   emit('tap')
 }

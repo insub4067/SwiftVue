@@ -109,6 +109,7 @@ const darkMode = useState(false)
 - `Stepper` — increment/decrement (`v-model`, `min`, `max`, `step`)
 - `DatePicker` — date/time input (`v-model`, `displayedComponents`, `min`, `max`)
 - `Menu` — dropdown of actions (`label`, `actions`, `@select`)
+- `ContextMenu` — long press / right click / Shift+F10 menu over any content (`actions`, `@select`)
 
 ### Data
 - `ForEach` — list rendering (`items`, `keyPath`, scoped slot)
@@ -117,14 +118,15 @@ const darkMode = useState(false)
 - `Form` — real `<form>` grouping Sections, `@submit`
 
 ### Navigation
-- `NavigationStack` — push/pop stack with back button and edge-swipe back (`title`, `displayMode`)
-- `NavigationLink` — pushes its `#destination` slot; or `to` (router) / `@tap`
-- `TabView` — tab bar (`tabs`, `v-model`)
+- `NavigationStack` — push/pop stack with back button and edge-swipe back (`title`, `displayMode`, `browserBack`, `historyKey`)
+- `NavigationLink` — pushes its `#destination` slot; `route`/`param` name it for the URL; or `to` (router) / `@tap`
+- `TabView` — tab bar (`tabs`, `v-model`); a tab's `badge` draws the iOS pill
 - `Sheet` — bottom sheet (`v-model:isPresented`, `detents`)
 
 ### Feedback
 - `Alert` — alert dialog (`v-model:isPresented`, `title`, `message`, `actions`)
 - `ProgressView` — loading indicator (`value`, `total`, `progressViewStyle`)
+- `Gauge` — value in a range (`value`, `min`, `max`, `gaugeStyle`, `tint`, `currentValueLabel`)
 
 ### Media
 - `Image` — image (`src`, `alt`, `resizable`, `contentMode`)
@@ -255,23 +257,72 @@ hardware back button pop a screen instead of leaving the app:
 <NavigationStack title="Settings" browser-back>…</NavigationStack>
 ```
 
-**This is history integration, not routing.** Concretely:
+On its own it moves the stack but says nothing about where you are:
 
-| | |
-|---|---|
-| Back / back gesture | pops, restoring the previous screen as it was left |
-| Forward | returns to the screen, **rebuilt** — its local state is gone |
-| The URL | never changes |
-| Reload, or opening a shared link | starts at the root |
+| | with `browser-back` alone | plus a `history-key` and named screens |
+|---|---|---|
+| Back / back gesture | pops, restoring the previous screen as it was left | same |
+| Forward | returns to the screen, **rebuilt** — its local state is gone | same |
+| The URL | never changes | names the screens you are on |
+| Reload, or opening a shared link | starts at the root | reopens those screens |
 
-The reason is that history can only carry the stack depth: pushed views are
-closures the app owns, and no closure survives a reload. If you need real
-deep links, drive `NavigationStack` from your router and push on route
-changes.
+The reason is that a closure has no name, and history can only carry names.
+Give your screens names and all four rows turn green — see below.
 
 Each stack records its own depth, so a tabbed app can turn `browser-back` on
 for every tab and each keeps its own history. Leave it off for a stack that
 is not the page's main content — a sidebar should not answer the back button.
+
+## Deep links
+
+Name the stack with `history-key` and its screens with `route`, and the URL
+starts describing where you are:
+
+```vue
+<NavigationStack title="Settings" browser-back history-key="settings">
+  <NavigationLink route="general" destination-title="General">
+    <Label system-image="⚙️">General</Label>
+    <template #destination><GeneralView /></template>
+  </NavigationLink>
+
+  <!-- rows that share a route tell themselves apart by param -->
+  <ForEach :items="users" key-path="id">
+    <template #default="{ item }">
+      <NavigationLink route="user" :param="item.id" :destination-title="item.name">
+        <Text>{{ item.name }}</Text>
+        <template #destination><UserView :id="item.id" /></template>
+      </NavigationLink>
+    </template>
+  </ForEach>
+</NavigationStack>
+```
+
+`?settings=general` and `?settings=user~42` now reopen those screens on a
+cold load. Nested screens come back too: each one that opens mounts the links
+that name the next, so `?settings=general/sound` restores both in order.
+
+Programmatic navigation gets the same treatment:
+
+```ts
+const nav = useNavigation()
+nav?.pushRoute('user', '42')             // named — lands in the URL
+nav?.push({ content: () => h(AdHoc) })   // unnamed — does not
+
+// register a screen no NavigationLink declares
+const stop = nav!.registerRoute('user', (id) => ({
+  title: `User ${id}`,
+  content: () => h(UserView, { id }),
+}))
+```
+
+Two things worth knowing:
+
+- **Reopening replaces, it never pushes.** Landing on a shared link puts you
+  where the link points, so Back leaves — it does not walk you forward
+  through screens you never opened.
+- **An unnamed screen ends the link.** Push a closure and the URL keeps
+  describing the last named screen above it, rather than inventing a name or
+  claiming you are somewhere you are not.
 
 ## Motion
 

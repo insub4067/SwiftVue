@@ -3,6 +3,8 @@ export interface TabItem {
   id: string
   label: string
   icon?: string
+  /** SwiftUI's .badge() — 0 and '' show nothing, as they do on iOS */
+  badge?: number | string
 }
 
 export interface TabViewProps extends ModifierProps {
@@ -24,6 +26,19 @@ const activeTab = computed({
   get: () => props.modelValue ?? props.tabs[0]?.id ?? '',
   set: (v) => emit('update:modelValue', v),
 })
+
+// iOS hides an empty badge rather than drawing a dot with nothing in it.
+function badgeOf(tab: TabItem): string | null {
+  const { badge } = tab
+  if (badge == null || badge === '' || badge === 0) return null
+  return typeof badge === 'number' && badge > 99 ? '99+' : String(badge)
+}
+
+// The capped text loses the real count, so assistive tech gets the number
+// itself. Uncapped badges are already exact and need no second reading.
+function badgeLabel(tab: TabItem): string | undefined {
+  return typeof tab.badge === 'number' && tab.badge > 99 ? String(tab.badge) : undefined
+}
 
 const style = computed(() => composeStyle(modifierStyle.value, {
   display: 'flex',
@@ -48,7 +63,14 @@ const style = computed(() => composeStyle(modifierStyle.value, {
         :class="['tab-item', { active: activeTab === tab.id }]"
         @click="activeTab = tab.id"
       >
-        <span v-if="tab.icon" class="tab-icon" aria-hidden="true">{{ tab.icon }}</span>
+        <span class="tab-icon-slot">
+          <span v-if="tab.icon" class="tab-icon" aria-hidden="true">{{ tab.icon }}</span>
+          <span
+            v-if="badgeOf(tab)"
+            class="tab-badge"
+            :aria-label="badgeLabel(tab)"
+          >{{ badgeOf(tab) }}</span>
+        </span>
         <span class="tab-label">{{ tab.label }}</span>
       </button>
     </nav>
@@ -86,6 +108,28 @@ const style = computed(() => composeStyle(modifierStyle.value, {
   outline: 2px solid var(--swift-primary);
   outline-offset: -2px;
 }
+.tab-icon-slot { position: relative; display: inline-flex; }
 .tab-icon { font-size: 24px; line-height: 1; }
 .tab-label { font-size: 10px; font-weight: 500; }
+
+/* Sits on the icon's trailing top corner, as it does on iOS. Reads left to
+   right, so it grows away from the icon instead of over it. */
+.tab-badge {
+  position: absolute;
+  top: -4px;
+  left: 100%;
+  transform: translateX(-40%);
+  min-width: 17px;
+  height: 17px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: 9px;
+  background: var(--swift-red);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 17px;
+  text-align: center;
+  white-space: nowrap;
+}
 </style>
