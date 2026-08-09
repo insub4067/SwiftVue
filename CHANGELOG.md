@@ -16,6 +16,14 @@ working code is called out under *Breaking* with the change you need to make.
   and emptied a half-typed field. A tab is built the first time it is opened
   and kept from then on, the way SwiftUI's `TabView` does it — and a kept
   tab counts as disappeared, so `onAppear` fires on the way back.
+
+  Worth knowing before you upgrade: a tab you have visited is still in the
+  DOM after you leave it, hidden with `display: none`. Anything that
+  searched the whole document for an element — `querySelector`, an
+  unscoped end-to-end selector — can now find one on a tab nobody is
+  looking at. Scope those to the visible panel; `[role="tabpanel"]` marks
+  each one. This broke three of SwiftVue's own browser tests, which is how
+  it came to be written down.
 - Every `NavigationLink` warned about a missing `router-link` in a project
   with no vue-router. The tag's lookup ran above the `v-if` guarding it.
 - `padding` rejected the three-value CSS shorthand. `[8, 0, 24]` is what a

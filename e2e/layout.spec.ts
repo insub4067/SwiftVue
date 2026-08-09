@@ -28,6 +28,19 @@ async function overflowOffenders(page: Page): Promise<string[]> {
   })
 }
 
+/**
+ * The rows on the tab that is showing.
+ *
+ * A tab is built the first time it is selected and kept from then on, so
+ * every tab visited so far still has its rows in the DOM. An unscoped
+ * `.nav-link` picks the first one in document order, which after a tab
+ * switch belongs to a tab nobody can see — and clicking it waits for a
+ * hidden element forever.
+ */
+function rowsOnScreen(page: Page) {
+  return page.locator('[role="tabpanel"]:visible').locator('.nav-link')
+}
+
 async function push(page: Page, row: string | RegExp) {
   await page.getByRole('button', { name: row }).click()
   await page.waitForTimeout(400) // push transition
@@ -64,7 +77,7 @@ for (const tab of TABS) {
     await page.getByRole('tab', { name: tab }).click()
     await page.waitForTimeout(150)
 
-    const rows = page.locator('.nav-link')
+    const rows = rowsOnScreen(page)
     const count = await rows.count()
     for (let i = 0; i < count; i++) {
       await rows.nth(i).click()
@@ -330,7 +343,7 @@ for (const tab of TABS) {
     await page.getByRole('tab', { name: tab }).click()
     await page.waitForTimeout(150)
 
-    const rows = page.locator('.nav-link')
+    const rows = rowsOnScreen(page)
     for (let i = 0; i < await rows.count(); i++) {
       await rows.nth(i).click()
       const back = page.getByLabel('Back')

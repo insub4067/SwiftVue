@@ -80,7 +80,7 @@ test('Return in the title field saves, the same as the button', async ({ page })
 test('a swipe reveals the row actions and deleting removes the row', async ({ page }) => {
   await fresh(page)
 
-  const row = page.locator('.swipe-actions').filter({ hasText: 'Buy milk' }).first()
+  const row = page.locator('.swipe-row').filter({ hasText: 'Buy milk' }).first()
   const box = await row.boundingBox()
   expect(box).not.toBeNull()
 
@@ -104,8 +104,11 @@ test('a deep link reopens the todo it names', async ({ page }) => {
   await page.getByText('Buy milk').click()
   await expect(page.getByRole('heading', { name: 'Buy milk' })).toBeVisible()
 
+  // The query parameter is named after the stack's `history-key`, which is
+  // `todos` here — one stack per page owns history, so the key has to say
+  // which stack the entry belongs to.
   const url = page.url()
-  expect(url, 'the open screen is in the URL').toContain('nav=')
+  expect(url, 'the open screen is in the URL').toContain('todos=todo')
 
   await page.goto(url)
   await expect(page.getByRole('heading', { name: 'Buy milk' })).toBeVisible()
@@ -169,9 +172,12 @@ test('right to left mirrors the app rather than only the text', async ({ page })
 
   // The chevron is a glyph, so a logical property moves it but cannot turn
   // it around — it has to be mirrored by hand, and this is that check.
-  const flipped = await page.evaluate(() => {
-    const chevron = document.querySelector('.nav-link-chevron')
-    return chevron ? getComputedStyle(chevron).transform : ''
-  })
+  //
+  // Scoped to the tab on screen. A tab that has been opened stays mounted,
+  // and `getComputedStyle` on an element inside a `display: none` subtree
+  // returns the specified `scaleX(-1)` rather than the resolved matrix —
+  // there is no layout box to resolve against.
+  const chevron = page.locator('[role="tabpanel"]:visible .nav-link-chevron').first()
+  const flipped = await chevron.evaluate(el => getComputedStyle(el).transform)
   expect(flipped).toContain('matrix(-1')
 })
