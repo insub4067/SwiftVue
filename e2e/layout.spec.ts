@@ -1,6 +1,9 @@
 // Enforces docs/LAYOUT.md in a real browser. These are the failures that
 // happy-dom unit tests cannot see: every layout blowout so far shipped with
 // the whole unit suite green.
+//
+// The demo is organized as Section lists whose NavigationLinks push each
+// component demo, so most tests push a destination first.
 import { test, expect, type Page } from '@playwright/test'
 
 const WIDTHS = [320, 360, 390, 430]
@@ -25,8 +28,13 @@ async function overflowOffenders(page: Page): Promise<string[]> {
   })
 }
 
+async function push(page: Page, row: string | RegExp) {
+  await page.getByRole('button', { name: row }).click()
+  await page.waitForTimeout(400) // push transition
+}
+
 for (const width of WIDTHS) {
-  test(`no horizontal overflow on any tab at ${width}px`, async ({ page }) => {
+  test(`no horizontal overflow on any tab root at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 780 })
     await page.goto('/')
 
@@ -44,10 +52,41 @@ for (const width of WIDTHS) {
   })
 }
 
+test('every pushed screen stays within a 320px viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 780 })
+  await page.goto('/')
+
+  for (const tab of TABS) {
+    await page.getByRole('tab', { name: tab }).click()
+    await page.waitForTimeout(150)
+
+    const rows = page.locator('.nav-link')
+    const count = await rows.count()
+    for (let i = 0; i < count; i++) {
+      await rows.nth(i).click()
+      const back = page.getByLabel('Back')
+      const pushed = await back.waitFor({ state: 'visible', timeout: 1500 }).then(() => true, () => false)
+
+      if (pushed) {
+        await page.waitForTimeout(350)
+        const row = await rows.nth(i).textContent().catch(() => `row ${i}`)
+        expect(await overflowOffenders(page), `${tab} → ${row}`).toEqual([])
+        await back.click()
+        await page.waitForTimeout(400)
+      } else {
+        // rows without a destination open an overlay instead (e.g. Sheet)
+        const close = page.getByRole('button', { name: 'Close' })
+        if (await close.isVisible().catch(() => false)) await close.click()
+      }
+    }
+  }
+})
+
 test('horizontal ScrollView actually scrolls', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 780 })
   await page.goto('/')
   await page.getByRole('tab', { name: 'Layout' }).click()
+  await push(page, /ScrollView/)
 
   const result = await page.evaluate(async () => {
     const label = [...document.querySelectorAll('*')]
@@ -69,27 +108,27 @@ test('NavigationLink pushes and the back button pops', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 780 })
   await page.goto('/')
 
-  await page.getByRole('button', { name: /General/ }).click()
-  await expect(page.getByText('This view was pushed onto the NavigationStack')).toBeVisible()
-  await expect(page.locator('h1', { hasText: 'General' })).toBeVisible()
+  await push(page, /Typography/)
+  await expect(page.getByText('Large Title')).toBeVisible()
+  await expect(page.locator('h1', { hasText: 'Typography' })).toBeVisible()
 
   const back = page.getByLabel('Back')
   await expect(back).toBeVisible()
   await expect(back).toContainText('Components') // names the previous view
   await back.click()
 
-  await expect(page.getByText('This view was pushed onto the NavigationStack')).toBeHidden()
-  await expect(page.getByRole('button', { name: /General/ })).toBeVisible()
+  await expect(page.getByText('Large Title')).toBeHidden()
+  await expect(page.getByRole('button', { name: /Typography/ })).toBeVisible()
 })
 
 test('popping restores the previous scroll position', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 780 })
+  // shallow viewport so the Components root actually scrolls
+  await page.setViewportSize({ width: 390, height: 560 })
   await page.goto('/')
 
   // Clicking auto-scrolls the row into view, so the reference point is the
   // pane's scroll position at the moment of the push.
-  await page.getByRole('button', { name: /General/ }).click()
-  await expect(page.getByText('This view was pushed onto the NavigationStack')).toBeVisible()
+  await push(page, /Pull to Refresh/)
   const atPush = await page.locator('.nav-pane').first().evaluate(el => el.scrollTop)
   expect(atPush).toBeGreaterThan(0)
 
@@ -103,7 +142,7 @@ test('popping restores the previous scroll position', async ({ page }) => {
 test('sheet opens and closes', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 780 })
   await page.goto('/')
-  await page.getByRole('button', { name: /Full Width Button/ }).click()
+  await page.getByRole('button', { name: /Sheet$/ }).click()
 
   const dialog = page.locator('[role="dialog"]')
   await expect(dialog).toBeVisible()
@@ -114,6 +153,7 @@ test('sheet opens and closes', async ({ page }) => {
 test('TransitionView shows and hides its content', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 780 })
   await page.goto('/')
+  await push(page, /Animation/)
 
   const box = page.getByTestId('transition-box')
   await expect(box).toBeVisible()
@@ -127,6 +167,7 @@ test('TransitionView shows and hides its content', async ({ page }) => {
 test('withAnimation applies the state change', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 780 })
   await page.goto('/')
+  await push(page, /Animation/)
 
   const extra = page.getByText('View Transitions API', { exact: false })
   await expect(extra).toBeHidden()
@@ -139,6 +180,7 @@ test('withAnimation applies the state change', async ({ page }) => {
 test('collapsible Section folds and reopens with state intact', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 780 })
   await page.goto('/')
+  await push(page, /Section & Collapsible/)
 
   const header = page.getByRole('button', { name: 'Advanced' })
   const body = page.locator('.section-body', { has: page.getByLabel('Notifications') })
@@ -162,7 +204,7 @@ test('collapsible Section folds and reopens with state intact', async ({ page })
 test('pull gesture triggers refreshable', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 780 })
   await page.goto('/')
-  await page.getByTestId('refresh-area').scrollIntoViewIfNeeded()
+  await push(page, /Pull to Refresh/)
 
   await page.getByTestId('refresh-area').locator('div').first().evaluate(async (scroller) => {
     const touch = (type: string, y: number) => scroller.dispatchEvent(new TouchEvent(type, {
@@ -185,6 +227,7 @@ test('debounced publisher settles on the final input', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 780 })
   await page.goto('/')
   await page.getByRole('tab', { name: 'Controls' }).click()
+  await push(page, /onChange & Combine/)
 
   await page.getByPlaceholder('Search...').fill('swift')
   // inside the debounce window nothing is delivered yet
