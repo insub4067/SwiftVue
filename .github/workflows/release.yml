@@ -36,11 +36,27 @@ jobs:
             exit 1
           fi
 
-      - run: npm publish --provenance --access public
+      # Re-running a tag must not go red. The step above has already proved
+      # the tag and package.json agree, so a version that is on the registry
+      # is this exact release and there is nothing left to do.
+      - name: Publish to npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          PKG=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "$PKG@$VERSION" version >/dev/null 2>&1; then
+            echo "$PKG@$VERSION is already on npm — nothing to publish."
+            exit 0
+          fi
+          npm publish --provenance --access public
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --generate-notes
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME already exists."
+            exit 0
+          fi
+          gh release create "$GITHUB_REF_NAME" --generate-notes
