@@ -5,6 +5,7 @@ import HStack from '../../src/components/layout/HStack.vue'
 import ZStack from '../../src/components/layout/ZStack.vue'
 import Spacer from '../../src/components/layout/Spacer.vue'
 import Divider from '../../src/components/layout/Divider.vue'
+import ScrollView from '../../src/components/layout/ScrollView.vue'
 
 describe('VStack', () => {
   it('renders slot content', () => {
@@ -91,5 +92,80 @@ describe('Divider', () => {
     const wrapper = mount(Divider, { props: { thickness: 3, color: '#000' } })
     expect(wrapper.element.style.height).toBe('3px')
     expect(wrapper.element.style.backgroundColor).toBe('#000')
+  })
+})
+
+describe('ScrollView', () => {
+  it('renders slot content', () => {
+    const wrapper = mount(ScrollView, { slots: { default: '<span>Content</span>' } })
+    expect(wrapper.text()).toBe('Content')
+  })
+
+  it('scrolls vertically by default', () => {
+    const wrapper = mount(ScrollView)
+    expect(wrapper.element.style.overflowY).toBe('auto')
+    expect(wrapper.element.style.overflowX).toBe('hidden')
+  })
+
+  it('scrolls horizontally when axes is horizontal', () => {
+    const wrapper = mount(ScrollView, { props: { axes: 'horizontal' } })
+    expect(wrapper.element.style.overflowX).toBe('auto')
+    expect(wrapper.element.style.overflowY).toBe('hidden')
+  })
+
+  it('scrolls both axes when axes is both', () => {
+    const wrapper = mount(ScrollView, { props: { axes: 'both' } })
+    expect(wrapper.element.style.overflowX).toBe('auto')
+    expect(wrapper.element.style.overflowY).toBe('auto')
+  })
+
+  // Regression: a horizontal scroller left at width:auto resolves to its
+  // content width, so it inflates its ancestors and has nothing to scroll.
+  it('takes its width from the parent when scrolling horizontally', () => {
+    expect(mount(ScrollView, { props: { axes: 'horizontal' } }).element.style.width).toBe('100%')
+    expect(mount(ScrollView, { props: { axes: 'both' } }).element.style.width).toBe('100%')
+  })
+
+  it('leaves width alone when only scrolling vertically', () => {
+    const wrapper = mount(ScrollView, { props: { axes: 'vertical' } })
+    expect(wrapper.element.style.width).toBe('')
+  })
+
+  it('lets an explicit frame width win over the parent-width default', () => {
+    const wrapper = mount(ScrollView, {
+      props: { axes: 'horizontal', frame: { width: 320 } },
+    })
+    expect(wrapper.element.style.width).toBe('320px')
+  })
+
+  it('drops the automatic minimum so content can overflow', () => {
+    const wrapper = mount(ScrollView, { props: { axes: 'horizontal' } })
+    // Serialized as '0' or '0px' depending on the DOM impl; both mean zero.
+    expect(parseFloat(wrapper.element.style.minWidth)).toBe(0)
+  })
+
+  it('lets an explicit frame minWidth win', () => {
+    const wrapper = mount(ScrollView, {
+      props: { axes: 'horizontal', frame: { minWidth: 200 } },
+    })
+    expect(wrapper.element.style.minWidth).toBe('200px')
+  })
+
+  it('shows scroll indicators by default', () => {
+    const wrapper = mount(ScrollView)
+    expect(wrapper.classes()).not.toContain('hide-scrollbar')
+  })
+
+  it('hides scroll indicators when showsIndicators is false', () => {
+    const wrapper = mount(ScrollView, { props: { showsIndicators: false } })
+    expect(wrapper.classes()).toContain('hide-scrollbar')
+  })
+
+  it('still applies modifier props', () => {
+    const wrapper = mount(ScrollView, {
+      props: { axes: 'horizontal', frame: { height: 100 }, padding: 16 },
+    })
+    expect(wrapper.element.style.height).toBe('100px')
+    expect(wrapper.element.style.padding).toBe('16px')
   })
 })
