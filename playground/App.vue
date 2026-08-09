@@ -7,6 +7,7 @@ import type { TransitionPreset } from '../src/components/motion/TransitionView.v
 import { onChange } from '../src/composables/onChange'
 import { publisher } from '../src/combine/publisher'
 import { version } from '../package.json'
+import CodeSample from './CodeSample.vue'
 
 declare const __BUILD_TIME__: string
 const buildTime = __BUILD_TIME__
@@ -145,6 +146,295 @@ function simulateProgress() {
 
 const completedCount = computed(() => todos.value.filter(t => t.done).length)
 const completionPercent = computed(() => Math.round((completedCount.value / todos.value.length) * 100))
+
+const samples: Record<string, { code: string; sources: string[] }> = {
+  typography: {
+    code: `<Text font="largeTitle">Large Title</Text>
+<Text font="headline">Headline</Text>
+<Text font="caption" foreground-color="secondary">Caption</Text>
+
+<Text bold>Bold</Text>
+<Text italic>Italic</Text>
+<Text underline>Underline</Text>
+<Text strikethrough>Strike</Text>
+
+<Text :line-limit="2">Truncated after two lines…</Text>
+<Text font-weight="semibold">semibold</Text>`,
+    sources: ['src/components/text/SText.vue', 'src/utils/theme.ts'],
+  },
+  label: {
+    code: `<Label system-image="\\uD83D\\uDCC1">Documents</Label>
+<Label system-image="\\uD83D\\uDCF7" icon-color="var(--swift-blue)">Photos</Label>`,
+    sources: ['src/components/text/SLabel.vue'],
+  },
+  buttons: {
+    code: `<Button button-style="borderedProminent" @tap="save">Prominent</Button>
+<Button button-style="bordered">Bordered</Button>
+<Button button-style="borderless">Borderless</Button>
+<Button button-style="plain">Plain</Button>
+
+<Button button-style="borderedProminent" role="destructive">Delete</Button>
+<Button button-style="borderedProminent" disabled>Disabled</Button>
+<Button button-style="borderedProminent" full-width>Full Width</Button>`,
+    sources: ['src/components/controls/SButton.vue'],
+  },
+  textFields: {
+    code: `<TextField v-model="username" placeholder="Username" />
+<TextField v-model="query" placeholder="Search..." text-field-style="roundedBorder" />
+<SecureField v-model="password" placeholder="Password" />
+<TextEditor v-model="bio" placeholder="Write something..." />
+<TextField model-value="Read only" disabled />`,
+    sources: ['src/components/input/STextField.vue', 'src/components/input/SecureField.vue', 'src/components/input/TextEditor.vue'],
+  },
+  focusState: {
+    code: `const field = useFocusState<'id' | 'password'>()
+
+<TextField
+  v-model="id"
+  v-model:focused="field"
+  focus-value="id"
+  @submit="field = 'password'"
+/>
+<SecureField
+  v-model="password"
+  v-model:focused="field"
+  focus-value="password"
+  @submit="field = null"
+/>
+
+<Button @tap="field = 'id'">Focus ID</Button>`,
+    sources: ['src/composables/useFocusState.ts', 'src/components/input/STextField.vue'],
+  },
+  progress: {
+    code: `<ProgressView label="Loading" />
+<ProgressView :value="65" :total="100" />
+<ProgressView :value="30" :total="100" progress-view-style="linear" />
+
+<Alert
+  v-model:is-presented="showAlert"
+  title="Delete Item?"
+  message="This action cannot be undone."
+  :actions="[
+    { label: 'Cancel', role: 'cancel' },
+    { label: 'Delete', role: 'destructive' },
+  ]"
+  @action="onAction"
+/>`,
+    sources: ['src/components/feedback/ProgressView.vue', 'src/components/feedback/SAlert.vue'],
+  },
+  animation: {
+    code: `// every visual difference the mutation causes animates
+withAnimation(() => { expanded.value = !expanded.value })
+withAnimation(() => items.value.sort(), Animations.spring)
+// presets: default linear easeIn easeOut easeInOut
+//          spring smooth snappy bouncy
+
+<TransitionView transition="scale">
+  <Card v-if="show" />
+</TransitionView>
+
+<!-- .asymmetric(insertion:removal:) -->
+<TransitionView insertion="moveBottom" removal="opacity">
+  <Banner v-if="visible" />
+</TransitionView>`,
+    sources: ['src/motion/withAnimation.ts', 'src/components/motion/TransitionView.vue'],
+  },
+  section: {
+    code: `<Section header="Profile" footer="Synced across devices.">
+  <div class="swift-list-row">Name</div>
+  <div class="swift-list-row">Team</div>
+</Section>
+
+<!-- DisclosureGroup: folds the rows, state inside survives -->
+<Section header="Advanced" collapsible v-model:expanded="open">
+  <div class="swift-list-row">Notifications</div>
+</Section>`,
+    sources: ['src/components/data/Section.vue'],
+  },
+  refresh: {
+    code: `async function reload() {
+  items.value = await fetchItems()
+}
+
+<!-- pull down from the top; the spinner holds
+     until the promise settles -->
+<ScrollView :refreshable="reload">
+  <Row v-for="item in items" :key="item.id" />
+</ScrollView>`,
+    sources: ['src/components/layout/ScrollView.vue'],
+  },
+  toggle: {
+    code: `<Toggle v-model="wifiEnabled" label="Wi-Fi" />
+<Toggle v-model="bluetooth" tint="var(--swift-blue)" label="Bluetooth" />
+<Toggle :model-value="false" disabled label="Disabled" />`,
+    sources: ['src/components/controls/Toggle.vue'],
+  },
+  slider: {
+    code: `<Slider v-model="volume" :min="0" :max="100" label="Volume" />
+<Slider v-model="brightness" tint="var(--swift-orange)" label="Brightness" />
+<Slider v-model="size" :min="10" :max="30" :step="1" label="Font Size" />
+<Slider :model-value="40" disabled label="Disabled" />`,
+    sources: ['src/components/controls/SSlider.vue'],
+  },
+  stepper: {
+    code: `<Stepper v-model="quantity" :min="0" :max="99" label="Quantity" />
+<Stepper v-model="rating" :min="0" :max="5" label="Rating" />`,
+    sources: ['src/components/controls/Stepper.vue'],
+  },
+  picker: {
+    code: `const sizes = [
+  { value: 'small', label: 'S' },
+  { value: 'medium', label: 'M' },
+]
+
+<Picker v-model="size" :options="sizes" picker-style="segmented" />
+<Picker v-model="fruit" :options="fruits" picker-style="menu" />
+<Picker :model-value="fruit" :options="fruits" disabled />`,
+    sources: ['src/components/controls/Picker.vue'],
+  },
+  reactive: {
+    code: `// .onChange(of:)
+onChange(volume, (value, oldValue) => save(value))
+onChange(() => props.user, reload, { initial: true })
+
+// Combine subset — nothing runs until sink()
+const stop = publisher(searchText)
+  .map(s => s.trim())
+  .removeDuplicates()
+  .debounce(300)
+  .sink(query => search(query))`,
+    sources: ['src/composables/onChange.ts', 'src/combine/publisher.ts'],
+  },
+  vstack: {
+    code: `<VStack :spacing="4" alignment="leading">
+  <Text>Short</Text>
+  <Text>A Longer Text</Text>
+</VStack>
+
+<!-- alignment: leading | center | trailing -->`,
+    sources: ['src/components/layout/VStack.vue'],
+  },
+  hstack: {
+    code: `<HStack :spacing="8" alignment="top">
+  <Text font="largeTitle">A</Text>
+  <Text font="caption">C</Text>
+</HStack>
+
+<!-- alignment: top | center | bottom | firstTextBaseline -->
+<!-- wrap is a web addition: rows flow onto more lines -->
+<HStack :spacing="8" wrap>…</HStack>`,
+    sources: ['src/components/layout/HStack.vue'],
+  },
+  zstack: {
+    code: `<ZStack alignment="bottomTrailing">
+  <Avatar />
+  <Badge />
+</ZStack>
+
+<HStack>
+  <Text>Left</Text>
+  <Spacer />
+  <Text>Right</Text>
+</HStack>`,
+    sources: ['src/components/layout/ZStack.vue', 'src/components/layout/Spacer.vue'],
+  },
+  lazyVGrid: {
+    code: `<!-- a track count, or a GridItem[] -->
+<LazyVGrid :columns="3" :spacing="8">…</LazyVGrid>
+
+<LazyVGrid :columns="[{ adaptive: { minimum: 100 } }]">…</LazyVGrid>
+
+<LazyVGrid :columns="[{ fixed: 80 }, { flexible: {} }]">…</LazyVGrid>
+
+<!-- tracks resolve through minmax(0, …) so a wide child
+     never pushes the grid past its container -->`,
+    sources: ['src/components/layout/LazyVGrid.vue', 'src/utils/grid.ts'],
+  },
+  lazyHGrid: {
+    code: `<!-- stays content-sized so it can scroll sideways -->
+<ScrollView axes="horizontal">
+  <LazyHGrid :rows="2" :spacing="8">
+    <Card v-for="i in 12" :key="i" />
+  </LazyHGrid>
+</ScrollView>`,
+    sources: ['src/components/layout/LazyHGrid.vue', 'src/utils/grid.ts'],
+  },
+  scrollView: {
+    code: `<ScrollView axes="horizontal" :shows-indicators="false">
+  <HStack :spacing="12">
+    <Card v-for="i in 10" :key="i" />
+  </HStack>
+</ScrollView>
+
+<!-- axes: vertical | horizontal | both
+     a horizontal scroller takes its width from the parent,
+     otherwise it sizes to its content and cannot scroll -->`,
+    sources: ['src/components/layout/ScrollView.vue', 'docs/LAYOUT.md'],
+  },
+  forEach: {
+    code: `<ForEach :items="fruits">
+  <template #default="{ item, index }">
+    <Text>{{ index + 1 }}. {{ item }}</Text>
+  </template>
+</ForEach>
+
+<!-- keyPath picks the key field -->
+<ForEach :items="users" key-path="id">…</ForEach>`,
+    sources: ['src/components/data/ForEach.vue'],
+  },
+  list: {
+    code: `<List :items="todos" list-style="insetGrouped">
+  <template #default="{ item, index }">
+    <HStack>
+      <Text>{{ item.title }}</Text>
+      <Spacer />
+      <Button button-style="plain" @tap="toggle(index)">Done</Button>
+    </HStack>
+  </template>
+</List>`,
+    sources: ['src/components/data/SList.vue'],
+  },
+  modifiers: {
+    code: `<VStack
+  :padding="16"
+  background="secondaryBackground"
+  foreground-color="primary"
+  :corner-radius="12"
+  :shadow="{ radius: 12, y: 4 }"
+  :opacity="0.9"
+  :border="{ color: 'var(--swift-blue)', width: 2 }"
+  :frame="{ maxWidth: '400px' }"
+>…</VStack>`,
+    sources: ['src/utils/modifiers.ts'],
+  },
+  clipShape: {
+    code: `<VStack :padding="20" background="orange" clip-shape="circle">…</VStack>
+<VStack :padding="[12, 24]" background="teal" clip-shape="capsule">…</VStack>
+<VStack :padding="16" background="indigo" clip-shape="roundedRectangle">…</VStack>`,
+    sources: ['src/utils/modifiers.ts'],
+  },
+  colors: {
+    code: `<!-- names resolve to iOS system colors -->
+<Text foreground-color="red">Red</Text>
+<VStack background="secondaryBackground">…</VStack>
+
+// or the CSS variables directly
+background: var(--swift-indigo);
+
+// they follow the system appearance; force one with
+const scheme = usePreferredColorScheme()
+scheme.value = 'dark'
+`,
+    sources: ['src/utils/theme.ts', 'src/styles/swift.css'],
+  },
+  listStyles: {
+    code: `<List list-style="insetGrouped">…</List>
+<List list-style="plain">…</List>
+<List list-style="grouped">…</List>
+<List list-style="sidebar">…</List>`,
+    sources: ['src/components/data/SList.vue'],
+  },
+}
 
 // iOS Safari positions `fixed` elements against the large viewport, so the
 // bottom edge hides behind the browser toolbar. visualViewport reports the
@@ -288,6 +578,7 @@ onUnmounted(() => {
                       <Text font-weight="bold">bold</Text>
                       <Text font-weight="black">black</Text>
                     </VStack>
+                    <CodeSample v-bind="samples.typography" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -300,6 +591,7 @@ onUnmounted(() => {
                     <Label system-image="📷" icon-color="var(--swift-blue)">Photos</Label>
                     <Label system-image="🎵" icon-color="var(--swift-red)">Music</Label>
                     <Label system-image="⬇️" icon-color="var(--swift-green)">Downloads</Label>
+                    <CodeSample v-bind="samples.label" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -324,6 +616,7 @@ onUnmounted(() => {
                     <Button button-style="borderedProminent" full-width @tap="showSheet = true">
                       Full Width Button (Open Sheet)
                     </Button>
+                    <CodeSample v-bind="samples.buttons" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -352,6 +645,7 @@ onUnmounted(() => {
                       <Text font="caption" foreground-color="secondary">Disabled TextField</Text>
                       <TextField model-value="Read only" disabled text-field-style="roundedBorder" />
                     </VStack>
+                    <CodeSample v-bind="samples.textFields" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -386,6 +680,7 @@ onUnmounted(() => {
                     <Text font="caption" foreground-color="secondary">
                       Enter in ID moves focus to Password, just like SwiftUI's @FocusState.
                     </Text>
+                    <CodeSample v-bind="samples.focusState" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -417,6 +712,7 @@ onUnmounted(() => {
                         Delete Alert
                       </Button>
                     </HStack>
+                    <CodeSample v-bind="samples.progress" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -474,6 +770,7 @@ onUnmounted(() => {
                         </VStack>
                       </HStack>
                     </VStack>
+                    <CodeSample v-bind="samples.animation" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -506,6 +803,7 @@ onUnmounted(() => {
                         <HStack><Text>Items</Text><Spacer /><Stepper v-model="count" :min="0" :max="99" label="Items" /></HStack>
                       </div>
                     </Section>
+                    <CodeSample v-bind="samples.section" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -527,6 +825,7 @@ onUnmounted(() => {
                         </VStack>
                       </ScrollView>
                     </div>
+                    <CodeSample v-bind="samples.refresh" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -576,6 +875,7 @@ onUnmounted(() => {
                         </HStack>
                       </div>
                     </Section>
+                    <CodeSample v-bind="samples.toggle" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -613,6 +913,7 @@ onUnmounted(() => {
                       <Text font="body">Disabled</Text>
                       <Slider :model-value="40" :min="0" :max="100" disabled label="Disabled" />
                     </VStack>
+                    <CodeSample v-bind="samples.slider" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -640,6 +941,7 @@ onUnmounted(() => {
                         </HStack>
                       </div>
                     </Section>
+                    <CodeSample v-bind="samples.stepper" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -662,6 +964,7 @@ onUnmounted(() => {
                       <Text font="subheadline" foreground-color="secondary">Disabled</Text>
                       <Picker :model-value="'apple'" :options="fruits" picker-style="segmented" disabled />
                     </VStack>
+                    <CodeSample v-bind="samples.picker" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -688,6 +991,7 @@ onUnmounted(() => {
                       <Slider v-model="volume" :min="0" :max="100" label="Volume" />
                       <Text font="subheadline" data-testid="volume-log">{{ volumeLog }}</Text>
                     </VStack>
+                    <CodeSample v-bind="samples.reactive" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -727,6 +1031,7 @@ onUnmounted(() => {
                         <Text foreground-color="purple">A Longer Text</Text>
                       </VStack>
                     </HStack>
+                    <CodeSample v-bind="samples.vstack" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -753,6 +1058,7 @@ onUnmounted(() => {
                       <Text font="body" foreground-color="green">B</Text>
                       <Text font="caption" foreground-color="green">C</Text>
                     </HStack>
+                    <CodeSample v-bind="samples.hstack" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -794,6 +1100,7 @@ onUnmounted(() => {
                       <Spacer />
                       <Text foreground-color="purple">C</Text>
                     </HStack>
+                    <CodeSample v-bind="samples.zstack" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -833,6 +1140,7 @@ onUnmounted(() => {
                         <Text font="caption" foreground-color="white">flexible</Text>
                       </VStack>
                     </LazyVGrid>
+                    <CodeSample v-bind="samples.lazyVGrid" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -851,6 +1159,7 @@ onUnmounted(() => {
                         </VStack>
                       </LazyHGrid>
                     </ScrollView>
+                    <CodeSample v-bind="samples.lazyHGrid" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -877,6 +1186,7 @@ onUnmounted(() => {
                         </div>
                       </HStack>
                     </ScrollView>
+                    <CodeSample v-bind="samples.scrollView" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -895,6 +1205,7 @@ onUnmounted(() => {
                         </template>
                       </ForEach>
                     </HStack>
+                    <CodeSample v-bind="samples.forEach" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -922,6 +1233,7 @@ onUnmounted(() => {
                         </HStack>
                       </template>
                     </List>
+                    <CodeSample v-bind="samples.list" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -982,6 +1294,7 @@ onUnmounted(() => {
                         <Text font="headline" foreground-color="red">Border</Text>
                       </VStack>
                     </HStack>
+                    <CodeSample v-bind="samples.modifiers" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -1001,6 +1314,7 @@ onUnmounted(() => {
                         <Text font="headline">Rounded</Text>
                       </VStack>
                     </HStack>
+                    <CodeSample v-bind="samples.clipShape" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -1017,6 +1331,7 @@ onUnmounted(() => {
                         <Text font="caption" foreground-color="white" bold>{{ c.name }}</Text>
                       </VStack>
                     </LazyVGrid>
+                    <CodeSample v-bind="samples.colors" />
                   </VStack>
                 </template>
               </NavigationLink>
@@ -1041,6 +1356,7 @@ onUnmounted(() => {
                         <div class="swift-list-row"><Text>Row 3</Text></div>
                       </List>
                     </VStack>
+                    <CodeSample v-bind="samples.listStyles" />
                   </VStack>
                 </template>
               </NavigationLink>

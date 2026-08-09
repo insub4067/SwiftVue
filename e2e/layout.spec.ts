@@ -109,7 +109,8 @@ test('NavigationLink pushes and the back button pops', async ({ page }) => {
   await page.goto('/')
 
   await push(page, /Typography/)
-  await expect(page.getByText('Large Title')).toBeVisible()
+  // .first(): the collapsed source sample quotes the same string
+  await expect(page.getByText('Large Title').first()).toBeVisible()
   await expect(page.locator('h1', { hasText: 'Typography' })).toBeVisible()
 
   const back = page.getByLabel('Back')
@@ -117,7 +118,7 @@ test('NavigationLink pushes and the back button pops', async ({ page }) => {
   await expect(back).toContainText('Components') // names the previous view
   await back.click()
 
-  await expect(page.getByText('Large Title')).toBeHidden()
+  await expect(page.getByText('Large Title')).toHaveCount(0)
   await expect(page.getByRole('button', { name: /Typography/ })).toBeVisible()
 })
 
@@ -233,6 +234,44 @@ test('debounced publisher settles on the final input', async ({ page }) => {
   // inside the debounce window nothing is delivered yet
   await expect(page.getByTestId('debounced')).toContainText('—')
   await expect(page.getByTestId('debounced')).toContainText('swift', { timeout: 2000 })
+})
+
+test('every demo screen ships a source sample and links to the implementation', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+
+  for (const tab of TABS) {
+    await page.getByRole('tab', { name: tab }).click()
+    await page.waitForTimeout(150)
+
+    const rows = page.locator('.nav-link')
+    for (let i = 0; i < await rows.count(); i++) {
+      await rows.nth(i).click()
+      const back = page.getByLabel('Back')
+      const pushed = await back.waitFor({ state: 'visible', timeout: 1500 }).then(() => true, () => false)
+      if (!pushed) {
+        const close = page.getByRole('button', { name: 'Close' })
+        if (await close.isVisible().catch(() => false)) await close.click()
+        continue
+      }
+
+      // Buried panes stay mounted, so scope to the one on top of the stack.
+      const pane = page.locator('.nav-pane:not(.nav-pane--under)')
+      const title = await page.locator('h1').first().textContent()
+      const source = pane.getByRole('button', { name: 'Source' })
+      await expect(source, `${title} must offer its source`).toBeVisible()
+
+      // collapsed by default so it never buries the demo itself
+      await expect(source).toHaveAttribute('aria-expanded', 'false')
+      await source.click()
+      await expect(pane.locator('.code-block')).toBeVisible()
+      await expect(pane.locator('.code-link').first()).toHaveAttribute(
+        'href', /^https:\/\/github\.com\/insub4067\/SwiftVue\/blob\/main\//)
+
+      await back.click()
+      await page.waitForTimeout(350)
+    }
+  }
 })
 
 test.describe('forced light must beat a dark OS', () => {

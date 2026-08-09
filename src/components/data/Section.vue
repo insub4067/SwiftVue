@@ -9,17 +9,22 @@ export interface SectionProps {
   collapsible?: boolean
   /** optional v-model:expanded; left unbound the section manages itself */
   expanded?: boolean
+  /** starting state when `expanded` is left unbound */
+  defaultExpanded?: boolean
 }
 </script>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
-const props = withDefaults(defineProps<SectionProps>(), { expanded: undefined })
+const props = withDefaults(defineProps<SectionProps>(), {
+  expanded: undefined,
+  defaultExpanded: true,
+})
 const emit = defineEmits<{ 'update:expanded': [value: boolean] }>()
 
 // Controlled when the prop is bound, self-managed otherwise.
-const internal = ref(props.expanded ?? true)
+const internal = ref(props.expanded ?? props.defaultExpanded)
 watch(() => props.expanded, (value) => {
   if (value !== undefined) internal.value = value
 })

@@ -111,7 +111,7 @@ const darkMode = useState(false)
 ### Data
 - `ForEach` — list rendering (`items`, `keyPath`, scoped slot)
 - `List` — styled list (`items`, `listStyle`)
-- `Section` — grouped card with `header`/`footer`; `collapsible` folds like DisclosureGroup
+- `Section` — grouped card with `header`/`footer`; `collapsible` folds like DisclosureGroup (`defaultExpanded`)
 
 ### Navigation
 - `NavigationStack` — push/pop stack with back button and edge-swipe back (`title`, `displayMode`)
