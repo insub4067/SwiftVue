@@ -6,6 +6,7 @@ interface Props extends ModifierProps {
   modelValue?: boolean
   tint?: string
   disabled?: boolean
+  label?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -39,15 +40,32 @@ const thumbStyle = computed(() => ({
   top: '2px',
   left: props.modelValue ? '22px' : '2px',
   transition: 'left var(--swift-transition)',
+  pointerEvents: 'none' as const,
 }))
 
 function toggle() {
   if (!props.disabled) emit('update:modelValue', !props.modelValue)
 }
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === ' ' || e.key === 'Enter') {
+    e.preventDefault()
+    toggle()
+  }
+}
 </script>
 
 <template>
-  <div :style="trackStyle" role="switch" :aria-checked="modelValue" @click="toggle">
+  <div
+    :style="trackStyle"
+    role="switch"
+    :tabindex="disabled ? -1 : 0"
+    :aria-checked="modelValue"
+    :aria-disabled="disabled || undefined"
+    :aria-label="label"
+    @click="toggle"
+    @keydown="onKeydown"
+  >
     <div :style="thumbStyle" />
   </div>
 </template>

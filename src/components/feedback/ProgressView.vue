@@ -7,6 +7,7 @@ interface Props extends ModifierProps {
   total?: number
   progressViewStyle?: 'circular' | 'linear'
   tint?: string
+  label?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -23,7 +24,16 @@ const pct = computed(() =>
 </script>
 
 <template>
-  <div v-if="progressViewStyle === 'circular'" class="circular" :style="style">
+  <div
+    v-if="progressViewStyle === 'circular'"
+    class="circular"
+    :style="style"
+    role="progressbar"
+    :aria-valuenow="isIndeterminate ? undefined : pct"
+    :aria-valuemin="isIndeterminate ? undefined : 0"
+    :aria-valuemax="isIndeterminate ? undefined : 100"
+    :aria-label="label ?? 'Loading'"
+  >
     <svg viewBox="0 0 36 36" :class="{ spin: isIndeterminate }">
       <circle cx="18" cy="18" r="15" fill="none" stroke="var(--swift-fill)" stroke-width="3" />
       <circle
@@ -36,7 +46,16 @@ const pct = computed(() =>
     <span v-if="$slots.default" class="circular-label"><slot /></span>
   </div>
 
-  <div v-else class="linear" :style="style">
+  <div
+    v-else
+    class="linear"
+    :style="style"
+    role="progressbar"
+    :aria-valuenow="isIndeterminate ? undefined : pct"
+    :aria-valuemin="isIndeterminate ? undefined : 0"
+    :aria-valuemax="isIndeterminate ? undefined : 100"
+    :aria-label="label ?? 'Loading'"
+  >
     <div class="track">
       <div
         :class="['bar', { indeterminate: isIndeterminate }]"

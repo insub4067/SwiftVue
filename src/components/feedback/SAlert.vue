@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { watch, nextTick, ref } from 'vue'
 
 interface AlertAction {
   label: string
@@ -22,20 +22,63 @@ const emit = defineEmits<{
   action: [label: string]
 }>()
 
+const alertBox = ref<HTMLElement | null>(null)
+let previouslyFocused: HTMLElement | null = null
+
 function handleAction(action: AlertAction) {
   emit('action', action.label)
   emit('update:isPresented', false)
 }
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') {
+    const cancelAction = props.actions.find(a => a.role === 'cancel')
+    handleAction(cancelAction ?? props.actions[props.actions.length - 1])
+    return
+  }
+  if (e.key === 'Tab' && alertBox.value) {
+    const focusable = alertBox.value.querySelectorAll<HTMLElement>('button, [tabindex]')
+    if (focusable.length === 0) return
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
+}
+
+watch(() => props.isPresented, async (val) => {
+  if (val) {
+    previouslyFocused = document.activeElement as HTMLElement
+    await nextTick()
+    const firstBtn = alertBox.value?.querySelector<HTMLElement>('button')
+    firstBtn?.focus()
+  } else {
+    previouslyFocused?.focus()
+    previouslyFocused = null
+  }
+})
 </script>
 
 <template>
   <Teleport to="body">
     <Transition name="alert">
-      <div v-if="isPresented" class="alert-overlay">
-        <div class="alert-box">
+      <div
+        v-if="isPresented"
+        class="alert-overlay"
+        role="alertdialog"
+        aria-modal="true"
+        :aria-label="title"
+        @keydown="onKeydown"
+      >
+        <div ref="alertBox" class="alert-box">
           <div class="alert-body">
-            <h3 class="alert-title">{{ title }}</h3>
-            <p v-if="message" class="alert-message">{{ message }}</p>
+            <h3 id="alert-title" class="alert-title">{{ title }}</h3>
+            <p v-if="message" id="alert-message" class="alert-message">{{ message }}</p>
           </div>
           <div class="alert-actions" :class="{ stacked: actions.length > 2 }">
             <button
@@ -101,6 +144,10 @@ function handleAction(action: AlertAction) {
   color: var(--swift-primary);
   cursor: pointer;
   transition: background var(--swift-transition);
+}
+.alert-btn:focus-visible {
+  outline: 2px solid var(--swift-primary);
+  outline-offset: -2px;
 }
 .alert-btn + .alert-btn {
   border-left: 1px solid var(--swift-separator);

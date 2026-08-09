@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useModifiers, modifierPropDefs, type ModifierProps } from '../../utils/modifiers'
+import { useModifiers, type ModifierProps } from '../../utils/modifiers'
 
 interface Props extends ModifierProps {
   spacing?: number

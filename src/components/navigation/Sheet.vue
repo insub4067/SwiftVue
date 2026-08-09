@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch, onMounted, onUnmounted } from 'vue'
+import { computed, watch, nextTick, ref, onUnmounted } from 'vue'
 import { useModifiers, type ModifierProps } from '../../utils/modifiers'
 
 interface Props extends ModifierProps {
@@ -13,29 +13,64 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{ 'update:isPresented': [value: boolean]; dismiss: [] }>()
 const modifierStyle = useModifiers(props)
-const containerStyle = computed(() => ({ ...modifierStyle.value, maxHeight: sheetHeight.value }))
+
+const sheetEl = ref<HTMLElement | null>(null)
+let previouslyFocused: HTMLElement | null = null
 
 const sheetHeight = computed(() => {
   if (props.detents.includes('large')) return '92%'
   return '50%'
 })
 
+const containerStyle = computed(() => ({ ...modifierStyle.value, maxHeight: sheetHeight.value }))
+
 function dismiss() {
   emit('update:isPresented', false)
   emit('dismiss')
 }
 
-function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') dismiss()
+function onOverlayKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') {
+    dismiss()
+    return
+  }
+  if (e.key === 'Tab' && sheetEl.value) {
+    const focusable = sheetEl.value.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+    if (focusable.length === 0) {
+      e.preventDefault()
+      return
+    }
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
 }
 
-watch(() => props.isPresented, (val) => {
-  document.body.style.overflow = val ? 'hidden' : ''
+watch(() => props.isPresented, async (val) => {
+  if (val) {
+    previouslyFocused = document.activeElement as HTMLElement
+    document.body.style.overflow = 'hidden'
+    await nextTick()
+    const firstFocusable = sheetEl.value?.querySelector<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+    firstFocusable?.focus()
+  } else {
+    document.body.style.overflow = ''
+    previouslyFocused?.focus()
+    previouslyFocused = null
+  }
 })
 
-onMounted(() => document.addEventListener('keydown', onKeydown))
 onUnmounted(() => {
-  document.removeEventListener('keydown', onKeydown)
   document.body.style.overflow = ''
 })
 </script>
@@ -43,8 +78,15 @@ onUnmounted(() => {
 <template>
   <Teleport to="body">
     <Transition name="sheet">
-      <div v-if="isPresented" class="sheet-overlay" @click.self="dismiss">
-        <div class="sheet-container" :style="containerStyle">
+      <div
+        v-if="isPresented"
+        class="sheet-overlay"
+        role="dialog"
+        aria-modal="true"
+        @click.self="dismiss"
+        @keydown="onOverlayKeydown"
+      >
+        <div ref="sheetEl" class="sheet-container" :style="containerStyle">
           <div class="sheet-handle" />
           <div class="sheet-content">
             <slot />
