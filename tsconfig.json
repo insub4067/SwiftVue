@@ -15,9 +15,14 @@
     "declaration": true,
     "declarationDir": "./dist",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@swiftvue": ["./src/index.ts"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "playground/**/*.ts", "playground/**/*.vue"],
+  "include": [
+    "src/**/*.ts", "src/**/*.vue",
+    "playground/**/*.ts", "playground/**/*.vue",
+    "kitchen/**/*.ts", "kitchen/**/*.vue", "kitchen/**/*.d.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }

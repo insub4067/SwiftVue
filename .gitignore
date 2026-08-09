@@ -5,6 +5,7 @@ dist
 coverage
 playground-dist
 playground/dist
+kitchen/dist
 test-results
 playwright-report
 *.tsbuildinfo

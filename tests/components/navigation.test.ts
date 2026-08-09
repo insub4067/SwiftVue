@@ -218,6 +218,33 @@ describe('NavigationLink with a destination', () => {
     await wrapper.trigger('click')
     expect(wrapper.emitted('tap')).toHaveLength(1)
   })
+
+  // Most projects have no vue-router, and writing `<router-link>` in the
+  // template makes its lookup run at the top of every render regardless of
+  // the `v-if` guarding it. The result was a warning per link per render in
+  // a project that never asked for a router — silent to the tests that only
+  // checked the markup, deafening in a console.
+  it('says nothing about vue-router when no link asked for it', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    mount(NavigationLink, { slots: { default: () => 'Row' } })
+    const said = warn.mock.calls.flat().join('\n')
+    warn.mockRestore()
+    expect(said).toBe('')
+  })
+
+  it('but a link with `to` still renders the router link', () => {
+    const RouterLink = defineComponent({
+      props: { to: { type: String, required: true } },
+      setup: (props, { slots }) => () => h('a', { href: props.to, class: 'stub-router' }, slots.default?.()),
+    })
+    const wrapper = mount(NavigationLink, {
+      props: { to: '/somewhere' },
+      slots: { default: () => 'Row' },
+      global: { components: { RouterLink } },
+    })
+    expect(wrapper.find('.stub-router').exists()).toBe(true)
+    expect(wrapper.find('.stub-router').attributes('href')).toBe('/somewhere')
+  })
 })
 
 describe('TabView', () => {

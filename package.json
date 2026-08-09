@@ -30,14 +30,17 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint src/ tests/",
-    "lint:fix": "eslint src/ tests/ --fix",
+    "lint": "eslint src/ tests/ kitchen/",
+    "lint:fix": "eslint src/ tests/ kitchen/ --fix",
     "check": "npm run typecheck && npm run lint && npm run test",
     "demo:build": "vite build playground",
     "demo:preview": "vite preview playground --port 4173 --strictPort",
     "e2e": "playwright test",
     "prepublishOnly": "npm run check && npm run verify:package",
-    "verify:package": "npm run build && node scripts/verify-package.mjs"
+    "verify:package": "npm run build && node scripts/verify-package.mjs",
+    "kitchen": "vite serve kitchen",
+    "kitchen:build": "vite build kitchen",
+    "kitchen:preview": "vite preview kitchen --port 4174 --strictPort"
   },
   "peerDependencies": {
     "vue": "^3.5.0"

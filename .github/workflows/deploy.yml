@@ -25,6 +25,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx vite build playground --outDir ../playground-dist
+      # Kitchen ships under /kitchen/ on the same Pages site — its vite
+      # config already sets that base when GITHUB_ACTIONS is set.
+      - run: npx vite build kitchen --outDir ../playground-dist/kitchen --emptyOutDir false
       - uses: actions/upload-pages-artifact@v3
         with:
           path: playground-dist

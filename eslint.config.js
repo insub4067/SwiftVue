@@ -2,7 +2,10 @@ import pluginVue from 'eslint-plugin-vue'
 import tseslint from 'typescript-eslint'
 
 export default [
-  { ignores: ['dist/', 'node_modules/', 'playground/'] },
+  // Kitchen is linted — it is the app the library is tested against, and
+  // code that demonstrates the library should hold to the library's own
+  // standard. Only its build output is skipped.
+  { ignores: ['dist/', 'node_modules/', 'playground/', 'kitchen/dist/'] },
   ...tseslint.configs.recommended,
   ...pluginVue.configs['flat/recommended'],
   {
