@@ -14,23 +14,30 @@ function resolveStorage(): Storage | null {
 }
 
 // Every ref bound to a key, so writing through one updates the others.
-// SwiftUI's @AppStorage behaves as a single source of truth per key.
-const bound = new Map<string, Set<Ref<unknown>>>()
+// SwiftUI's @AppStorage behaves as a single source of truth per key. The
+// fallback travels with the ref: when another tab deletes the key there is
+// no value to mirror, and each ref has to go back to its own default.
+interface Binding { state: Ref<unknown>; fallback: unknown }
+const bound = new Map<string, Set<Binding>>()
 
-function share(key: string, state: Ref<unknown>) {
+function share(key: string, binding: Binding) {
   let refs = bound.get(key)
   if (!refs) bound.set(key, refs = new Set())
-  refs.add(state)
+  refs.add(binding)
   return () => {
-    refs.delete(state)
+    refs.delete(binding)
     if (!refs.size) bound.delete(key)
   }
 }
 
 function broadcast(key: string, value: unknown, from: Ref<unknown>) {
   for (const other of bound.get(key) ?? []) {
-    if (other !== from) other.value = value
+    if (other.state !== from) other.state.value = value
   }
+}
+
+function resetAll(key: string) {
+  for (const binding of bound.get(key) ?? []) binding.state.value = binding.fallback
 }
 
 let listening = false
@@ -40,17 +47,29 @@ function startTabSync() {
   if (listening || typeof window === 'undefined') return
   listening = true
   window.addEventListener('storage', (event) => {
-    if (!event.key) return
+    // A null key is `storage.clear()` — every key at once, so every ref goes
+    // back to its default. A logout in another tab looks like this.
+    if (event.key == null) {
+      for (const key of [...bound.keys()]) resetAll(key)
+      return
+    }
     const refs = bound.get(event.key)
     if (!refs?.size) return
+
+    // A null value is `removeItem`. There is nothing to mirror, so the refs
+    // fall back the same way a fresh load would.
+    if (event.newValue == null) {
+      resetAll(event.key)
+      return
+    }
+
     let next: unknown
     try {
-      next = event.newValue == null ? null : JSON.parse(event.newValue)
+      next = JSON.parse(event.newValue)
     } catch {
       return // another writer put something we cannot read; leave state alone
     }
-    if (next === null) return
-    for (const state of refs) state.value = next
+    for (const binding of refs) binding.state.value = next
   })
 }
 
@@ -79,7 +98,7 @@ export function useAppStorage<T>(key: string, defaultValue: T): Ref<T> {
   const state = ref(initial) as Ref<T>
 
   if (storage) {
-    const release = share(key, state as Ref<unknown>)
+    const release = share(key, { state: state as Ref<unknown>, fallback: defaultValue })
     startTabSync()
 
     watch(state, (value) => {
