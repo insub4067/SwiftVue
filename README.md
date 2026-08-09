@@ -70,7 +70,7 @@ const darkMode = useState(false)
 
 ### Layout
 - `VStack` — vertical flex container (`spacing`, `alignment`)
-- `HStack` — horizontal flex container (`spacing`, `alignment`)
+- `HStack` — horizontal flex container (`spacing`, `alignment`, `wrap`)
 - `ZStack` — layered container (`alignment`)
 - `Spacer` — flexible space (`minLength`)
 - `Divider` — horizontal line (`color`, `thickness`)
