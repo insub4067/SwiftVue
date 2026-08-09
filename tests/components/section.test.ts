@@ -56,6 +56,26 @@ describe('Section', () => {
       expect(wrapper.find('.section-body').classes()).not.toContain('collapsed')
     })
 
+    it('starts folded when defaultExpanded is false', async () => {
+      const wrapper = mount(Section, {
+        props: { header: 'Source', collapsible: true, defaultExpanded: false },
+        slots: { default: 'Row' },
+      })
+      expect(wrapper.find('.section-body').classes()).toContain('collapsed')
+      expect(wrapper.find('button').attributes('aria-expanded')).toBe('false')
+
+      await wrapper.find('button').trigger('click')
+      expect(wrapper.find('.section-body').classes()).not.toContain('collapsed')
+    })
+
+    it('an explicit expanded prop wins over defaultExpanded', () => {
+      const wrapper = mount(Section, {
+        props: { header: 'Source', collapsible: true, defaultExpanded: false, expanded: true },
+        slots: { default: 'Row' },
+      })
+      expect(wrapper.find('.section-body').classes()).not.toContain('collapsed')
+    })
+
     it('supports v-model:expanded', async () => {
       const wrapper = mount(Section, {
         props: { header: 'Advanced', collapsible: true, expanded: false },
