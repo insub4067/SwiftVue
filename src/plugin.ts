@@ -1,4 +1,4 @@
-import type { App } from 'vue'
+import type { App, Component } from 'vue'
 
 import VStack from './components/layout/VStack.vue'
 import HStack from './components/layout/HStack.vue'
@@ -33,46 +33,47 @@ import Sheet from './components/navigation/Sheet.vue'
 import SAlert from './components/feedback/SAlert.vue'
 import ProgressView from './components/feedback/ProgressView.vue'
 
+/** Registration name → component. S-prefixed sources register under SwiftUI names. */
+const components: Record<string, Component> = {
+  // Layout
+  VStack, HStack, ZStack, Spacer, Divider, ScrollView, LazyVGrid, LazyHGrid,
+  // Text
+  Text: SText,
+  Label: SLabel,
+  // Input
+  TextField: STextField,
+  SecureField, TextEditor,
+  // Controls
+  Button: SButton,
+  Toggle,
+  Slider: SSlider,
+  Picker, Stepper,
+  // Data — generic components don't satisfy Component structurally
+  ForEach: ForEach as unknown as Component,
+  List: SList as unknown as Component,
+  // Navigation
+  NavigationStack, NavigationLink, TabView, Sheet,
+  // Feedback
+  Alert: SAlert,
+  ProgressView,
+}
+
+export interface SwiftVuePluginOptions {
+  /**
+   * Prepended to every registered name — `{ prefix: 'SV' }` turns
+   * `<TextField>` into `<SVTextField>`. Reach for this when the SwiftUI
+   * names collide with another library, or with in-DOM templates where
+   * case-insensitive parsing folds `<Text>` into SVG's `<text>`.
+   * Named imports from 'swiftvue' are unaffected.
+   */
+  prefix?: string
+}
+
 export const SwiftVuePlugin = {
-  install(app: App) {
-    // Layout
-    app.component('VStack', VStack)
-    app.component('HStack', HStack)
-    app.component('ZStack', ZStack)
-    app.component('Spacer', Spacer)
-    app.component('Divider', Divider)
-    app.component('ScrollView', ScrollView)
-    app.component('LazyVGrid', LazyVGrid)
-    app.component('LazyHGrid', LazyHGrid)
-
-    // Text — registered as "Text" for SwiftUI familiarity
-    app.component('Text', SText)
-    app.component('Label', SLabel)
-
-    // Input — registered as "TextField"
-    app.component('TextField', STextField)
-    app.component('SecureField', SecureField)
-    app.component('TextEditor', TextEditor)
-
-    // Controls — registered as "Button"
-    app.component('Button', SButton)
-    app.component('Toggle', Toggle)
-    app.component('Slider', SSlider)
-    app.component('Picker', Picker)
-    app.component('Stepper', Stepper)
-
-    // Data
-    app.component('ForEach', ForEach as any)
-    app.component('List', SList as any)
-
-    // Navigation
-    app.component('NavigationStack', NavigationStack)
-    app.component('NavigationLink', NavigationLink)
-    app.component('TabView', TabView)
-    app.component('Sheet', Sheet)
-
-    // Feedback
-    app.component('Alert', SAlert)
-    app.component('ProgressView', ProgressView)
+  install(app: App, options: SwiftVuePluginOptions = {}) {
+    const prefix = options.prefix ?? ''
+    for (const [name, component] of Object.entries(components)) {
+      app.component(prefix + name, component)
+    }
   },
 }
