@@ -269,9 +269,18 @@ On its own it moves the stack but says nothing about where you are:
 The reason is that a closure has no name, and history can only carry names.
 Give your screens names and all four rows turn green — see below.
 
-Each stack records its own depth, so a tabbed app can turn `browser-back` on
-for every tab and each keeps its own history. Leave it off for a stack that
-is not the page's main content — a sidebar should not answer the back button.
+**One stack per page answers the back button.** Browser history is a single
+linear list: `history.back()` undoes the most recent entry no matter who
+pushed it, and nothing can reach into the middle to remove one — so two
+stacks sharing it would pop each other. The first mounted stack claims the
+seat; a second one warns in development and stays in memory, which is what a
+sidebar or a modal stack wants anyway.
+
+A tabbed app is fine: `TabView` renders one tab at a time, so only that tab's
+stack is mounted and it takes the seat. One caveat that follows from the
+same single-list constraint — push inside a tab, switch tabs, and the entry
+you left behind is still in browser history with nothing listening to it, so
+the first Back press after the switch does nothing.
 
 ## Deep links
 

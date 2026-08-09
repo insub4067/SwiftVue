@@ -25,8 +25,9 @@ export interface GaugeProps extends ModifierProps {
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, useAttrs } from 'vue'
 import { useModifiers, composeStyle } from '../../utils/modifiers'
+import { warnDev } from '../../utils/warn'
 import { resolveColor } from '../../utils/theme'
 
 const props = withDefaults(defineProps<GaugeProps>(), {
@@ -37,6 +38,7 @@ const props = withDefaults(defineProps<GaugeProps>(), {
 })
 
 const modifierStyle = useModifiers(props)
+const attrs = useAttrs()
 
 // An inverted or empty range has no meaningful fraction, and a value outside
 // it would otherwise sweep past the end of the dial.
@@ -44,6 +46,28 @@ const fraction = computed(() => {
   const { value, min, max } = props
   if (![value, min, max].every(Number.isFinite) || max <= min) return 0
   return Math.min(1, Math.max(0, (value - min) / (max - min)))
+})
+
+// WAI-ARIA: aria-valuenow on a meter must lie within [min, max], so the
+// number announced matches the one drawn. The reading the app passed in is
+// still worth having — it goes to aria-valuetext, which is free-form.
+// https://www.w3.org/TR/wai-aria/#meter
+const clampedValue = computed(() => {
+  const { value, min, max } = props
+  if (!Number.isFinite(value)) return min
+  return Math.min(Math.max(value, min), Math.max(min, max))
+})
+
+const valueText = computed(() => props.currentValueLabel ?? String(props.value))
+
+// A meter needs an accessible name. `label` is the way to give it one; a
+// fallthrough aria-label or aria-labelledby counts too.
+onMounted(() => {
+  if (props.label || attrs['aria-label'] || attrs['aria-labelledby']) return
+  warnDev(
+    'Gauge: a role="meter" needs an accessible name. Pass `label`, or an ' +
+    'aria-label if the name should not be visible.',
+  )
 })
 
 const percent = computed(() => fraction.value * 100)
@@ -82,11 +106,11 @@ const linearStyle = computed(() => composeStyle(modifierStyle.value, {
     class="gauge gauge--circular"
     :style="style"
     role="meter"
-    :aria-valuenow="value"
+    :aria-valuenow="clampedValue"
     :aria-valuemin="min"
     :aria-valuemax="max"
     :aria-label="label"
-    :aria-valuetext="currentValueLabel"
+    :aria-valuetext="valueText"
   >
     <div class="gauge-dial" :style="{ width: `${size}px`, height: `${size}px` }">
       <!-- rotated so the gap sits at the bottom and the sweep starts left -->
@@ -115,11 +139,11 @@ const linearStyle = computed(() => composeStyle(modifierStyle.value, {
     class="gauge gauge--linear"
     :style="linearStyle"
     role="meter"
-    :aria-valuenow="value"
+    :aria-valuenow="clampedValue"
     :aria-valuemin="min"
     :aria-valuemax="max"
     :aria-label="label"
-    :aria-valuetext="currentValueLabel"
+    :aria-valuetext="valueText"
   >
     <div v-if="label || currentValueLabel" class="gauge-linear-head">
       <span v-if="label" class="gauge-label">{{ label }}</span>

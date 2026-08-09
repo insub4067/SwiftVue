@@ -275,7 +275,8 @@ describe('Sheet', () => {
 describe('NavigationStack browser history', () => {
   // history.state is shared by the whole file, and every stack folds its key
   // into whatever is already there. Start each test from nothing so the key a
-  // mount stamps is unambiguous.
+  // mount stamps is unambiguous. Ownership of history — one stack per page —
+  // lives in review-round3.test.ts.
   beforeEach(() => history.replaceState(null, ''))
 
   const Pusher = defineComponent({
@@ -300,7 +301,7 @@ describe('NavigationStack browser history', () => {
     })
     const stamped = replace.mock.calls[0]?.[0] as Record<string, number> | undefined
     replace.mockRestore()
-    const key = stamped ? Object.keys(stamped).filter(k => k.startsWith('swiftvue-nav-')).at(-1)! : ''
+    const key = stamped ? Object.keys(stamped).filter(k => k.startsWith('swiftvue-nav')).at(-1)! : ''
 
     const goTo = async (depth: number) => {
       window.dispatchEvent(new PopStateEvent('popstate', { state: { [key]: depth } }))
@@ -407,40 +408,6 @@ describe('NavigationStack browser history', () => {
 
     expect(wrapper.vm.depth).toBe(0)
     expect(wrapper.text()).not.toContain('detail')
-    wrapper.unmount()
-  })
-
-  // A tabbed app holds one stack per tab. Each keeps its own key, so moving
-  // one must leave the others exactly where they were.
-  it('two stacks on a page keep separate histories', async () => {
-    const TwoTabs = defineComponent({
-      setup: () => () => [
-        h(NavigationStack, { title: 'A', browserBack: true }, { default: () => h(Pusher) }),
-        h(NavigationStack, { title: 'B', browserBack: true }, { default: () => h(Pusher) }),
-      ],
-    })
-
-    const replace = vi.spyOn(history, 'replaceState')
-    const wrapper = mount(TwoTabs, { attachTo: document.body })
-    // each stack folds its key into the previous state, so the one it just
-    // added is the last
-    const keys = replace.mock.calls.map(([state]) =>
-      Object.keys(state as object).filter(k => k.startsWith('swiftvue-nav-')).at(-1)!)
-    replace.mockRestore()
-    expect(new Set(keys).size, 'each stack owns a distinct key').toBe(2)
-
-    const [a, b] = wrapper.findAllComponents(NavigationStack)
-    await wrapper.findAll('#go')[0].trigger('click')
-    await wrapper.findAll('#go')[1].trigger('click')
-    await flushPromises()
-    expect(a.vm.depth).toBe(1)
-    expect(b.vm.depth).toBe(1)
-
-    window.dispatchEvent(new PopStateEvent('popstate', { state: { [keys[0]]: 0, [keys[1]]: 1 } }))
-    await flushPromises()
-    expect(a.vm.depth).toBe(0)
-    expect(b.vm.depth, 'the other stack is untouched').toBe(1)
-
     wrapper.unmount()
   })
 

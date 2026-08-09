@@ -54,19 +54,49 @@ export function useNavigation(): Navigation | null {
   return inject(navigationKey, null)
 }
 
-/** `id`, or `id~param` — one URL path segment. */
-export function serializeRoute(route: RouteRef): string {
-  const id = encodeURIComponent(route.id)
-  return route.param == null ? id : `${id}~${encodeURIComponent(route.param)}`
+// `~` divides an id from its param and `/` divides segments, so both have to
+// survive encoding. encodeURIComponent leaves `~` alone — it is an unreserved
+// character — so that one is escaped by hand.
+function encodePart(value: string): string {
+  return encodeURIComponent(value).replace(/~/g, '%7E')
 }
 
+// The value comes from the address bar, where anything can be typed or
+// truncated. `decodeURIComponent('%')` throws, and a throw here would take
+// down the mount that is reading the link.
+function decodePart(value: string): string | null {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return null
+  }
+}
+
+/** `id`, or `id~param` — one URL path segment. */
+export function serializeRoute(route: RouteRef): string {
+  const id = encodePart(route.id)
+  return route.param == null ? id : `${id}~${encodePart(route.param)}`
+}
+
+/**
+ * Reads back what `serializeRoute` wrote. A segment that will not decode ends
+ * the list rather than throwing: the screens named before it are still real,
+ * and the app stops where the link stopped making sense.
+ */
 export function parseRoutes(value: string): RouteRef[] {
-  return value.split('/').filter(Boolean).map((segment) => {
+  const routes: RouteRef[] = []
+  for (const segment of value.split('/')) {
+    if (!segment) continue
     const split = segment.indexOf('~')
-    if (split === -1) return { id: decodeURIComponent(segment) }
-    return {
-      id: decodeURIComponent(segment.slice(0, split)),
-      param: decodeURIComponent(segment.slice(split + 1)),
+    const id = decodePart(split === -1 ? segment : segment.slice(0, split))
+    if (id == null) break
+    if (split === -1) {
+      routes.push({ id })
+      continue
     }
-  })
+    const param = decodePart(segment.slice(split + 1))
+    if (param == null) break
+    routes.push({ id, param })
+  }
+  return routes
 }

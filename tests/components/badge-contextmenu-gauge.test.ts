@@ -192,7 +192,7 @@ describe('ContextMenu', () => {
 
 describe('Gauge', () => {
   const linear = (props: Record<string, unknown>) =>
-    mount(Gauge, { props: { gaugeStyle: 'linear', ...props } })
+    mount(Gauge, { props: { gaugeStyle: 'linear', label: 'Meter', ...props } })
 
   it('fills to the fraction of its range', () => {
     expect(linear({ value: 25, min: 0, max: 100 }).find('.gauge-bar-fill').attributes('style'))
@@ -213,10 +213,10 @@ describe('Gauge', () => {
     expect(linear(props).find('.gauge-bar-fill').attributes('style')).toContain(expected)
   })
 
-  it('reports the raw value to assistive tech, not the clamped bar', () => {
-    const wrapper = linear({ value: 200, min: 0, max: 100, label: 'Battery' })
+  it('announces itself as a meter over its range', () => {
+    const wrapper = linear({ value: 40, min: 0, max: 100, label: 'Battery' })
     expect(wrapper.attributes('role')).toBe('meter')
-    expect(wrapper.attributes('aria-valuenow')).toBe('200')
+    expect(wrapper.attributes('aria-valuenow')).toBe('40')
     expect(wrapper.attributes('aria-valuemin')).toBe('0')
     expect(wrapper.attributes('aria-valuemax')).toBe('100')
     expect(wrapper.attributes('aria-label')).toBe('Battery')
@@ -238,7 +238,7 @@ describe('Gauge', () => {
   })
 
   describe('circular', () => {
-    const dial = (props: Record<string, unknown>) => mount(Gauge, { props })
+    const dial = (props: Record<string, unknown>) => mount(Gauge, { props: { label: 'Meter', ...props } })
 
     it('sweeps the arc in proportion to the value', () => {
       const empty = dial({ value: 0 }).find('.gauge-fill').attributes('stroke-dasharray')
