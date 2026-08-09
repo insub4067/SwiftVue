@@ -83,4 +83,5 @@ const style = computed(() => {
 <style scoped>
 button:not(:disabled):hover { filter: brightness(0.92); }
 button:not(:disabled):active { transform: scale(0.97); }
+button:focus-visible { outline: 2px solid var(--swift-primary); outline-offset: 2px; }
 </style>

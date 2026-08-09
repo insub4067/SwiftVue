@@ -9,6 +9,7 @@ interface Props extends ModifierProps {
   step?: number
   tint?: string
   disabled?: boolean
+  label?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -21,8 +22,6 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{ 'update:modelValue': [value: number] }>()
 const modifierStyle = useModifiers(props)
-
-const pct = computed(() => ((props.modelValue - props.min) / (props.max - props.min)) * 100)
 
 const style = computed(() => ({
   ...modifierStyle.value,
@@ -42,6 +41,8 @@ function onInput(e: Event) {
     :max="max"
     :step="step"
     :disabled="disabled"
+    :aria-label="label"
+    :aria-valuetext="`${modelValue}`"
     :style="style"
     class="swift-slider"
     @input="onInput"
@@ -57,6 +58,10 @@ function onInput(e: Event) {
   background: var(--swift-fill);
   outline: none;
   cursor: pointer;
+}
+.swift-slider:focus-visible {
+  outline: 2px solid var(--swift-primary);
+  outline-offset: 4px;
 }
 .swift-slider:disabled { opacity: 0.5; cursor: not-allowed; }
 .swift-slider::-webkit-slider-thumb {

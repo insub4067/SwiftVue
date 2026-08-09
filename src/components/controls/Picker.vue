@@ -43,8 +43,8 @@ const segmentedStyle = computed(() => ({
 
 function onChange(e: Event) {
   const val = (e.target as HTMLSelectElement).value
-  const numVal = Number(val)
-  emit('update:modelValue', isNaN(numVal) ? val : numVal)
+  const original = props.options.find(o => String(o.value) === val)
+  emit('update:modelValue', original ? original.value : val)
 }
 </script>
 

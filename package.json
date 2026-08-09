@@ -17,21 +17,42 @@
   "files": [
     "dist"
   ],
+  "sideEffects": [
+    "**/*.css"
+  ],
   "scripts": {
     "dev": "vite serve playground",
     "build": "vite build && vue-tsc --emitDeclarationOnly",
     "preview": "vite preview",
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/ tests/",
+    "lint:fix": "eslint src/ tests/ --fix",
+    "check": "npm run typecheck && npm run lint && npm run test"
   },
   "peerDependencies": {
     "vue": "^3.4.0"
   },
+  "peerDependenciesMeta": {
+    "vue-router": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@types/node": "^26.2.0",
     "@vitejs/plugin-vue": "^5.2.0",
+    "@vitest/coverage-v8": "^4.1.10",
+    "@vue/test-utils": "^2.4.11",
+    "eslint": "^9.39.5",
+    "eslint-plugin-vue": "^10.10.0",
+    "happy-dom": "^20.11.2",
     "typescript": "^5.7.0",
+    "typescript-eslint": "^8.66.0",
     "vite": "^6.0.0",
     "vite-plugin-dts": "^4.3.0",
+    "vitest": "^4.1.10",
     "vue": "^3.5.0",
     "vue-router": "^4.5.0",
     "vue-tsc": "^2.2.0"
@@ -42,11 +63,20 @@
     "ios",
     "components",
     "ui-framework",
-    "declarative"
+    "declarative",
+    "vue3",
+    "typescript",
+    "accessibility"
   ],
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/insub4067/swiftvue.git"
+  },
+  "bugs": {
+    "url": "https://github.com/insub4067/swiftvue/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

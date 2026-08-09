@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useModifiers, type ModifierProps } from '../../utils/modifiers'
 
 interface Tab {
@@ -32,17 +32,20 @@ const style = computed(() => ({
 
 <template>
   <div :style="style">
-    <div class="tab-content">
+    <div class="tab-content" role="tabpanel" :aria-labelledby="`tab-${activeTab}`">
       <slot :name="activeTab" />
     </div>
-    <nav class="tab-bar">
+    <nav class="tab-bar" role="tablist" aria-label="Tabs">
       <button
         v-for="tab in tabs"
+        :id="`tab-${tab.id}`"
         :key="tab.id"
+        role="tab"
+        :aria-selected="activeTab === tab.id"
         :class="['tab-item', { active: activeTab === tab.id }]"
         @click="activeTab = tab.id"
       >
-        <span v-if="tab.icon" class="tab-icon">{{ tab.icon }}</span>
+        <span v-if="tab.icon" class="tab-icon" aria-hidden="true">{{ tab.icon }}</span>
         <span class="tab-label">{{ tab.label }}</span>
       </button>
     </nav>
@@ -76,6 +79,10 @@ const style = computed(() => ({
   font-family: inherit;
 }
 .tab-item.active { color: var(--swift-primary); }
+.tab-item:focus-visible {
+  outline: 2px solid var(--swift-primary);
+  outline-offset: -2px;
+}
 .tab-icon { font-size: 24px; line-height: 1; }
 .tab-label { font-size: 10px; font-weight: 500; }
 </style>

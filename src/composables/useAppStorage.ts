@@ -9,12 +9,21 @@ import { ref, watch, type Ref } from 'vue'
  *   const isDark = useAppStorage('darkMode', false)
  */
 export function useAppStorage<T>(key: string, defaultValue: T): Ref<T> {
-  const stored = localStorage.getItem(key)
-  const initial = stored != null ? JSON.parse(stored) : defaultValue
+  let initial = defaultValue
+  try {
+    const stored = localStorage.getItem(key)
+    if (stored != null) initial = JSON.parse(stored)
+  } catch {
+    // corrupt data — fall back to default
+  }
   const state = ref(initial) as Ref<T>
 
   watch(state, (val) => {
-    localStorage.setItem(key, JSON.stringify(val))
+    try {
+      localStorage.setItem(key, JSON.stringify(val))
+    } catch {
+      // quota exceeded or unavailable — silently ignore
+    }
   }, { deep: true })
 
   return state

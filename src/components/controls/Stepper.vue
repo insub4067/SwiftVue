@@ -8,6 +8,7 @@ interface Props extends ModifierProps {
   max?: number
   step?: number
   disabled?: boolean
+  label?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -39,10 +40,18 @@ function increment() {
 </script>
 
 <template>
-  <div class="stepper" :style="style">
-    <button :disabled="!canDecrement || disabled" @click="decrement">−</button>
-    <span class="value">{{ modelValue }}</span>
-    <button :disabled="!canIncrement || disabled" @click="increment">+</button>
+  <div class="stepper" :style="style" role="group" :aria-label="label ?? 'Stepper'">
+    <button
+      :disabled="!canDecrement || disabled"
+      :aria-label="`Decrease${label ? ' ' + label : ''}`"
+      @click="decrement"
+    >−</button>
+    <span class="value" aria-live="polite">{{ modelValue }}</span>
+    <button
+      :disabled="!canIncrement || disabled"
+      :aria-label="`Increase${label ? ' ' + label : ''}`"
+      @click="increment"
+    >+</button>
   </div>
 </template>
 
@@ -71,6 +80,10 @@ function increment() {
 }
 .stepper button:disabled { opacity: 0.3; cursor: not-allowed; }
 .stepper button:not(:disabled):hover { background: var(--swift-fill); }
+.stepper button:focus-visible {
+  outline: 2px solid var(--swift-primary);
+  outline-offset: -2px;
+}
 .value {
   min-width: 44px;
   text-align: center;
