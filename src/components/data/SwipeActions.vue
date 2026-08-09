@@ -120,12 +120,17 @@ function settle() {
 }
 
 const modifierStyle = useModifiers(props)
-const style = computed(() => composeStyle(modifierStyle.value, {
-  position: 'relative' as const,
-  display: 'block',
-  overflow: 'hidden',
-  width: modifierStyle.value.width ?? '100%',
-}))
+const style = computed(() => composeStyle(
+  modifierStyle.value,
+  { width: '100%' },
+  {
+    // The action slabs sit behind the row and must stay clipped to it —
+    // unclipped they spill across whatever is next in the list.
+    position: 'relative' as const,
+    display: 'block',
+    overflow: 'hidden',
+  },
+))
 
 const contentStyle = computed(() => ({
   transform: `translateX(${offset.value}px)`,

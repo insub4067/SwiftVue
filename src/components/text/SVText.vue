@@ -25,7 +25,7 @@ const style = computed(() => {
   const own: any = {
     fontSize: f.size,
     lineHeight: f.lineHeight,
-    fontWeight: props.bold ? '700' : modifierStyle.value.fontWeight ?? f.weight,
+    fontWeight: f.weight,
     fontStyle: props.italic ? 'italic' : undefined,
     textDecoration: [
       props.strikethrough ? 'line-through' : '',
@@ -39,7 +39,8 @@ const style = computed(() => {
     own.WebkitBoxOrient = 'vertical'
     own.overflow = 'hidden'
   }
-  return composeStyle(modifierStyle.value, own)
+  // `bold` is the dedicated prop, so it has the last word over fontWeight
+  return composeStyle(modifierStyle.value, own, props.bold ? { fontWeight: '700' } : {})
 })
 </script>
 

@@ -133,6 +133,42 @@ const darkMode = useState(false)
 - `Image` — image (`src`, `alt`, `resizable`, `contentMode`)
 - `AsyncImage` — remote image with `#placeholder` / `#error` slots (`url`)
 
+## How modifiers compose
+
+A modifier wraps the view, as it does in SwiftUI, so what you ask for beats
+what the component would have picked:
+
+```vue
+<TextField v-model="name" foreground-color="red" background="green" :corner-radius="20" />
+<Button font="largeTitle" :frame="{ width: 200 }">Tap</Button>
+```
+
+Three layers decide the final style, in this order:
+
+| layer | |
+|---|---|
+| the component's **defaults** | what it looks like when you said nothing — colours, fonts, radii, sizes |
+| your **modifiers** | beat any default |
+| the component's **essentials** | what it needs to still be itself: a VStack stays a column, a ScrollView keeps scrolling |
+
+`hidden` outranks even essentials — nothing may un-hide a hidden view. And a
+component's own dedicated prop is more specific than a general modifier, so
+`<Text bold font-weight="light">` is bold, and a disabled `Toggle` stays
+dimmed whatever `opacity` says.
+
+Building your own component on the same rules:
+
+```ts
+import { useModifiers, composeStyle } from 'swiftvue'
+
+const modifierStyle = useModifiers(props)
+const style = computed(() => composeStyle(
+  modifierStyle.value,
+  { padding: '12px', backgroundColor: 'var(--swift-fill)' },  // defaults
+  { display: 'flex' },                                        // essentials
+))
+```
+
 ## Sections & Pull to Refresh
 
 ```vue

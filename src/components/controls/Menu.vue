@@ -29,10 +29,13 @@ const menuEl = ref<HTMLElement | null>(null)
 const menuId = `swift-menu-${useId()}`
 
 const modifierStyle = useModifiers(props)
-const style = computed(() => composeStyle(modifierStyle.value, {
-  position: 'relative' as const,
-  display: 'inline-block' as const,
-}))
+const style = computed(() => composeStyle(
+  modifierStyle.value,
+  {},
+  // The popup is positioned against this box; a static one would send it to
+  // the nearest positioned ancestor instead.
+  { position: 'relative' as const, display: 'inline-block' as const },
+))
 
 function items() {
   return [...(menuEl.value?.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])') ?? [])]
