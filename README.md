@@ -165,6 +165,7 @@ All components accept SwiftUI-style modifier props:
 | `@AppStorage` | `useAppStorage(key, default)` | `const theme = useAppStorage('theme', 'light')` |
 | `@Environment` | `useEnvironment(key)` | `const config = useEnvironment(ConfigKey)` |
 | `@FocusState` | `useFocusState()` | `const focused = useFocusState<Field>()` |
+| `.preferredColorScheme()` | `usePreferredColorScheme()` | `scheme.value = 'dark'` |
 
 ## Focus
 
@@ -204,7 +205,20 @@ through a template ref.
 
 ## Theme
 
-SwiftVue uses CSS variables matching iOS system colors. They automatically adapt to light/dark mode:
+SwiftVue uses CSS variables matching iOS system colors. They follow the system
+appearance by default, and `usePreferredColorScheme` forces one — the analogue
+of SwiftUI's `.preferredColorScheme(_:)`:
+
+```ts
+import { usePreferredColorScheme } from 'swiftvue'
+
+const scheme = usePreferredColorScheme() // Ref<'light' | 'dark' | null>
+scheme.value = 'dark'   // force dark
+scheme.value = null     // follow the system again
+```
+
+The choice persists across sessions and wins over the OS setting in both
+directions. Available tokens:
 
 - `primary`, `secondary`, `accent`
 - `red`, `orange`, `yellow`, `green`, `blue`, `purple`, `pink`

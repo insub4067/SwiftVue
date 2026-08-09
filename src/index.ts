@@ -57,6 +57,8 @@ export {
 export { useAppStorage } from './composables/useAppStorage'
 export { useFocusState, useFocusBinding } from './composables/useFocusState'
 export type { FocusStateProps } from './composables/useFocusState'
+export { usePreferredColorScheme } from './composables/usePreferredColorScheme'
+export type { ColorScheme } from './composables/usePreferredColorScheme'
 
 // Utilities
 export { resolveColor, resolveFont, SwiftColors, SwiftFonts } from './utils/theme'

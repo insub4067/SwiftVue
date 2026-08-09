@@ -12,7 +12,7 @@
       "import": "./dist/swiftvue.js",
       "require": "./dist/swiftvue.umd.cjs"
     },
-    "./styles": "./dist/style.css"
+    "./styles": "./dist/swiftvue.css"
   },
   "files": [
     "dist"
@@ -30,7 +30,11 @@
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src/ tests/",
     "lint:fix": "eslint src/ tests/ --fix",
-    "check": "npm run typecheck && npm run lint && npm run test"
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "demo:build": "vite build playground",
+    "demo:preview": "vite preview playground --port 4173 --strictPort",
+    "e2e": "playwright test",
+    "prepublishOnly": "npm run check && npm run build"
   },
   "peerDependencies": {
     "vue": "^3.4.0"
@@ -41,6 +45,7 @@
     }
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/node": "^26.2.0",
     "@vitejs/plugin-vue": "^5.2.0",
     "@vitest/coverage-v8": "^4.1.10",

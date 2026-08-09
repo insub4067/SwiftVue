@@ -4,4 +4,7 @@ dist
 .DS_Store
 coverage
 playground-dist
+playground/dist
+test-results
+playwright-report
 *.tsbuildinfo
