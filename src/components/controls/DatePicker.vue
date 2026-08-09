@@ -15,7 +15,7 @@ export interface DatePickerProps extends ModifierProps {
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useModifiers } from '../../utils/modifiers'
+import { useModifiers, composeStyle } from '../../utils/modifiers'
 
 const props = withDefaults(defineProps<DatePickerProps>(), {
   modelValue: '',
@@ -31,8 +31,7 @@ const inputType = computed(() => ({
 }[props.displayedComponents]))
 
 const modifierStyle = useModifiers(props)
-const style = computed(() => ({
-  ...modifierStyle.value,
+const style = computed(() => composeStyle(modifierStyle.value, {
   fontFamily: 'inherit',
   fontSize: '17px',
   lineHeight: '22px',

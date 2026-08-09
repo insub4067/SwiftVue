@@ -9,14 +9,13 @@ export interface FormProps extends ModifierProps {
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useModifiers } from '../../utils/modifiers'
+import { useModifiers, composeStyle } from '../../utils/modifiers'
 
 const props = withDefaults(defineProps<FormProps>(), { spacing: 24 })
-const emit = defineEmits<{ submit: [] }>()
+const emit = defineEmits<{ submit: [event: SubmitEvent] }>()
 
 const modifierStyle = useModifiers(props)
-const style = computed(() => ({
-  ...modifierStyle.value,
+const style = computed(() => composeStyle(modifierStyle.value, {
   display: 'flex',
   flexDirection: 'column' as const,
   gap: `${props.spacing}px`,
@@ -29,7 +28,9 @@ const style = computed(() => ({
 // `type="submit"` reaches this.
 function onSubmit(event: Event) {
   event.preventDefault()
-  emit('submit')
+  // Hand the original event on: submitter, FormData and modifier keys all
+  // live on it, and nothing else can recover them afterwards.
+  emit('submit', event as SubmitEvent)
 }
 </script>
 

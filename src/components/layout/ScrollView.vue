@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useModifiers, type ModifierProps } from '../../utils/modifiers'
+import { useModifiers, composeStyle, type ModifierProps } from '../../utils/modifiers'
 
 interface Props extends ModifierProps {
   axes?: 'vertical' | 'horizontal' | 'both'
@@ -75,8 +75,7 @@ function onTouchEnd() {
   else pull.value = 0
 }
 
-const style = computed(() => ({
-  ...modifierStyle.value,
+const style = computed(() => composeStyle(modifierStyle.value, {
   overflowX: (scrollsHorizontally.value ? 'auto' : 'hidden') as any,
   overflowY: (scrollsVertically.value ? 'auto' : 'hidden') as any,
   flex: '1 1 0%',

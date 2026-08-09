@@ -14,7 +14,7 @@ export interface AsyncImageProps extends ModifierProps {
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useModifiers } from '../../utils/modifiers'
+import { useModifiers, composeStyle } from '../../utils/modifiers'
 
 const props = withDefaults(defineProps<AsyncImageProps>(), {
   contentMode: 'fit',
@@ -34,8 +34,7 @@ const phase = ref<AsyncImagePhase>('empty')
 watch(() => props.url, () => { phase.value = 'empty' })
 
 const modifierStyle = useModifiers(props)
-const frameStyle = computed(() => ({
-  ...modifierStyle.value,
+const frameStyle = computed(() => composeStyle(modifierStyle.value, {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -70,9 +69,15 @@ const imageStyle = computed(() => (props.resizable
     </slot>
 
     <slot v-else-if="phase === 'failure'" name="error">
-      <span class="async-image-failed" role="img" :aria-label="alt ? `${alt} (failed to load)` : 'Image failed to load'">
-        ⚠
-      </span>
+      <!-- a decorative image stays decorative when it fails; only a
+           described one is worth announcing as broken -->
+      <span
+        v-if="alt"
+        class="async-image-failed"
+        role="img"
+        :aria-label="`${alt} (failed to load)`"
+      >⚠</span>
+      <span v-else class="async-image-failed" aria-hidden="true">⚠</span>
     </slot>
   </div>
 </template>

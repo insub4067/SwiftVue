@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useModifiers, type ModifierProps } from '../../utils/modifiers'
+import { useModifiers, composeStyle, type ModifierProps } from '../../utils/modifiers'
 
 interface Props extends ModifierProps {
   systemImage?: string
@@ -16,8 +16,7 @@ interface Props extends ModifierProps {
 const props = defineProps<Props>()
 const modifierStyle = useModifiers(props)
 
-const style = computed(() => ({
-  ...modifierStyle.value,
+const style = computed(() => composeStyle(modifierStyle.value, {
   display: 'inline-flex',
   alignItems: 'center',
   gap: '6px',

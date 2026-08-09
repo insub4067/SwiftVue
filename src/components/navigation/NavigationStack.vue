@@ -5,17 +5,22 @@ export interface NavigationStackProps extends ModifierProps {
   title?: string
   displayMode?: 'large' | 'inline'
   /**
-   * Mirror the stack into browser history, so Back, refresh and a shared URL
-   * behave the way a web user expects. Off by default: a page can hold more
-   * than one stack, and only one of them can own history.
+   * Give the browser's Back and Forward control of the stack, so the system
+   * back gesture and the hardware back button pop instead of leaving the app.
+   *
+   * This is history integration, not routing. The URL never changes: entries
+   * are closures the app owns, so a reload or a shared link starts at the
+   * root, and a screen reached by Forward is rebuilt rather than restored.
+   * Off by default, since a stack that is not the page's main content
+   * should not answer the back button.
    */
-  path?: boolean
+  browserBack?: boolean
 }
 </script>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, provide, readonly, ref } from 'vue'
-import { useModifiers } from '../../utils/modifiers'
+import { computed, onBeforeUnmount, onMounted, provide, readonly, ref, useId } from 'vue'
+import { useModifiers, composeStyle } from '../../utils/modifiers'
 import { navigationKey, type NavigationEntry } from '../../composables/useNavigation'
 
 const props = withDefaults(defineProps<NavigationStackProps>(), {
@@ -24,18 +29,27 @@ const props = withDefaults(defineProps<NavigationStackProps>(), {
 
 const modifierStyle = useModifiers(props)
 
-const stack = ref<NavigationEntry[]>([])
+// `entries` holds every screen we still have a closure for; `cursor` is how
+// many of them are showing. They differ only after a history Back, which
+// leaves the popped entries behind so Forward has somewhere to go.
+const entries = ref<NavigationEntry[]>([])
+const cursor = ref(0)
+const stack = computed(() => entries.value.slice(0, cursor.value))
 const direction = ref<'push' | 'pop'>('push')
-const depth = computed(() => stack.value.length)
+const depth = computed(() => cursor.value)
 
-// --- browser history (path) ---------------------------------------------
-// History only carries the depth. Entry contents are closures owned by the
-// component that pushed them, so a reload legitimately lands back at the
-// root rather than resurrecting views the app never re-created.
-const HISTORY_KEY = 'swiftvue-nav-depth'
+// --- browser history (browserBack) --------------------------------------
+// History carries the depth, nothing more: entry contents are closures owned
+// by the component that pushed them, and no closure survives a reload. So a
+// refresh legitimately lands back at the root instead of resurrecting views
+// the app never re-created.
+//
+// The key is per stack, so a tabbed app can give every tab its own history.
+// A popstate that does not move this stack's depth leaves it alone.
+const HISTORY_KEY = `swiftvue-nav-${useId()}`
 let syncingFromHistory = false
 
-const historyEnabled = () => props.path && typeof history !== 'undefined'
+const historyEnabled = () => props.browserBack && typeof history !== 'undefined'
 
 function recordDepth(next: number, replace = false) {
   if (!historyEnabled() || syncingFromHistory) return
@@ -45,14 +59,14 @@ function recordDepth(next: number, replace = false) {
 }
 
 function onPopState(event: PopStateEvent) {
-  if (!props.path) return
+  if (!props.browserBack) return
   const target = Number(event.state?.[HISTORY_KEY] ?? 0)
-  if (!Number.isFinite(target) || target === depth.value) return
+  if (!Number.isFinite(target) || target === cursor.value) return
 
   syncingFromHistory = true
-  direction.value = target < depth.value ? 'pop' : 'push'
-  // Forward past entries we no longer hold closures for stops at what we have.
-  stack.value = stack.value.slice(0, Math.min(target, stack.value.length))
+  direction.value = target < cursor.value ? 'pop' : 'push'
+  // Forward can only reach entries we still hold closures for.
+  cursor.value = Math.max(0, Math.min(target, entries.value.length))
   syncingFromHistory = false
 }
 
@@ -68,23 +82,30 @@ onBeforeUnmount(() => {
 
 function push(entry: NavigationEntry) {
   direction.value = 'push'
-  stack.value = [...stack.value, entry]
-  recordDepth(stack.value.length)
+  // A push after a Back forks: whatever Forward pointed at is unreachable
+  // now, exactly as pushState drops the browser's own forward entries.
+  entries.value = [...entries.value.slice(0, cursor.value), entry]
+  cursor.value = entries.value.length
+  recordDepth(cursor.value)
 }
 
 function pop() {
-  if (!stack.value.length) return
-  // Let the browser drive, so its Back stack and ours never disagree.
+  if (!cursor.value) return
+  // Let the browser drive, so its Back stack and ours never disagree. The
+  // popstate handler moves the cursor and keeps the entry for Forward.
   if (historyEnabled() && !syncingFromHistory) { history.back(); return }
   direction.value = 'pop'
-  stack.value = stack.value.slice(0, -1)
+  cursor.value -= 1
+  // Without history there is no Forward, so nothing can reach this again.
+  entries.value = entries.value.slice(0, cursor.value)
 }
 
 function popToRoot() {
-  if (!stack.value.length) return
-  if (historyEnabled() && !syncingFromHistory) { history.go(-stack.value.length); return }
+  if (!cursor.value) return
+  if (historyEnabled() && !syncingFromHistory) { history.go(-cursor.value); return }
   direction.value = 'pop'
-  stack.value = []
+  cursor.value = 0
+  entries.value = []
 }
 
 provide(navigationKey, { depth: readonly(depth), push, pop, popToRoot })
@@ -117,8 +138,7 @@ function onPointerUp(e: PointerEvent) {
   if (dx > 70 && dy < 60) pop()
 }
 
-const style = computed(() => ({
-  ...modifierStyle.value,
+const style = computed(() => composeStyle(modifierStyle.value, {
   display: 'flex',
   flexDirection: 'column' as const,
   height: modifierStyle.value.height ?? '100%',

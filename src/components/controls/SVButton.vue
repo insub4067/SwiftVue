@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useModifiers, type ModifierProps } from '../../utils/modifiers'
+import { useModifiers, composeStyle, type ModifierProps } from '../../utils/modifiers'
 
 interface Props extends ModifierProps {
   buttonStyle?: 'automatic' | 'bordered' | 'borderedProminent' | 'borderless' | 'plain'
@@ -30,7 +30,6 @@ const baseColor = computed(() => {
 
 const style = computed(() => {
   const s: any = {
-    ...modifierStyle.value,
     fontFamily: 'inherit',
     fontSize: '17px',
     lineHeight: '22px',
@@ -76,7 +75,7 @@ const style = computed(() => {
 
   if (props.disabled) s.opacity = 0.4
 
-  return s
+  return composeStyle(modifierStyle.value, s)
 })
 </script>
 

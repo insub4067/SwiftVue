@@ -13,7 +13,7 @@ export interface TabViewProps extends ModifierProps {
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useModifiers, type ModifierProps } from '../../utils/modifiers'
+import { useModifiers, composeStyle, type ModifierProps } from '../../utils/modifiers'
 
 
 const props = defineProps<TabViewProps>()
@@ -25,8 +25,7 @@ const activeTab = computed({
   set: (v) => emit('update:modelValue', v),
 })
 
-const style = computed(() => ({
-  ...modifierStyle.value,
+const style = computed(() => composeStyle(modifierStyle.value, {
   display: 'flex',
   flexDirection: 'column' as const,
   height: modifierStyle.value.height ?? '100%',

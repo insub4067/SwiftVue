@@ -28,7 +28,7 @@ const asyncProps: AsyncImageProps = { url: '/b.png', alt: 'B' }
 const phase: AsyncImagePhase = 'success'
 const formProps: FormProps = { spacing: 16 }
 const dateProps: DatePickerProps = { modelValue: '2026-08-09', displayedComponents: 'dateAndTime' }
-const stackProps: NavigationStackProps = { title: 'Home', path: true }
+const stackProps: NavigationStackProps = { title: 'Home', browserBack: true }
 void [actions, options, tabs, preset, sectionProps, listProps,
      menuActions, imageProps, asyncProps, phase, formProps, dateProps, stackProps]
 

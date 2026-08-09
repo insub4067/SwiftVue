@@ -97,7 +97,7 @@ export type { Publisher } from './combine/publisher'
 // Utilities
 export { resolveColor, resolveFont, SwiftColors, SwiftFonts } from './utils/theme'
 export type { SwiftColorName, SwiftFontStyle } from './utils/theme'
-export { buildModifierStyle, useModifiers } from './utils/modifiers'
+export { buildModifierStyle, useModifiers, composeStyle } from './utils/modifiers'
 export type { ModifierProps, FrameModifier, ShadowModifier } from './utils/modifiers'
 export { resolveTracks } from './utils/grid'
 export type { GridItem } from './utils/grid'

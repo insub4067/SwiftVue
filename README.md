@@ -247,18 +247,31 @@ Escape, and dismissal on an outside press.
 
 ## Browser history
 
-`NavigationStack` keeps its stack in memory by default. Add `path` to mirror
-it into browser history, so Back, refresh and a shared URL behave the way a
-web user expects:
+`NavigationStack` keeps its stack in memory by default. Add `browser-back` to
+hand Back and Forward control of it, so the system back gesture and the
+hardware back button pop a screen instead of leaving the app:
 
 ```vue
-<NavigationStack title="Settings" path>…</NavigationStack>
+<NavigationStack title="Settings" browser-back>…</NavigationStack>
 ```
 
-History carries the stack depth only — pushed views are closures the app
-owns, so a reload lands back at the root rather than resurrecting views
-nothing re-created. Leave it off when a page holds more than one stack;
-only one of them can own history.
+**This is history integration, not routing.** Concretely:
+
+| | |
+|---|---|
+| Back / back gesture | pops, restoring the previous screen as it was left |
+| Forward | returns to the screen, **rebuilt** — its local state is gone |
+| The URL | never changes |
+| Reload, or opening a shared link | starts at the root |
+
+The reason is that history can only carry the stack depth: pushed views are
+closures the app owns, and no closure survives a reload. If you need real
+deep links, drive `NavigationStack` from your router and push on route
+changes.
+
+Each stack records its own depth, so a tabbed app can turn `browser-back` on
+for every tab and each keeps its own history. Leave it off for a stack that
+is not the page's main content — a sidebar should not answer the back button.
 
 ## Motion
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent, h, ref } from 'vue'
 import NavigationStack from '../../src/components/navigation/NavigationStack.vue'
@@ -273,6 +273,11 @@ describe('Sheet', () => {
 })
 
 describe('NavigationStack browser history', () => {
+  // history.state is shared by the whole file, and every stack folds its key
+  // into whatever is already there. Start each test from nothing so the key a
+  // mount stamps is unambiguous.
+  beforeEach(() => history.replaceState(null, ''))
+
   const Pusher = defineComponent({
     setup() {
       const nav = useNavigation()!
@@ -283,17 +288,30 @@ describe('NavigationStack browser history', () => {
     },
   })
 
-  function mountStack(path: boolean) {
-    return mount(NavigationStack, {
-      props: { title: 'Home', path },
+  // The history key is per stack so a tabbed app can give each tab its own
+  // history, so a test cannot hard-code it — it reads the key back off the
+  // replaceState the stack makes when it mounts.
+  function mountStack(browserBack: boolean) {
+    const replace = vi.spyOn(history, 'replaceState')
+    const wrapper = mount(NavigationStack, {
+      props: { title: 'Home', browserBack },
       slots: { default: () => h(Pusher) },
       attachTo: document.body,
     })
+    const stamped = replace.mock.calls[0]?.[0] as Record<string, number> | undefined
+    replace.mockRestore()
+    const key = stamped ? Object.keys(stamped).filter(k => k.startsWith('swiftvue-nav-')).at(-1)! : ''
+
+    const goTo = async (depth: number) => {
+      window.dispatchEvent(new PopStateEvent('popstate', { state: { [key]: depth } }))
+      await flushPromises()
+    }
+    return { wrapper, key, goTo }
   }
 
   it('stays out of history unless asked', async () => {
     const push = vi.spyOn(history, 'pushState')
-    const wrapper = mountStack(false)
+    const { wrapper } = mountStack(false)
     await wrapper.find('#go').trigger('click')
     await flushPromises()
     expect(push).not.toHaveBeenCalled()
@@ -304,19 +322,19 @@ describe('NavigationStack browser history', () => {
 
   it('records the depth so Back has somewhere to return to', async () => {
     const push = vi.spyOn(history, 'pushState')
-    const wrapper = mountStack(true)
+    const { wrapper, key } = mountStack(true)
     await wrapper.find('#go').trigger('click')
     await flushPromises()
 
     expect(push).toHaveBeenCalledOnce()
-    expect(push.mock.calls[0][0]).toMatchObject({ 'swiftvue-nav-depth': 1 })
+    expect(push.mock.calls[0][0]).toMatchObject({ [key]: 1 })
     push.mockRestore()
     wrapper.unmount()
   })
 
   it('the back button delegates to the browser rather than popping twice', async () => {
     const back = vi.spyOn(history, 'back').mockImplementation(() => {})
-    const wrapper = mountStack(true)
+    const { wrapper } = mountStack(true)
     await wrapper.find('#go').trigger('click')
     await flushPromises()
 
@@ -330,34 +348,111 @@ describe('NavigationStack browser history', () => {
   })
 
   it('a browser Back pops the stack', async () => {
-    const wrapper = mountStack(true)
+    const { wrapper, goTo } = mountStack(true)
     await wrapper.find('#go').trigger('click')
     await flushPromises()
     expect(wrapper.vm.depth).toBe(1)
 
-    window.dispatchEvent(new PopStateEvent('popstate', { state: { 'swiftvue-nav-depth': 0 } }))
-    await flushPromises()
+    await goTo(0)
     expect(wrapper.vm.depth).toBe(0)
     wrapper.unmount()
   })
 
   it('forward past views it no longer holds stops at what it has', async () => {
-    const wrapper = mountStack(true)
-    window.dispatchEvent(new PopStateEvent('popstate', { state: { 'swiftvue-nav-depth': 5 } }))
-    await flushPromises()
+    const { wrapper, goTo } = mountStack(true)
+    await goTo(5)
     expect(wrapper.vm.depth).toBe(0)
     wrapper.unmount()
   })
 
+  // Back has to leave the entry behind, or Forward has nothing to return to.
+  it('Forward returns to a screen Back left', async () => {
+    const { wrapper, goTo } = mountStack(true)
+    await wrapper.find('#go').trigger('click')
+    await flushPromises()
+
+    await goTo(0)
+    expect(wrapper.vm.depth).toBe(0)
+    expect(wrapper.text()).not.toContain('detail')
+
+    await goTo(1)
+    expect(wrapper.vm.depth).toBe(1)
+    expect(wrapper.text(), 'the screen is rebuilt from its closure').toContain('detail')
+    wrapper.unmount()
+  })
+
+  // pushState drops the browser's forward entries; ours have to go with them.
+  it('a push after Back makes the forward screen unreachable', async () => {
+    const { wrapper, goTo } = mountStack(true)
+    await wrapper.find('#go').trigger('click')
+    await flushPromises()
+
+    await goTo(0)
+    await wrapper.find('#go').trigger('click')
+    await flushPromises()
+    expect(wrapper.vm.depth).toBe(1)
+
+    await goTo(2)
+    expect(wrapper.vm.depth, 'nothing was forked forward to').toBe(1)
+    wrapper.unmount()
+  })
+
+  // Without history there is no Forward, so a popped screen must not linger.
+  it('drops the popped entry when the browser is not driving', async () => {
+    const { wrapper } = mountStack(false)
+    await wrapper.find('#go').trigger('click')
+    await flushPromises()
+    wrapper.vm.pop()
+    await flushPromises()
+
+    expect(wrapper.vm.depth).toBe(0)
+    expect(wrapper.text()).not.toContain('detail')
+    wrapper.unmount()
+  })
+
+  // A tabbed app holds one stack per tab. Each keeps its own key, so moving
+  // one must leave the others exactly where they were.
+  it('two stacks on a page keep separate histories', async () => {
+    const TwoTabs = defineComponent({
+      setup: () => () => [
+        h(NavigationStack, { title: 'A', browserBack: true }, { default: () => h(Pusher) }),
+        h(NavigationStack, { title: 'B', browserBack: true }, { default: () => h(Pusher) }),
+      ],
+    })
+
+    const replace = vi.spyOn(history, 'replaceState')
+    const wrapper = mount(TwoTabs, { attachTo: document.body })
+    // each stack folds its key into the previous state, so the one it just
+    // added is the last
+    const keys = replace.mock.calls.map(([state]) =>
+      Object.keys(state as object).filter(k => k.startsWith('swiftvue-nav-')).at(-1)!)
+    replace.mockRestore()
+    expect(new Set(keys).size, 'each stack owns a distinct key').toBe(2)
+
+    const [a, b] = wrapper.findAllComponents(NavigationStack)
+    await wrapper.findAll('#go')[0].trigger('click')
+    await wrapper.findAll('#go')[1].trigger('click')
+    await flushPromises()
+    expect(a.vm.depth).toBe(1)
+    expect(b.vm.depth).toBe(1)
+
+    window.dispatchEvent(new PopStateEvent('popstate', { state: { [keys[0]]: 0, [keys[1]]: 1 } }))
+    await flushPromises()
+    expect(a.vm.depth).toBe(0)
+    expect(b.vm.depth, 'the other stack is untouched').toBe(1)
+
+    wrapper.unmount()
+  })
+
   it('stops listening once unmounted', async () => {
-    const wrapper = mountStack(true)
+    const { wrapper, key } = mountStack(true)
     await wrapper.find('#go').trigger('click')
     await flushPromises()
     wrapper.unmount()
 
     // no error, and nothing left listening to move a dead stack
     expect(() => window.dispatchEvent(
-      new PopStateEvent('popstate', { state: { 'swiftvue-nav-depth': 0 } }),
+      new PopStateEvent('popstate', { state: { [key]: 0 } }),
     )).not.toThrow()
   })
 })
