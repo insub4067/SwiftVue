@@ -160,12 +160,12 @@ const samples: Record<string, { code: string; sources: string[] }> = {
 
 <Text :line-limit="2">Truncated after two lines…</Text>
 <Text font-weight="semibold">semibold</Text>`,
-    sources: ['src/components/text/SText.vue', 'src/utils/theme.ts'],
+    sources: ['src/components/text/SVText.vue', 'src/utils/theme.ts'],
   },
   label: {
     code: `<Label system-image="\\uD83D\\uDCC1">Documents</Label>
 <Label system-image="\\uD83D\\uDCF7" icon-color="var(--swift-blue)">Photos</Label>`,
-    sources: ['src/components/text/SLabel.vue'],
+    sources: ['src/components/text/SVLabel.vue'],
   },
   buttons: {
     code: `<Button button-style="borderedProminent" @tap="save">Prominent</Button>
@@ -176,7 +176,7 @@ const samples: Record<string, { code: string; sources: string[] }> = {
 <Button button-style="borderedProminent" role="destructive">Delete</Button>
 <Button button-style="borderedProminent" disabled>Disabled</Button>
 <Button button-style="borderedProminent" full-width>Full Width</Button>`,
-    sources: ['src/components/controls/SButton.vue'],
+    sources: ['src/components/controls/SVButton.vue'],
   },
   textFields: {
     code: `<TextField v-model="username" placeholder="Username" />
@@ -184,7 +184,7 @@ const samples: Record<string, { code: string; sources: string[] }> = {
 <SecureField v-model="password" placeholder="Password" />
 <TextEditor v-model="bio" placeholder="Write something..." />
 <TextField model-value="Read only" disabled />`,
-    sources: ['src/components/input/STextField.vue', 'src/components/input/SecureField.vue', 'src/components/input/TextEditor.vue'],
+    sources: ['src/components/input/SVTextField.vue', 'src/components/input/SecureField.vue', 'src/components/input/TextEditor.vue'],
   },
   focusState: {
     code: `const field = useFocusState<'id' | 'password'>()
@@ -203,7 +203,7 @@ const samples: Record<string, { code: string; sources: string[] }> = {
 />
 
 <Button @tap="field = 'id'">Focus ID</Button>`,
-    sources: ['src/composables/useFocusState.ts', 'src/components/input/STextField.vue'],
+    sources: ['src/composables/useFocusState.ts', 'src/components/input/SVTextField.vue'],
   },
   progress: {
     code: `<ProgressView label="Loading" />
@@ -220,7 +220,7 @@ const samples: Record<string, { code: string; sources: string[] }> = {
   ]"
   @action="onAction"
 />`,
-    sources: ['src/components/feedback/ProgressView.vue', 'src/components/feedback/SAlert.vue'],
+    sources: ['src/components/feedback/ProgressView.vue', 'src/components/feedback/SVAlert.vue'],
   },
   animation: {
     code: `// every visual difference the mutation causes animates
@@ -274,7 +274,7 @@ withAnimation(() => items.value.sort(), Animations.spring)
 <Slider v-model="brightness" tint="var(--swift-orange)" label="Brightness" />
 <Slider v-model="size" :min="10" :max="30" :step="1" label="Font Size" />
 <Slider :model-value="40" disabled label="Disabled" />`,
-    sources: ['src/components/controls/SSlider.vue'],
+    sources: ['src/components/controls/SVSlider.vue'],
   },
   stepper: {
     code: `<Stepper v-model="quantity" :min="0" :max="99" label="Quantity" />
@@ -392,7 +392,7 @@ const stop = publisher(searchText)
     </HStack>
   </template>
 </List>`,
-    sources: ['src/components/data/SList.vue'],
+    sources: ['src/components/data/SVList.vue'],
   },
   modifiers: {
     code: `<VStack
@@ -432,7 +432,7 @@ scheme.value = 'dark'
 <List list-style="plain">…</List>
 <List list-style="grouped">…</List>
 <List list-style="sidebar">…</List>`,
-    sources: ['src/components/data/SList.vue'],
+    sources: ['src/components/data/SVList.vue'],
   },
 }
 

@@ -1,41 +1,41 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-import SButton from '../../src/components/controls/SButton.vue'
+import SVButton from '../../src/components/controls/SVButton.vue'
 import Toggle from '../../src/components/controls/Toggle.vue'
 import Stepper from '../../src/components/controls/Stepper.vue'
 import Picker from '../../src/components/controls/Picker.vue'
 
 describe('Button', () => {
   it('renders slot content', () => {
-    const wrapper = mount(SButton, { slots: { default: 'Click me' } })
+    const wrapper = mount(SVButton, { slots: { default: 'Click me' } })
     expect(wrapper.text()).toBe('Click me')
   })
 
   it('emits tap on click', async () => {
-    const wrapper = mount(SButton)
+    const wrapper = mount(SVButton)
     await wrapper.trigger('click')
     expect(wrapper.emitted('tap')).toHaveLength(1)
   })
 
   it('does not emit when disabled', async () => {
-    const wrapper = mount(SButton, { props: { disabled: true } })
+    const wrapper = mount(SVButton, { props: { disabled: true } })
     await wrapper.trigger('click')
     expect(wrapper.emitted('tap')).toBeUndefined()
   })
 
   it('applies borderedProminent style', () => {
-    const wrapper = mount(SButton, { props: { buttonStyle: 'borderedProminent' } })
+    const wrapper = mount(SVButton, { props: { buttonStyle: 'borderedProminent' } })
     expect(wrapper.element.style.backgroundColor).toBe('var(--swift-primary)')
     expect(wrapper.element.style.color).toBe('#FFFFFF')
   })
 
   it('applies destructive role', () => {
-    const wrapper = mount(SButton, { props: { role: 'destructive', buttonStyle: 'borderedProminent' } })
+    const wrapper = mount(SVButton, { props: { role: 'destructive', buttonStyle: 'borderedProminent' } })
     expect(wrapper.element.style.backgroundColor).toBe('var(--swift-red)')
   })
 
   it('applies fullWidth', () => {
-    const wrapper = mount(SButton, { props: { fullWidth: true } })
+    const wrapper = mount(SVButton, { props: { fullWidth: true } })
     expect(wrapper.element.style.width).toBe('100%')
   })
 })

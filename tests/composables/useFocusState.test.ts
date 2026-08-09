@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { useFocusState } from '../../src/composables/useFocusState'
-import STextField from '../../src/components/input/STextField.vue'
+import SVTextField from '../../src/components/input/SVTextField.vue'
 import SecureField from '../../src/components/input/SecureField.vue'
 import TextEditor from '../../src/components/input/TextEditor.vue'
 
@@ -24,7 +24,7 @@ describe('useFocusState', () => {
 // The boolean form — SwiftUI's `.focused($isFocused)`.
 describe('focused (boolean form)', () => {
   it('focuses the field when set to true', async () => {
-    const wrapper = mount(STextField, {
+    const wrapper = mount(SVTextField, {
       props: { focused: false },
       attachTo: document.body,
     })
@@ -36,7 +36,7 @@ describe('focused (boolean form)', () => {
   })
 
   it('blurs the field when set back to false', async () => {
-    const wrapper = mount(STextField, {
+    const wrapper = mount(SVTextField, {
       props: { focused: true },
       attachTo: document.body,
     })
@@ -48,7 +48,7 @@ describe('focused (boolean form)', () => {
   })
 
   it('focuses on mount when already true', () => {
-    const wrapper = mount(STextField, {
+    const wrapper = mount(SVTextField, {
       props: { focused: true },
       attachTo: document.body,
     })
@@ -57,21 +57,21 @@ describe('focused (boolean form)', () => {
   })
 
   it('reports focus gained by the user', async () => {
-    const wrapper = mount(STextField, { props: { focused: false }, attachTo: document.body })
+    const wrapper = mount(SVTextField, { props: { focused: false }, attachTo: document.body })
     await wrapper.trigger('focus')
     expect(wrapper.emitted('update:focused')?.at(-1)).toEqual([true])
     wrapper.unmount()
   })
 
   it('reports focus lost by the user', async () => {
-    const wrapper = mount(STextField, { props: { focused: true }, attachTo: document.body })
+    const wrapper = mount(SVTextField, { props: { focused: true }, attachTo: document.body })
     await wrapper.trigger('blur')
     expect(wrapper.emitted('update:focused')?.at(-1)).toEqual([false])
     wrapper.unmount()
   })
 
   it('stays silent when the field is not bound to any focus state', async () => {
-    const wrapper = mount(STextField, { attachTo: document.body })
+    const wrapper = mount(SVTextField, { attachTo: document.body })
     await wrapper.trigger('focus')
     await wrapper.trigger('blur')
     expect(wrapper.emitted('update:focused')).toBeUndefined()
@@ -82,7 +82,7 @@ describe('focused (boolean form)', () => {
 // The tagged form — SwiftUI's `.focused($field, equals: .username)`.
 describe('focused (focusValue form)', () => {
   it('focuses only the field whose tag matches', async () => {
-    const user = mount(STextField, {
+    const user = mount(SVTextField, {
       props: { focused: null, focusValue: 'user' },
       attachTo: document.body,
     })
@@ -104,7 +104,7 @@ describe('focused (focusValue form)', () => {
   })
 
   it('clears focus when set to null', async () => {
-    const wrapper = mount(STextField, {
+    const wrapper = mount(SVTextField, {
       props: { focused: 'user', focusValue: 'user' },
       attachTo: document.body,
     })
@@ -116,7 +116,7 @@ describe('focused (focusValue form)', () => {
   })
 
   it('reports its own tag when focused by the user', async () => {
-    const wrapper = mount(STextField, {
+    const wrapper = mount(SVTextField, {
       props: { focused: null, focusValue: 'user' },
       attachTo: document.body,
     })
@@ -126,7 +126,7 @@ describe('focused (focusValue form)', () => {
   })
 
   it('clears the shared state when it loses focus', async () => {
-    const wrapper = mount(STextField, {
+    const wrapper = mount(SVTextField, {
       props: { focused: 'user', focusValue: 'user' },
       attachTo: document.body,
     })
@@ -136,7 +136,7 @@ describe('focused (focusValue form)', () => {
   })
 
   it('does not clear state owned by another field', async () => {
-    const wrapper = mount(STextField, {
+    const wrapper = mount(SVTextField, {
       props: { focused: 'pass', focusValue: 'user' },
       attachTo: document.body,
     })
@@ -148,7 +148,7 @@ describe('focused (focusValue form)', () => {
 
 describe('focus binding across input components', () => {
   const cases = [
-    ['TextField', STextField],
+    ['TextField', SVTextField],
     ['SecureField', SecureField],
     ['TextEditor', TextEditor],
   ] as const

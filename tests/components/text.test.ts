@@ -1,17 +1,17 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-import SText from '../../src/components/text/SText.vue'
-import SLabel from '../../src/components/text/SLabel.vue'
+import SVText from '../../src/components/text/SVText.vue'
+import SVLabel from '../../src/components/text/SVLabel.vue'
 
 describe('Text', () => {
   it('renders slot content in a span', () => {
-    const wrapper = mount(SText, { slots: { default: 'Hello World' } })
+    const wrapper = mount(SVText, { slots: { default: 'Hello World' } })
     expect(wrapper.element.tagName).toBe('SPAN')
     expect(wrapper.text()).toBe('Hello World')
   })
 
   it('applies font size from font prop', () => {
-    const wrapper = mount(SText, {
+    const wrapper = mount(SVText, {
       props: { font: 'title' },
       slots: { default: 'Title' },
     })
@@ -19,7 +19,7 @@ describe('Text', () => {
   })
 
   it('applies bold', () => {
-    const wrapper = mount(SText, {
+    const wrapper = mount(SVText, {
       props: { bold: true },
       slots: { default: 'Bold' },
     })
@@ -27,7 +27,7 @@ describe('Text', () => {
   })
 
   it('applies italic', () => {
-    const wrapper = mount(SText, {
+    const wrapper = mount(SVText, {
       props: { italic: true },
       slots: { default: 'Italic' },
     })
@@ -35,7 +35,7 @@ describe('Text', () => {
   })
 
   it('applies strikethrough', () => {
-    const wrapper = mount(SText, {
+    const wrapper = mount(SVText, {
       props: { strikethrough: true },
       slots: { default: 'Struck' },
     })
@@ -43,7 +43,7 @@ describe('Text', () => {
   })
 
   it('applies overflow hidden for lineLimit', () => {
-    const wrapper = mount(SText, {
+    const wrapper = mount(SVText, {
       props: { lineLimit: 2 },
       slots: { default: 'Clamped text' },
     })
@@ -51,7 +51,7 @@ describe('Text', () => {
   })
 
   it('applies text alignment', () => {
-    const wrapper = mount(SText, {
+    const wrapper = mount(SVText, {
       props: { multilineTextAlignment: 'trailing' },
       slots: { default: 'Right aligned' },
     })
@@ -61,7 +61,7 @@ describe('Text', () => {
 
 describe('Label', () => {
   it('renders with icon and text', () => {
-    const wrapper = mount(SLabel, {
+    const wrapper = mount(SVLabel, {
       props: { systemImage: '⭐' },
       slots: { default: 'Favorites' },
     })
@@ -70,7 +70,7 @@ describe('Label', () => {
   })
 
   it('hides icon span when no systemImage', () => {
-    const wrapper = mount(SLabel, {
+    const wrapper = mount(SVLabel, {
       slots: { default: 'No Icon' },
     })
     const spans = wrapper.findAll('span')
