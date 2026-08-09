@@ -146,6 +146,29 @@ const darkMode = useState(false)
 <ScrollView :refreshable="reload">…</ScrollView>
 ```
 
+## onAppear & onDisappear
+
+```ts
+import { onAppear, onDisappear } from 'swiftvue'
+
+onAppear(() => reload())
+onDisappear(() => cancelPolling())
+```
+
+These follow the view's **visibility**, not its mount:
+
+| | |
+|---|---|
+| mounted, or unhidden by `v-if` | appears |
+| pushed over by a NavigationStack | disappears, though it stays mounted |
+| popped back to | appears again — this is where a list refreshes |
+| unmounted | disappears, unless it already had |
+
+A covered pane is still alive so popping back restores it exactly as it was
+left, which is why "appear" cannot mean "mount" here. For work that must
+outlive a push — an upload, a socket — use Vue's `onMounted`/`onUnmounted`:
+those follow the component, not what the user can see.
+
 ## onChange & Combine
 
 `.onChange(of:)` translates directly:

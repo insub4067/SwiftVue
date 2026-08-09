@@ -374,6 +374,26 @@ test('the gauge sweeps as its value changes', async ({ page }) => {
   await expect.poll(sweep).toBeGreaterThan(before)
 })
 
+// A covered pane stays mounted, so only a real push and pop can show that
+// onAppear fires again rather than staying at one.
+test('onAppear fires again when a screen is returned to', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+  await push(page, /onAppear/)
+
+  const appears = page.getByTestId('appear-count')
+  const disappears = page.getByTestId('disappear-count')
+  await expect(appears).toHaveText('1')
+  await expect(disappears).toHaveText('0')
+
+  await push(page, /화면 하나 더 쌓기/)
+  await page.getByLabel('Back').click()
+  await page.waitForTimeout(400)
+
+  await expect(appears, 'covered, then shown again').toHaveText('2')
+  await expect(disappears).toHaveText('1')
+})
+
 test('ZStack places children on the axis the alignment names', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 780 })
   await page.goto('/')

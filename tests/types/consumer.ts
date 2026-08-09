@@ -7,6 +7,7 @@ import {
   LazyVGrid, TransitionView, List,
   Image, AsyncImage, Form, DatePicker, Menu, ContextMenu, Gauge,
   useFocusState, usePreferredColorScheme, useNavigation, onChange, publisher,
+  onAppear, onDisappear,
   withAnimation, Animations,
   type GridItem, type ColorScheme, type ModifierProps,
   type AlertAction, type PickerOption, type TabItem, type TransitionPreset,
@@ -56,6 +57,8 @@ export default defineComponent({
     const focused = useFocusState<'a' | 'b'>()
     const nav = useNavigation()
 
+    onAppear(() => void 0)
+    onDisappear(() => void 0)
     onChange(text, (value, oldValue) => void [value, oldValue])
     publisher(text).map(s => s.trim()).removeDuplicates().debounce(300).sink(q => void q)
     void withAnimation(() => { text.value = 'x' }, Animations.spring)

@@ -8,6 +8,7 @@ import { onChange } from '../src/composables/onChange'
 import { publisher } from '../src/combine/publisher'
 import { version } from '../package.json'
 import CodeSample from './CodeSample.vue'
+import AppearCounter from './AppearCounter.vue'
 
 declare const __BUILD_TIME__: string
 const buildTime = __BUILD_TIME__
@@ -255,6 +256,15 @@ const tabs = computed(() => [
 
 <!-- over 99 shows 99+, but assistive tech still hears the count -->`,
     sources: ['src/components/navigation/TabView.vue'],
+  },
+  lifecycle: {
+    code: `import { onAppear, onDisappear } from 'swiftvue'
+
+// visibility, not mount: a pane covered by a push has
+// disappeared even though it is still alive
+onAppear(() => reload())
+onDisappear(() => cancelPolling())`,
+    sources: ['src/composables/useLifecycle.ts'],
   },
   navPath: {
     code: `<!-- browser-back: Back and Forward drive the stack, so the
@@ -899,6 +909,40 @@ onUnmounted(() => {
 
               <NavigationLink @tap="showSheet = true">
                 <Label system-image="📄">Sheet</Label>
+              </NavigationLink>
+            </Section>
+
+            <Section header="Lifecycle">
+              <NavigationLink route="appear" destination-title="onAppear">
+                <Label system-image="👋">onAppear / onDisappear</Label>
+                <template #destination>
+                  <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <Text font="subheadline" foreground-color="secondary">
+                      아래 화면으로 들어갔다 뒤로 나와 보세요. 이 화면은 언마운트되지 않지만
+                      가려졌다가 다시 보였으므로 두 숫자가 모두 올라갑니다.
+                    </Text>
+                    <VStack
+                      :spacing="8"
+                      :padding="[12, 16]"
+                      background="secondaryBackground"
+                      :corner-radius="12"
+                      :frame="{ width: '100%' }"
+                    >
+                      <AppearCounter />
+                    </VStack>
+
+                    <NavigationLink route="appear-detail" destination-title="Detail">
+                      <Label system-image="➡️">화면 하나 더 쌓기</Label>
+                      <template #destination>
+                        <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                          <Text>뒤로 가면 앞 화면의 onAppear가 다시 호출됩니다.</Text>
+                        </VStack>
+                      </template>
+                    </NavigationLink>
+
+                    <CodeSample v-bind="samples.lifecycle" />
+                  </VStack>
+                </template>
               </NavigationLink>
             </Section>
 

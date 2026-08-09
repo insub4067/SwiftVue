@@ -88,6 +88,7 @@ export {
 } from './composables/useEnvironment'
 export { useAppStorage } from './composables/useAppStorage'
 export { useNavigation, navigationKey } from './composables/useNavigation'
+export { onAppear, onDisappear } from './composables/useLifecycle'
 export type { Navigation, NavigationEntry, RouteRef, RouteFactory } from './composables/useNavigation'
 export { useFocusState, useFocusBinding } from './composables/useFocusState'
 export type { FocusStateProps } from './composables/useFocusState'

@@ -49,6 +49,7 @@ function releaseHistory(token: symbol) {
 import { computed, nextTick, onBeforeUnmount, onMounted, provide, readonly, ref, useId } from 'vue'
 import { useModifiers, composeStyle } from '../../utils/modifiers'
 import { warnDev } from '../../utils/warn'
+import NavPane from './NavPane'
 import {
   navigationKey,
   parseRoutes,
@@ -316,8 +317,10 @@ const style = computed(() => composeStyle(modifierStyle.value, {
           :class="{ 'nav-pane--under': i < depth }"
           :inert="i < depth"
         >
-          <slot v-if="i === 0" />
-          <component :is="entry!.content" v-else />
+          <NavPane :active="i === depth">
+            <slot v-if="i === 0" />
+            <component :is="entry!.content" v-else />
+          </NavPane>
         </div>
       </TransitionGroup>
     </div>
