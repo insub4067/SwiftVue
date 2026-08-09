@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, ref } from 'vue'
 import NavigationStack from '../../src/components/navigation/NavigationStack.vue'
 import NavigationLink from '../../src/components/navigation/NavigationLink.vue'
 import TabView from '../../src/components/navigation/TabView.vue'
@@ -95,6 +95,86 @@ describe('NavigationStack push/pop', () => {
     wrapper.vm.pop()
     await flushPromises()
     expect(wrapper.find('h1').text()).toBe('Home')
+  })
+})
+
+describe('NavigationStack state preservation across pop', () => {
+  // Local state that would be lost if the pane were remounted.
+  const Counter = defineComponent({
+    setup() {
+      const count = ref(0)
+      return () => h('button', { id: 'counter', onClick: () => count.value++ }, `count:${count.value}`)
+    },
+  })
+
+  function mountStack() {
+    return mount(NavigationStack, {
+      props: { title: 'Home' },
+      slots: { default: () => h(Counter) },
+    })
+  }
+
+  it('the previous view keeps component state', async () => {
+    const wrapper = mountStack()
+    await wrapper.find('#counter').trigger('click')
+    await wrapper.find('#counter').trigger('click')
+    expect(wrapper.find('#counter').text()).toBe('count:2')
+
+    wrapper.vm.push({ title: 'Detail', content: () => h('p', 'detail') })
+    await flushPromises()
+    wrapper.vm.pop()
+    await flushPromises()
+
+    expect(wrapper.find('#counter').text()).toBe('count:2')
+  })
+
+  it('the previous pane keeps its scroll position', async () => {
+    const wrapper = mountStack()
+    const pane = wrapper.find('.nav-pane').element
+    pane.scrollTop = 250
+
+    wrapper.vm.push({ title: 'Detail', content: () => h('p', 'detail') })
+    await flushPromises()
+    wrapper.vm.pop()
+    await flushPromises()
+
+    expect(wrapper.find('.nav-pane').element).toBe(pane) // never remounted
+    expect(pane.scrollTop).toBe(250)
+  })
+
+  it('buried panes stay mounted but inert', async () => {
+    const wrapper = mountStack()
+    wrapper.vm.push({ title: 'Detail', content: () => h('p', 'detail') })
+    await flushPromises()
+
+    const panes = wrapper.findAll('.nav-pane')
+    expect(panes).toHaveLength(2)
+    expect(panes[0].attributes('inert')).toBeDefined()
+    expect(panes[0].classes()).toContain('nav-pane--under')
+    expect(panes[1].attributes('inert')).toBeUndefined()
+  })
+
+  it('state survives a deep push-pop round trip', async () => {
+    const wrapper = mountStack()
+    await wrapper.find('#counter').trigger('click')
+
+    wrapper.vm.push({ title: 'A', content: () => h(Counter) })
+    await flushPromises()
+    const inner = wrapper.findAll('#counter')[1]
+    await inner.trigger('click')
+    await inner.trigger('click')
+    await inner.trigger('click')
+    expect(inner.text()).toBe('count:3')
+
+    wrapper.vm.push({ title: 'B', content: () => h('p', 'b') })
+    await flushPromises()
+    wrapper.vm.pop() // back to A — its counter must still read 3
+    await flushPromises()
+    expect(wrapper.findAll('#counter')[1].text()).toBe('count:3')
+
+    wrapper.vm.pop() // back to root
+    await flushPromises()
+    expect(wrapper.find('#counter').text()).toBe('count:1')
   })
 })
 
