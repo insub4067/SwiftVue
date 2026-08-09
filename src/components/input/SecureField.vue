@@ -1,15 +1,24 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useModifiers, type ModifierProps } from '../../utils/modifiers'
+import { useFocusBinding, type FocusStateProps } from '../../composables/useFocusState'
 
-interface Props extends ModifierProps {
+interface Props extends ModifierProps, FocusStateProps {
   modelValue?: string
   placeholder?: string
   disabled?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), { modelValue: '' })
-const emit = defineEmits<{ 'update:modelValue': [value: string]; submit: [] }>()
+const emit = defineEmits<{
+  'update:modelValue': [value: string]
+  'update:focused': [value: unknown]
+  submit: []
+}>()
+
+const inputEl = ref<HTMLInputElement | null>(null)
+const { onFocus, onBlur, focus, blur } = useFocusBinding(props, emit, inputEl)
+defineExpose({ focus, blur })
 
 const modifierStyle = useModifiers(props)
 const style = computed(() => ({
@@ -37,6 +46,7 @@ function onKeydown(e: KeyboardEvent) {
 
 <template>
   <input
+    ref="inputEl"
     type="password"
     :value="modelValue"
     :placeholder="placeholder"
@@ -44,6 +54,8 @@ function onKeydown(e: KeyboardEvent) {
     :style="style"
     @input="onInput"
     @keydown="onKeydown"
+    @focus="onFocus"
+    @blur="onBlur"
   />
 </template>
 

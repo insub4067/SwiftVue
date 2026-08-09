@@ -1,15 +1,23 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useModifiers, type ModifierProps } from '../../utils/modifiers'
+import { useFocusBinding, type FocusStateProps } from '../../composables/useFocusState'
 
-interface Props extends ModifierProps {
+interface Props extends ModifierProps, FocusStateProps {
   modelValue?: string
   placeholder?: string
   disabled?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), { modelValue: '' })
-const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
+const emit = defineEmits<{
+  'update:modelValue': [value: string]
+  'update:focused': [value: unknown]
+}>()
+
+const textareaEl = ref<HTMLTextAreaElement | null>(null)
+const { onFocus, onBlur, focus, blur } = useFocusBinding(props, emit, textareaEl)
+defineExpose({ focus, blur })
 
 const modifierStyle = useModifiers(props)
 const style = computed(() => ({
@@ -36,11 +44,14 @@ function onInput(e: Event) {
 
 <template>
   <textarea
+    ref="textareaEl"
     :value="modelValue"
     :placeholder="placeholder"
     :disabled="disabled"
     :style="style"
     @input="onInput"
+    @focus="onFocus"
+    @blur="onBlur"
   />
 </template>
 

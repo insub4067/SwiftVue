@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useAppStorage } from '../src/composables/useAppStorage'
+import { useFocusState } from '../src/composables/useFocusState'
 import { version } from '../package.json'
 
 declare const __BUILD_TIME__: string
@@ -15,6 +16,9 @@ const username = ref('')
 const password = ref('')
 const bio = ref('')
 const searchText = ref('')
+const loginId = ref('')
+const loginPassword = ref('')
+const focusedField = useFocusState<'id' | 'password'>()
 
 const darkMode = useAppStorage('demo-dark-mode', false)
 const volume = ref(50)
@@ -243,6 +247,42 @@ onUnmounted(() => {
                   <Text font="caption" foreground-color="secondary">Disabled TextField</Text>
                   <TextField model-value="Read only" disabled text-field-style="roundedBorder" />
                 </VStack>
+              </VStack>
+
+              <Divider />
+
+              <!-- FocusState -->
+              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '400px', width: '100%' }">
+                <Text font="title2" foreground-color="primary">FocusState</Text>
+                <Text font="caption" foreground-color="secondary">
+                  Focused field: {{ focusedField ?? 'none' }}
+                </Text>
+
+                <TextField
+                  v-model="loginId"
+                  v-model:focused="focusedField"
+                  focus-value="id"
+                  placeholder="ID"
+                  text-field-style="roundedBorder"
+                  @submit="focusedField = 'password'"
+                />
+                <SecureField
+                  v-model="loginPassword"
+                  v-model:focused="focusedField"
+                  focus-value="password"
+                  placeholder="Password"
+                  @submit="focusedField = null"
+                />
+
+                <HStack :spacing="8">
+                  <Button button-style="bordered" @tap="focusedField = 'id'">Focus ID</Button>
+                  <Button button-style="bordered" @tap="focusedField = 'password'">Focus Password</Button>
+                  <Button button-style="plain" @tap="focusedField = null">Dismiss</Button>
+                </HStack>
+
+                <Text font="caption" foreground-color="secondary">
+                  Enter in ID moves focus to Password, just like SwiftUI's @FocusState.
+                </Text>
               </VStack>
 
               <Divider />
