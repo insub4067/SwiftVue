@@ -75,16 +75,23 @@ function onTouchEnd() {
   else pull.value = 0
 }
 
-const style = computed(() => composeStyle(modifierStyle.value, {
-  overflowX: (scrollsHorizontally.value ? 'auto' : 'hidden') as any,
-  overflowY: (scrollsVertically.value ? 'auto' : 'hidden') as any,
-  flex: '1 1 0%',
-  // A horizontal scroller must take its width from the parent. Left to size
-  // itself it resolves to its content width, which both inflates ancestors
-  // and leaves nothing to scroll.
-  ...(scrollsHorizontally.value ? { width: modifierStyle.value.width ?? '100%' } : {}),
-  minWidth: modifierStyle.value.minWidth ?? 0,
-}))
+const style = computed(() => composeStyle(
+  modifierStyle.value,
+  {
+    flex: '1 1 0%',
+    // A horizontal scroller must take its width from the parent. Left to
+    // size itself it resolves to its content width, which both inflates
+    // ancestors and leaves nothing to scroll.
+    ...(scrollsHorizontally.value ? { width: '100%' } : {}),
+    minWidth: 0,
+  },
+  {
+    // The axes prop is the component's own answer to what scrolls. A view
+    // that does not scroll on the axis it was told to is not a ScrollView.
+    overflowX: (scrollsHorizontally.value ? 'auto' : 'hidden') as any,
+    overflowY: (scrollsVertically.value ? 'auto' : 'hidden') as any,
+  },
+))
 </script>
 
 <template>

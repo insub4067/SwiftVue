@@ -149,17 +149,28 @@ export function useModifiers(props: ModifierProps) {
 }
 
 /**
- * Merges a component's own style over the modifier style.
+ * Builds a component's inline style out of three layers.
  *
- * A component sets its own `display` — flex, grid, block — which would
- * silently override the one `hidden` produces. Component styles still win
- * everywhere else, but nothing may un-hide a hidden view.
+ * In SwiftUI a modifier wraps the view, so `.foregroundColor(.red)` on a
+ * TextField beats whatever the field would have picked. The order here says
+ * the same thing:
+ *
+ * - `defaults` — what the component looks like when the app said nothing.
+ *   Every one of these is up for grabs.
+ * - `modifiers` — what the app asked for. It wins over any default.
+ * - `essentials` — what the component needs to still be itself. A VStack
+ *   that is not a column is not a VStack, and no modifier should be able to
+ *   make it one.
+ *
+ * `hidden` is the exception that outranks even essentials: nothing may
+ * un-hide a hidden view.
  */
 export function composeStyle(
   modifiers: CSSProperties,
-  own: CSSProperties,
+  defaults: CSSProperties,
+  essentials: CSSProperties = {},
 ): CSSProperties {
-  const merged = { ...modifiers, ...own }
+  const merged = { ...defaults, ...modifiers, ...essentials }
   if (modifiers.display === 'none') merged.display = 'none'
   return merged
 }

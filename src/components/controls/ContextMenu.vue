@@ -30,10 +30,12 @@ const menuId = `swift-context-menu-${useId()}`
 const at = ref({ x: 0, y: 0 })
 
 const modifierStyle = useModifiers(props)
-const style = computed(() => composeStyle(modifierStyle.value, {
-  position: 'relative' as const,
-  display: 'inline-block' as const,
-}))
+const style = computed(() => composeStyle(
+  modifierStyle.value,
+  {},
+  // The menu is positioned against this box, at the pointer.
+  { position: 'relative' as const, display: 'inline-block' as const },
+))
 
 const menuStyle = computed(() => ({ left: `${at.value.x}px`, top: `${at.value.y}px` }))
 

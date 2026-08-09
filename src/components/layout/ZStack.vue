@@ -24,11 +24,17 @@ const posMap: Record<string, { justifyItems: string; alignItems: string }> = {
 }
 
 const modifierStyle = useModifiers(props)
-const style = computed(() => composeStyle(modifierStyle.value, {
-  position: 'relative' as const,
-  display: 'grid' as const,
-  ...posMap[props.alignment],
-}))
+const style = computed(() => composeStyle(
+  modifierStyle.value,
+  {},
+  {
+    // A ZStack is a one-cell grid with everything stacked in it. Lose the
+    // grid and the children stop overlapping, which is the whole component.
+    position: 'relative' as const,
+    display: 'grid' as const,
+    ...posMap[props.alignment],
+  },
+))
 </script>
 
 <template>

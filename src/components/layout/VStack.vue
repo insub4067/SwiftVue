@@ -15,12 +15,16 @@ const props = withDefaults(defineProps<Props>(), {
 const alignMap = { leading: 'flex-start', center: 'center', trailing: 'flex-end' }
 
 const modifierStyle = useModifiers(props)
-const style = computed(() => composeStyle(modifierStyle.value, {
-  display: 'flex',
-  flexDirection: 'column' as const,
-  alignItems: alignMap[props.alignment],
-  gap: `${props.spacing}px`,
-}))
+const style = computed(() => composeStyle(
+  modifierStyle.value,
+  { gap: `${props.spacing}px` },
+  {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    // the dedicated prop, so more specific than frame.alignment
+    alignItems: alignMap[props.alignment],
+  },
+))
 </script>
 
 <template>

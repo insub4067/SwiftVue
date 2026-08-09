@@ -20,13 +20,17 @@ const props = withDefaults(defineProps<Props>(), {
 const alignMap = { top: 'flex-start', center: 'center', bottom: 'flex-end', firstTextBaseline: 'baseline' }
 
 const modifierStyle = useModifiers(props)
-const style = computed(() => composeStyle(modifierStyle.value, {
-  display: 'flex',
-  flexDirection: 'row' as const,
-  alignItems: alignMap[props.alignment],
-  gap: `${props.spacing}px`,
-  ...(props.wrap ? { flexWrap: 'wrap' as const } : {}),
-}))
+const style = computed(() => composeStyle(
+  modifierStyle.value,
+  { gap: `${props.spacing}px` },
+  {
+    display: 'flex',
+    flexDirection: 'row' as const,
+    // the dedicated prop, so more specific than frame.alignment
+    alignItems: alignMap[props.alignment],
+    ...(props.wrap ? { flexWrap: 'wrap' as const } : {}),
+  },
+))
 </script>
 
 <template>

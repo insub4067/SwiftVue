@@ -17,17 +17,24 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
 const modifierStyle = useModifiers(props)
 
-const trackStyle = computed(() => composeStyle(modifierStyle.value, {
-  width: '51px',
-  height: '31px',
-  borderRadius: '15.5px',
-  backgroundColor: props.modelValue ? props.tint : 'var(--swift-fill)',
-  position: 'relative' as const,
-  cursor: props.disabled ? 'not-allowed' : 'pointer',
-  transition: 'background-color var(--swift-transition)',
-  opacity: props.disabled ? 0.5 : 1,
-  flexShrink: 0,
-}))
+const trackStyle = computed(() => composeStyle(
+  modifierStyle.value,
+  {
+    width: '51px',
+    height: '31px',
+    borderRadius: '15.5px',
+    backgroundColor: props.modelValue ? props.tint : 'var(--swift-fill)',
+    transition: 'background-color var(--swift-transition)',
+    flexShrink: 0,
+  },
+  {
+    position: 'relative' as const,
+    cursor: props.disabled ? 'not-allowed' : 'pointer',
+    // Dimming says "you cannot use this". An opacity modifier may set the
+    // look of an enabled switch, but it may not hide that one is disabled.
+    ...(props.disabled ? { opacity: 0.5 } : {}),
+  },
+))
 
 const thumbStyle = computed(() => ({
   width: '27px',
