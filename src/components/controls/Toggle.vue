@@ -1,0 +1,53 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useModifiers, type ModifierProps } from '../../utils/modifiers'
+
+interface Props extends ModifierProps {
+  modelValue?: boolean
+  tint?: string
+  disabled?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: false,
+  tint: 'var(--swift-green)',
+})
+
+const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
+const modifierStyle = useModifiers(props)
+
+const trackStyle = computed(() => ({
+  ...modifierStyle.value,
+  width: '51px',
+  height: '31px',
+  borderRadius: '15.5px',
+  backgroundColor: props.modelValue ? props.tint : 'var(--swift-fill)',
+  position: 'relative' as const,
+  cursor: props.disabled ? 'not-allowed' : 'pointer',
+  transition: 'background-color var(--swift-transition)',
+  opacity: props.disabled ? 0.5 : 1,
+  flexShrink: 0,
+}))
+
+const thumbStyle = computed(() => ({
+  width: '27px',
+  height: '27px',
+  borderRadius: '50%',
+  backgroundColor: '#FFFFFF',
+  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+  position: 'absolute' as const,
+  top: '2px',
+  left: props.modelValue ? '22px' : '2px',
+  transition: 'left var(--swift-transition)',
+}))
+
+function toggle() {
+  if (!props.disabled) emit('update:modelValue', !props.modelValue)
+}
+</script>
+
+<template>
+  <div :style="trackStyle" role="switch" :aria-checked="modelValue" @click="toggle">
+    <div :style="thumbStyle" />
+  </div>
+</template>

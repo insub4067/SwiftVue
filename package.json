@@ -1,0 +1,52 @@
+{
+  "name": "swiftvue",
+  "version": "0.1.0",
+  "description": "SwiftUI-style component library for Vue.js — build web apps with familiar iOS syntax",
+  "type": "module",
+  "main": "./dist/swiftvue.umd.cjs",
+  "module": "./dist/swiftvue.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/swiftvue.js",
+      "require": "./dist/swiftvue.umd.cjs"
+    },
+    "./styles": "./dist/style.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite serve playground",
+    "build": "vite build && vue-tsc --emitDeclarationOnly",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "peerDependencies": {
+    "vue": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "@vitejs/plugin-vue": "^5.2.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "vite-plugin-dts": "^4.3.0",
+    "vue": "^3.5.0",
+    "vue-router": "^4.5.0",
+    "vue-tsc": "^2.2.0"
+  },
+  "keywords": [
+    "vue",
+    "swiftui",
+    "ios",
+    "components",
+    "ui-framework",
+    "declarative"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/insub4067/swiftvue.git"
+  }
+}

@@ -1,0 +1,82 @@
+:root {
+  --swift-primary: #007AFF;
+  --swift-secondary: #8E8E93;
+  --swift-accent: #007AFF;
+  --swift-red: #FF3B30;
+  --swift-orange: #FF9500;
+  --swift-yellow: #FFCC00;
+  --swift-green: #34C759;
+  --swift-mint: #00C7BE;
+  --swift-teal: #30B0C7;
+  --swift-cyan: #32ADE6;
+  --swift-blue: #007AFF;
+  --swift-indigo: #5856D6;
+  --swift-purple: #AF52DE;
+  --swift-pink: #FF2D55;
+  --swift-brown: #A2845E;
+  --swift-gray: #8E8E93;
+
+  --swift-label: #000000;
+  --swift-secondary-label: #3C3C4399;
+  --swift-tertiary-label: #3C3C434D;
+  --swift-background: #FFFFFF;
+  --swift-secondary-background: #F2F2F7;
+  --swift-tertiary-background: #FFFFFF;
+  --swift-grouped-background: #F2F2F7;
+  --swift-secondary-grouped-background: #FFFFFF;
+  --swift-separator: #3C3C4349;
+  --swift-fill: #78788033;
+  --swift-secondary-fill: #78788028;
+
+  --swift-font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+    'Helvetica Neue', Arial, sans-serif;
+  --swift-transition: 0.2s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --swift-primary: #0A84FF;
+    --swift-secondary: #8E8E93;
+    --swift-accent: #0A84FF;
+    --swift-red: #FF453A;
+    --swift-orange: #FF9F0A;
+    --swift-yellow: #FFD60A;
+    --swift-green: #30D158;
+    --swift-mint: #63E6E2;
+    --swift-teal: #40CBE0;
+    --swift-cyan: #64D2FF;
+    --swift-blue: #0A84FF;
+    --swift-indigo: #5E5CE6;
+    --swift-purple: #BF5AF2;
+    --swift-pink: #FF375F;
+    --swift-brown: #AC8E68;
+    --swift-gray: #8E8E93;
+
+    --swift-label: #FFFFFF;
+    --swift-secondary-label: #EBEBF599;
+    --swift-tertiary-label: #EBEBF54D;
+    --swift-background: #000000;
+    --swift-secondary-background: #1C1C1E;
+    --swift-tertiary-background: #2C2C2E;
+    --swift-grouped-background: #000000;
+    --swift-secondary-grouped-background: #1C1C1E;
+    --swift-separator: #54545899;
+    --swift-fill: #7878805C;
+    --swift-secondary-fill: #78788051;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.swift-app {
+  font-family: var(--swift-font-family);
+  color: var(--swift-label);
+  background-color: var(--swift-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.4;
+}
