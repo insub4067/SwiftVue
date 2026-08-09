@@ -33,8 +33,14 @@
   --swift-transition: 0.2s ease;
 }
 
+/*
+ * Dark tokens apply two ways:
+ *  - the system prefers dark and the app has not forced light (media query)
+ *  - the app forces dark via usePreferredColorScheme (.swift-dark class)
+ * The two blocks must stay identical.
+ */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.swift-light) {
     --swift-primary: #0A84FF;
     --swift-secondary: #8E8E93;
     --swift-accent: #0A84FF;
@@ -64,6 +70,37 @@
     --swift-fill: #7878805C;
     --swift-secondary-fill: #78788051;
   }
+}
+
+:root.swift-dark {
+  --swift-primary: #0A84FF;
+  --swift-secondary: #8E8E93;
+  --swift-accent: #0A84FF;
+  --swift-red: #FF453A;
+  --swift-orange: #FF9F0A;
+  --swift-yellow: #FFD60A;
+  --swift-green: #30D158;
+  --swift-mint: #63E6E2;
+  --swift-teal: #40CBE0;
+  --swift-cyan: #64D2FF;
+  --swift-blue: #0A84FF;
+  --swift-indigo: #5E5CE6;
+  --swift-purple: #BF5AF2;
+  --swift-pink: #FF375F;
+  --swift-brown: #AC8E68;
+  --swift-gray: #8E8E93;
+
+  --swift-label: #FFFFFF;
+  --swift-secondary-label: #EBEBF599;
+  --swift-tertiary-label: #EBEBF54D;
+  --swift-background: #000000;
+  --swift-secondary-background: #1C1C1E;
+  --swift-tertiary-background: #2C2C2E;
+  --swift-grouped-background: #000000;
+  --swift-secondary-grouped-background: #1C1C1E;
+  --swift-separator: #54545899;
+  --swift-fill: #7878805C;
+  --swift-secondary-fill: #78788051;
 }
 
 *,

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { useAppStorage } from '../src/composables/useAppStorage'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useFocusState } from '../src/composables/useFocusState'
+import { usePreferredColorScheme } from '../src/composables/usePreferredColorScheme'
 import { version } from '../package.json'
 
 declare const __BUILD_TIME__: string
@@ -21,7 +21,11 @@ const loginId = ref('')
 const loginPassword = ref('')
 const focusedField = useFocusState<'id' | 'password'>()
 
-const darkMode = useAppStorage('demo-dark-mode', false)
+const colorScheme = usePreferredColorScheme()
+const darkMode = computed({
+  get: () => colorScheme.value === 'dark',
+  set: (v) => { colorScheme.value = v ? 'dark' : 'light' },
+})
 const volume = ref(50)
 const brightness = ref(75)
 const count = ref(3)
@@ -87,10 +91,6 @@ const tabs = [
   { id: 'layout', label: 'Layout', icon: '📐' },
   { id: 'styles', label: 'Styles', icon: '🎨' },
 ]
-
-watch(darkMode, (val) => {
-  document.documentElement.style.colorScheme = val ? 'dark' : 'light'
-})
 
 function toggleTodo(index: number) {
   todos.value[index].done = !todos.value[index].done
@@ -196,7 +196,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="swift-app playground-shell" :style="{ colorScheme: darkMode ? 'dark' : 'light' }">
+  <div class="swift-app playground-shell">
     <div class="version-badge" :class="{ stale: staleBuild }">
       v{{ version }} · {{ buildTime }}<template v-if="staleBuild"> · outdated</template>
     </div>
@@ -926,7 +926,7 @@ onUnmounted(() => {
                 </HStack>
                 <Text font="caption" foreground-color="secondary">
                   Toggle dark mode to see all components adapt to the color scheme.
-                  This preference is saved via useAppStorage.
+                  This preference is saved via usePreferredColorScheme.
                 </Text>
               </VStack>
 
