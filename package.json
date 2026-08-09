@@ -1,6 +1,6 @@
 {
   "name": "swiftvue",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "SwiftUI-style component library for Vue.js — build web apps with familiar iOS syntax",
   "type": "module",
   "main": "./dist/swiftvue.umd.cjs",
@@ -12,7 +12,8 @@
       "import": "./dist/swiftvue.js",
       "require": "./dist/swiftvue.umd.cjs"
     },
-    "./styles": "./dist/swiftvue.css"
+    "./styles": "./dist/swiftvue.css",
+    "./package.json": "./package.json"
   },
   "files": [
     "dist"

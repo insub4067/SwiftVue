@@ -75,6 +75,27 @@ function cancelPress() {
   if (timer) clearTimeout(timer)
   timer = null
   startedAt = null
+  if (typeof document !== 'undefined') {
+    document.removeEventListener('pointerup', cancelPress)
+    document.removeEventListener('pointercancel', cancelPress)
+  }
+}
+
+/**
+ * A long press that opened the menu must not also activate what it was
+ * pressing. The browser still fires a click when the finger lifts, and the
+ * content underneath is often a button or a NavigationLink.
+ */
+function swallowNextClick(e: MouseEvent) {
+  // menu items are inside the root too, and theirs must go through
+  if (menuEl.value?.contains(e.target as Node)) return
+  e.stopPropagation()
+  e.preventDefault()
+  stopSwallowing()
+}
+
+function stopSwallowing() {
+  root.value?.removeEventListener('click', swallowNextClick, true)
 }
 
 function onPointerDown(e: PointerEvent) {
@@ -83,8 +104,16 @@ function onPointerDown(e: PointerEvent) {
   const x = e.clientX - box.left
   const y = e.clientY - box.top
   startedAt = { x: e.clientX, y: e.clientY }
+
+  // The finger can leave the target before it lifts, and then the element
+  // never sees pointerup. The document always does.
+  document.addEventListener('pointerup', cancelPress)
+  document.addEventListener('pointercancel', cancelPress)
+
   timer = setTimeout(() => {
     timer = null
+    // Capture phase, so it runs before the content's own handler.
+    root.value?.addEventListener('click', swallowNextClick, true)
     openAt(x, y)
   }, props.longPressDelay)
 }
@@ -95,9 +124,16 @@ function onPointerMove(e: PointerEvent) {
   if (moved > 10) cancelPress()
 }
 
-// The keyboard route in, so the menu is not pointer-only.
+// The keyboard route in, so the menu is not pointer-only. Escape is handled
+// here as well as on the menu: with no enabled item to focus there is nothing
+// inside the menu to receive the key.
 function onKeydown(e: KeyboardEvent) {
   if (props.disabled) return
+  if (open.value && e.key === 'Escape') {
+    e.preventDefault()
+    close()
+    return
+  }
   if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
     e.preventDefault()
     openAt(8, 8)
@@ -131,14 +167,20 @@ watch(open, async (isOpen) => {
     cancelPress()
     document.addEventListener('pointerdown', onPointerDownOutside)
     await nextTick()
-    items()[0]?.focus()
+    // With nothing enabled to focus, focus the menu itself — otherwise the
+    // keys that dismiss it land on whatever held focus before.
+    const first = items()[0]
+    if (first) first.focus()
+    else menuEl.value?.focus()
   } else {
+    stopSwallowing()
     document.removeEventListener('pointerdown', onPointerDownOutside)
   }
 })
 
 onBeforeUnmount(() => {
   cancelPress()
+  stopSwallowing()
   if (typeof document !== 'undefined') {
     document.removeEventListener('pointerdown', onPointerDownOutside)
   }
@@ -171,6 +213,7 @@ defineExpose({ close })
       ref="menuEl"
       class="context-menu"
       role="menu"
+      tabindex="-1"
       :aria-label="label"
       :style="menuStyle"
       @keydown="onMenuKeydown"

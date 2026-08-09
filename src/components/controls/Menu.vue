@@ -74,7 +74,14 @@ function onMenuKeydown(e: KeyboardEvent) {
   else if (e.key === 'Tab') close(false)
 }
 
+// Escape is handled here as well as on the menu: with no enabled item to
+// focus, focus never leaves the trigger, so the menu never sees the key.
 function onTriggerKeydown(e: KeyboardEvent) {
+  if (open.value && e.key === 'Escape') {
+    e.preventDefault()
+    close()
+    return
+  }
   if (e.key === 'ArrowDown' && !open.value) {
     e.preventDefault()
     open.value = true
@@ -90,7 +97,11 @@ watch(open, async (isOpen) => {
   if (isOpen) {
     document.addEventListener('pointerdown', onPointerDownOutside)
     await nextTick()
-    items()[0]?.focus()
+    // With nothing enabled to focus, focus the menu itself — otherwise the
+    // keys that dismiss it land on whatever held focus before.
+    const first = items()[0]
+    if (first) first.focus()
+    else menuEl.value?.focus()
   } else {
     document.removeEventListener('pointerdown', onPointerDownOutside)
   }
@@ -124,6 +135,7 @@ onBeforeUnmount(() => {
       ref="menuEl"
       class="menu-list"
       role="menu"
+      tabindex="-1"
       :aria-label="label"
       @keydown="onMenuKeydown"
     >

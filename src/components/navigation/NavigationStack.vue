@@ -28,11 +28,27 @@ export interface NavigationStackProps extends ModifierProps {
    */
   historyKey?: string
 }
+
+// The one stack on the page that answers the back button. Module scope on
+// purpose: the constraint is the browser's single history list, not anything
+// about a component tree, so nesting or provide/inject cannot scope it.
+let historyOwner: symbol | null = null
+
+function claimHistory(token: symbol): boolean {
+  if (historyOwner && historyOwner !== token) return false
+  historyOwner = token
+  return true
+}
+
+function releaseHistory(token: symbol) {
+  if (historyOwner === token) historyOwner = null
+}
 </script>
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, provide, readonly, ref, useId } from 'vue'
 import { useModifiers, composeStyle } from '../../utils/modifiers'
+import { warnDev } from '../../utils/warn'
 import {
   navigationKey,
   parseRoutes,
@@ -63,13 +79,20 @@ const depth = computed(() => cursor.value)
 // comes back only if it also has a name the route registry can rebuild it
 // from. Unnamed screens legitimately end at the root on refresh.
 //
-// The key is per stack, so a tabbed app can give every tab its own history.
-// A popstate that does not move this stack's depth leaves it alone.
-const fallbackKey = `swiftvue-nav-${useId()}`
-const HISTORY_KEY = computed(() => props.historyKey ?? fallbackKey)
+// Browser history is one linear list. `history.back()` undoes the most recent
+// entry whoever pushed it, and nothing can reach into the middle to remove
+// one — so two stacks sharing it would pop each other. Exactly one mounted
+// stack answers the back button; the others stay in memory, which is what a
+// sidebar or a modal stack wants anyway.
+const ownerToken = Symbol('swiftvue-nav-owner')
+const ownsHistory = ref(false)
+
+// Namespaced: `history.state` belongs to the host app, and a bare
+// `historyKey` would sit on top of whatever its router keeps under that name.
+const STATE_KEY = `swiftvue-nav:${props.historyKey ?? useId()}`
 let syncingFromHistory = false
 
-const historyEnabled = () => props.browserBack && typeof history !== 'undefined'
+const historyEnabled = () => ownsHistory.value && typeof history !== 'undefined'
 // Only a stack with a name of its own can claim a query parameter.
 const urlEnabled = () => historyEnabled() && !!props.historyKey && typeof location !== 'undefined'
 
@@ -98,7 +121,7 @@ function nextUrl(): string | undefined {
 
 function recordDepth(next: number, replace = false) {
   if (!historyEnabled() || syncingFromHistory) return
-  const state = { ...(history.state ?? {}), [HISTORY_KEY.value]: next }
+  const state = { ...(history.state ?? {}), [STATE_KEY]: next }
   if (replace) history.replaceState(state, '', nextUrl())
   else history.pushState(state, '', nextUrl())
 }
@@ -159,8 +182,8 @@ function pushRoute(id: string, param?: string) {
 }
 
 function onPopState(event: PopStateEvent) {
-  if (!props.browserBack) return
-  const target = Number(event.state?.[HISTORY_KEY.value] ?? 0)
+  if (!ownsHistory.value) return
+  const target = Number(event.state?.[STATE_KEY] ?? 0)
   if (!Number.isFinite(target) || target === cursor.value) return
 
   syncingFromHistory = true
@@ -171,7 +194,17 @@ function onPopState(event: PopStateEvent) {
 }
 
 onMounted(() => {
-  if (!historyEnabled()) return
+  if (!props.browserBack || typeof history === 'undefined') return
+  if (!claimHistory(ownerToken)) {
+    warnDev(
+      'NavigationStack: another stack on this page already answers the back button, ' +
+      'so this one stays in memory. Browser history is a single linear list — two ' +
+      'stacks sharing it would pop each other.',
+    )
+    return
+  }
+  ownsHistory.value = true
+
   if (urlEnabled()) {
     const value = new URL(location.href).searchParams.get(props.historyKey!)
     if (value) pending = parseRoutes(value)
@@ -182,6 +215,8 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  releaseHistory(ownerToken)
+  ownsHistory.value = false
   if (typeof window !== 'undefined') window.removeEventListener('popstate', onPopState)
 })
 
