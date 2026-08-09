@@ -11,13 +11,13 @@ import {
   Text, Label,
   TextField, SecureField, TextEditor,
   Button, Toggle, Slider, Picker, Stepper,
-  ForEach, List,
+  ForEach, List, Section,
   NavigationStack, NavigationLink, TabView, Sheet,
   Alert, ProgressView,
   TransitionView,
   useState, useBinding, useAppStorage, useFocusState,
   createEnvironmentKey, provideEnvironment, useEnvironment,
-  withAnimation, usePreferredColorScheme,
+  withAnimation, usePreferredColorScheme, onChange, publisher,
 } from '../../src'
 
 const options = [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }]
@@ -33,6 +33,8 @@ const Kitchen = defineComponent({
     const key = createEnvironmentKey<string>('ssr-env')
     provideEnvironment(key, 'value')
     const env = useEnvironment(key, 'fallback')
+    onChange(count, () => {})
+    publisher(count).debounce(100).sink(() => {})
 
     return () => h(VStack, { spacing: 8 }, () => [
       h(Text, { font: 'title' }, () => `count ${count.value} ${bound.value} ${stored.value} ${env} ${focused.value ?? ''}`),
@@ -58,6 +60,8 @@ const Kitchen = defineComponent({
       h(List, { items: [{ id: 1 }] }, {
         default: () => h(Text, () => 'row'),
       }),
+      h(Section, { header: 'Grouped', footer: 'note', collapsible: true }, () => h(Text, () => 'section-row')),
+      h(ScrollView, { refreshable: () => Promise.resolve() }, () => h(Text, () => 'refreshable')),
       h(NavigationStack, { title: 'SSR' }, () => h(Text, () => 'content')),
       h(NavigationLink, () => h(Text, () => 'link')),
       h(TabView, { tabs, modelValue: 'one' }, { one: () => h(Text, () => 'tab') }),

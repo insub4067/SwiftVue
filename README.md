@@ -90,7 +90,7 @@ const darkMode = useState(false)
 - `ZStack` — layered container (`alignment`)
 - `Spacer` — flexible space (`minLength`)
 - `Divider` — horizontal line (`color`, `thickness`)
-- `ScrollView` — scrollable area (`axes`, `showsIndicators`)
+- `ScrollView` — scrollable area (`axes`, `showsIndicators`, `refreshable`)
 - `LazyVGrid` — grid flowing down (`columns`, `spacing`, `alignment`)
 - `LazyHGrid` — grid flowing sideways (`rows`, `spacing`, `alignment`)
 
@@ -111,6 +111,7 @@ const darkMode = useState(false)
 ### Data
 - `ForEach` — list rendering (`items`, `keyPath`, scoped slot)
 - `List` — styled list (`items`, `listStyle`)
+- `Section` — grouped card with `header`/`footer`; `collapsible` folds like DisclosureGroup
 
 ### Navigation
 - `NavigationStack` — push/pop stack with back button and edge-swipe back (`title`, `displayMode`)
@@ -121,6 +122,49 @@ const darkMode = useState(false)
 ### Feedback
 - `Alert` — alert dialog (`v-model:isPresented`, `title`, `message`, `actions`)
 - `ProgressView` — loading indicator (`value`, `total`, `progressViewStyle`)
+
+## Sections & Pull to Refresh
+
+```vue
+<Section header="Profile" footer="Synced across devices.">
+  <div class="swift-list-row">…</div>
+</Section>
+
+<!-- DisclosureGroup: the header folds the rows; state inside survives -->
+<Section header="Advanced" collapsible v-model:expanded="open">…</Section>
+
+<!-- .refreshable — pull down from the top; spinner holds until the promise settles -->
+<ScrollView :refreshable="reload">…</ScrollView>
+```
+
+## onChange & Combine
+
+`.onChange(of:)` translates directly:
+
+```ts
+import { onChange } from 'swiftvue'
+
+onChange(volume, (value, oldValue) => save(value))
+onChange(() => props.user, reload, { initial: true })  // onChange(of:initial:)
+```
+
+For Combine, SwiftVue ships the slice UI code actually uses — a publisher
+over Vue reactivity with `map` · `filter` · `removeDuplicates` · `debounce` ·
+`throttle` · `sink`. Nothing runs until `sink`, and subscriptions started in
+`setup` stop with the component:
+
+```ts
+import { publisher } from 'swiftvue'
+
+const stop = publisher(searchText)
+  .map(s => s.trim())
+  .removeDuplicates()
+  .debounce(300)
+  .sink(query => search(query))
+```
+
+It is deliberately not a full FRP runtime — `computed` already covers
+`CombineLatest`-style derivation in Vue.
 
 ## Navigation
 

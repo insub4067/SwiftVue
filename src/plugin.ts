@@ -24,6 +24,7 @@ import Stepper from './components/controls/Stepper.vue'
 
 import ForEach from './components/data/ForEach.vue'
 import SList from './components/data/SList.vue'
+import Section from './components/data/Section.vue'
 
 import NavigationStack from './components/navigation/NavigationStack.vue'
 import NavigationLink from './components/navigation/NavigationLink.vue'
@@ -53,6 +54,7 @@ const components: Record<string, Component> = {
   // Data — generic components don't satisfy Component structurally
   ForEach: ForEach as unknown as Component,
   List: SList as unknown as Component,
+  Section,
   // Navigation
   NavigationStack, NavigationLink, TabView, Sheet,
   // Feedback

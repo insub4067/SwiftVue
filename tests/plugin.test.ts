@@ -7,7 +7,7 @@ const ALL_NAMES = [
   'Text', 'Label',
   'TextField', 'SecureField', 'TextEditor',
   'Button', 'Toggle', 'Slider', 'Picker', 'Stepper',
-  'ForEach', 'List',
+  'ForEach', 'List', 'Section',
   'NavigationStack', 'NavigationLink', 'TabView', 'Sheet',
   'Alert', 'ProgressView',
   'TransitionView',

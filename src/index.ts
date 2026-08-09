@@ -36,6 +36,7 @@ export { default as Stepper } from './components/controls/Stepper.vue'
 // Data
 export { default as ForEach } from './components/data/ForEach.vue'
 export { default as List } from './components/data/SList.vue'
+export { default as Section } from './components/data/Section.vue'
 
 // Navigation
 export { default as NavigationStack } from './components/navigation/NavigationStack.vue'
@@ -67,6 +68,10 @@ export { useFocusState, useFocusBinding } from './composables/useFocusState'
 export type { FocusStateProps } from './composables/useFocusState'
 export { usePreferredColorScheme } from './composables/usePreferredColorScheme'
 export type { ColorScheme } from './composables/usePreferredColorScheme'
+export { onChange } from './composables/onChange'
+export type { OnChangeOptions } from './composables/onChange'
+export { publisher } from './combine/publisher'
+export type { Publisher } from './combine/publisher'
 
 // Utilities
 export { resolveColor, resolveFont, SwiftColors, SwiftFonts } from './utils/theme'

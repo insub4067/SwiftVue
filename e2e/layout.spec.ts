@@ -136,6 +136,62 @@ test('withAnimation applies the state change', async ({ page }) => {
   await expect(extra).toBeHidden()
 })
 
+test('collapsible Section folds and reopens with state intact', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+
+  const header = page.getByRole('button', { name: 'Advanced' })
+  const body = page.locator('.section-body', { has: page.getByLabel('Notifications') })
+
+  await expect(header).toHaveAttribute('aria-expanded', 'true')
+
+  // flip a control inside, collapse, reopen — the toggle must keep its state
+  const toggle = page.getByRole('switch', { name: 'Notifications' })
+  const before = await toggle.getAttribute('aria-checked')
+  await toggle.click()
+
+  await header.click()
+  await expect(header).toHaveAttribute('aria-expanded', 'false')
+  await expect(body).toHaveClass(/collapsed/)
+
+  await header.click()
+  await expect(header).toHaveAttribute('aria-expanded', 'true')
+  await expect(toggle).toHaveAttribute('aria-checked', before === 'true' ? 'false' : 'true')
+})
+
+test('pull gesture triggers refreshable', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+  await page.getByTestId('refresh-area').scrollIntoViewIfNeeded()
+
+  await page.getByTestId('refresh-area').locator('div').first().evaluate(async (scroller) => {
+    const touch = (type: string, y: number) => scroller.dispatchEvent(new TouchEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      touches: type === 'touchend' ? [] : [new Touch({ identifier: 1, target: scroller, clientX: 100, clientY: y })],
+    }))
+    touch('touchstart', 100)
+    for (let y = 110; y <= 260; y += 30) {
+      touch('touchmove', y)
+      await new Promise(r => setTimeout(r, 16))
+    }
+    touch('touchend', 260)
+  })
+
+  await expect(page.getByText(/Refreshed at/)).toBeVisible({ timeout: 3000 })
+})
+
+test('debounced publisher settles on the final input', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+  await page.getByRole('tab', { name: 'Controls' }).click()
+
+  await page.getByPlaceholder('Search...').fill('swift')
+  // inside the debounce window nothing is delivered yet
+  await expect(page.getByTestId('debounced')).toContainText('—')
+  await expect(page.getByTestId('debounced')).toContainText('swift', { timeout: 2000 })
+})
+
 test.describe('forced light must beat a dark OS', () => {
   test.use({ colorScheme: 'dark' })
 

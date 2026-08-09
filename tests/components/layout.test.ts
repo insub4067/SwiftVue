@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import VStack from '../../src/components/layout/VStack.vue'
 import HStack from '../../src/components/layout/HStack.vue'
 import ZStack from '../../src/components/layout/ZStack.vue'
@@ -177,6 +178,55 @@ describe('ScrollView', () => {
     })
     expect(wrapper.element.style.height).toBe('100px')
     expect(wrapper.element.style.padding).toBe('16px')
+  })
+})
+
+describe('ScrollView refreshable', () => {
+  it('renders no refresh zone without the prop', () => {
+    expect(mount(ScrollView).find('.swift-refresh').exists()).toBe(false)
+  })
+
+  it('refresh() runs the handler and holds the spinner until it settles', async () => {
+    let release!: () => void
+    const handler = vi.fn(() => new Promise<void>(r => { release = r }))
+    const wrapper = mount(ScrollView, { props: { refreshable: handler } })
+
+    const pending = (wrapper.vm as unknown as { refresh: () => Promise<void> }).refresh()
+    await nextTick()
+    expect(handler).toHaveBeenCalledOnce()
+    expect(wrapper.find('.swift-refresh-spinner').classes()).toContain('spinning')
+    expect(wrapper.find('.swift-refresh').element.getAttribute('style')).toContain('height: 52px')
+
+    release()
+    await pending
+    await nextTick()
+    expect(wrapper.find('.swift-refresh-spinner').classes()).not.toContain('spinning')
+    expect(wrapper.find('.swift-refresh').element.getAttribute('style')).toContain('height: 0px')
+  })
+
+  it('does not start a second refresh while one is running', async () => {
+    let release!: () => void
+    const handler = vi.fn(() => new Promise<void>(r => { release = r }))
+    const wrapper = mount(ScrollView, { props: { refreshable: handler } })
+    const vm = wrapper.vm as unknown as { refresh: () => Promise<void> }
+
+    const first = vm.refresh()
+    await nextTick()
+    await vm.refresh() // ignored — already refreshing
+    expect(handler).toHaveBeenCalledOnce()
+
+    release()
+    await first
+  })
+
+  it('spinner clears even when the handler rejects', async () => {
+    const handler = vi.fn(() => Promise.reject(new Error('offline')))
+    const wrapper = mount(ScrollView, { props: { refreshable: handler } })
+    const vm = wrapper.vm as unknown as { refresh: () => Promise<void> }
+
+    await expect(vm.refresh()).rejects.toThrow('offline')
+    await nextTick()
+    expect(wrapper.find('.swift-refresh-spinner').classes()).not.toContain('spinning')
   })
 })
 
