@@ -49,6 +49,7 @@ function releaseHistory(token: symbol) {
 import { computed, nextTick, onBeforeUnmount, onMounted, provide, readonly, ref, useId } from 'vue'
 import { useModifiers, composeStyle } from '../../utils/modifiers'
 import { warnDev } from '../../utils/warn'
+import { isRTL } from '../../utils/direction'
 import NavPane from './NavPane'
 import {
   navigationKey,
@@ -267,18 +268,23 @@ const panes = computed(() => [null, ...stack.value] as Array<NavigationEntry | n
 // iOS edge-swipe back: begin near the leading edge, travel right, pop.
 let swipeStart: { x: number; y: number } | null = null
 
+// Back travels from the leading edge inwards — which physical edge that is
+// depends on the writing direction, so the gesture mirrors with it.
 function onPointerDown(e: PointerEvent) {
   if (!depth.value) return
-  const left = (e.currentTarget as HTMLElement).getBoundingClientRect().left
-  if (e.clientX - left <= 28) swipeStart = { x: e.clientX, y: e.clientY }
+  const el = e.currentTarget as HTMLElement
+  const box = el.getBoundingClientRect()
+  const fromEdge = isRTL(el) ? box.right - e.clientX : e.clientX - box.left
+  if (fromEdge <= 28) swipeStart = { x: e.clientX, y: e.clientY }
 }
 
 function onPointerUp(e: PointerEvent) {
   if (!swipeStart) return
-  const dx = e.clientX - swipeStart.x
+  const travelled = e.clientX - swipeStart.x
+  const inwards = isRTL(e.currentTarget as HTMLElement) ? -travelled : travelled
   const dy = Math.abs(e.clientY - swipeStart.y)
   swipeStart = null
-  if (dx > 70 && dy < 60) pop()
+  if (inwards > 70 && dy < 60) pop()
 }
 
 const style = computed(() => composeStyle(modifierStyle.value, {
@@ -375,6 +381,7 @@ const style = computed(() => composeStyle(modifierStyle.value, {
   border-radius: 4px;
 }
 .nav-back-chevron { font-size: 26px; line-height: 1; margin-top: -3px; }
+[dir="rtl"] .nav-back-chevron { transform: scaleX(-1); }
 .nav-back-label {
   overflow: hidden;
   text-overflow: ellipsis;

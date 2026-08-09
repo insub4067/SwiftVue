@@ -275,7 +275,7 @@ defineExpose({ close })
   font-family: inherit;
   font-size: 17px;
   color: var(--swift-label);
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 .context-menu-item:hover:not(:disabled) { background: var(--swift-fill); }

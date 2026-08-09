@@ -155,10 +155,10 @@ watch(() => props.isPresented, async (val) => {
   outline-offset: -2px;
 }
 .alert-btn + .alert-btn {
-  border-left: 1px solid var(--swift-separator);
+  border-inline-start: 1px solid var(--swift-separator);
 }
 .stacked .alert-btn + .alert-btn {
-  border-left: none;
+  border-inline-start: none;
   border-top: 1px solid var(--swift-separator);
 }
 .alert-btn:hover { background: var(--swift-fill); }

@@ -29,6 +29,7 @@ import { computed, ref, useId } from 'vue'
 import { useModifiers, composeStyle } from '../../utils/modifiers'
 import { resolveColor } from '../../utils/theme'
 import { useSwipe } from '../../composables/useSwipe'
+import { isRTL } from '../../utils/direction'
 
 const props = withDefaults(defineProps<SwipeActionsProps>(), {
   trailing: () => [],
@@ -71,11 +72,18 @@ function rowWidth() {
   return root.value?.getBoundingClientRect().width ?? 0
 }
 
+// The slabs sit on the inline edges, so a finger moving towards the trailing
+// edge reveals the trailing actions — leftwards in Latin, rightwards in
+// Arabic. Everything below works in that logical space and is mirrored once,
+// here at the boundary.
+const inlineDelta = (x: number) => (isRTL(root.value) ? -x : x)
+
 useSwipe(root, {
   threshold: 24,
   tolerance: 32,
-  onMove({ x }) {
+  onMove({ x: physical }) {
     if (props.disabled) return
+    const x = inlineDelta(physical)
     // Clamp to what there is to reveal, with a little give so the row feels
     // attached to the finger rather than hitting a wall.
     const min = trailingWidth.value ? -(trailingWidth.value + 40) : 0
@@ -133,7 +141,7 @@ const style = computed(() => composeStyle(
 ))
 
 const contentStyle = computed(() => ({
-  transform: `translateX(${offset.value}px)`,
+  transform: `translateX(${inlineDelta(offset.value)}px)`,
   transition: dragging.value ? 'none' : 'transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)',
 }))
 
@@ -206,8 +214,8 @@ defineExpose({ close, offset })
   bottom: 0;
   display: flex;
 }
-.swipe-slab--leading { left: 0; }
-.swipe-slab--trailing { right: 0; }
+.swipe-slab--leading { inset-inline-start: 0; }
+.swipe-slab--trailing { inset-inline-end: 0; }
 
 .swipe-action {
   display: flex;

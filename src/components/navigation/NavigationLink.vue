@@ -108,6 +108,9 @@ const style = computed(() => composeStyle(modifierStyle.value, {
   color: var(--swift-tertiary-label);
   font-size: 20px;
   font-weight: 300;
-  margin-left: 8px;
+  margin-inline-start: 8px;
 }
+/* A glyph has no writing direction of its own — logical properties move the
+   chevron to the trailing side but leave it pointing the wrong way. */
+[dir="rtl"] .nav-link-chevron { transform: scaleX(-1); }
 </style>

@@ -117,7 +117,7 @@ const style = computed(() => composeStyle(modifierStyle.value, {
 .tab-badge {
   position: absolute;
   top: -4px;
-  left: 100%;
+  inset-inline-start: 100%;
   transform: translateX(-40%);
   min-width: 17px;
   height: 17px;

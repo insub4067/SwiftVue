@@ -50,12 +50,18 @@ describe('Text', () => {
     expect(wrapper.element.style.overflow).toBe('hidden')
   })
 
-  it('applies text alignment', () => {
+  // leading and trailing follow the writing direction, so they map to
+  // start/end rather than to a physical side.
+  it.each([
+    ['leading', 'start'],
+    ['center', 'center'],
+    ['trailing', 'end'],
+  ])('%s aligns to %s', (alignment, expected) => {
     const wrapper = mount(SVText, {
-      props: { multilineTextAlignment: 'trailing' },
-      slots: { default: 'Right aligned' },
+      props: { multilineTextAlignment: alignment as never },
+      slots: { default: 'Aligned' },
     })
-    expect(wrapper.element.style.textAlign).toBe('right')
+    expect(wrapper.element.style.textAlign).toBe(expected)
   })
 })
 

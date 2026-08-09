@@ -92,7 +92,7 @@ function increment() {
   font-size: 17px;
   padding: 0 4px;
   color: var(--swift-label);
-  border-left: 1px solid var(--swift-separator);
-  border-right: 1px solid var(--swift-separator);
+  border-inline-start: 1px solid var(--swift-separator);
+  border-inline-end: 1px solid var(--swift-separator);
 }
 </style>

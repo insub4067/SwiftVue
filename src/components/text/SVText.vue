@@ -17,7 +17,9 @@ const props = withDefaults(defineProps<Props>(), {
   font: 'body',
 })
 
-const alignMap = { leading: 'left', center: 'center', trailing: 'right' }
+// start/end rather than left/right: leading and trailing follow the
+// writing direction, which is the whole point of naming them that way.
+const alignMap = { leading: 'start', center: 'center', trailing: 'end' }
 
 const modifierStyle = useModifiers(props)
 const style = computed(() => {

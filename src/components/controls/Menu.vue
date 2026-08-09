@@ -185,7 +185,7 @@ onBeforeUnmount(() => {
 .menu-list {
   position: absolute;
   top: calc(100% + 4px);
-  left: 0;
+  inset-inline-start: 0;
   z-index: 50;
   min-width: 200px;
   padding: 5px;
@@ -206,7 +206,7 @@ onBeforeUnmount(() => {
   font-family: inherit;
   font-size: 17px;
   color: var(--swift-label);
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 .menu-item:hover:not(:disabled) { background: var(--swift-fill); }
