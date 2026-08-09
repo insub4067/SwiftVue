@@ -8,4 +8,5 @@ export default defineConfig({
     alias: { '@': resolve(__dirname, '../src') },
   },
   root: __dirname,
+  base: process.env.GITHUB_ACTIONS ? '/SwiftVue/' : '/',
 })
