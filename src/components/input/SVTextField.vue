@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useModifiers, composeStyle, type ModifierProps } from '../../utils/modifiers'
 import { useFocusBinding, type FocusStateProps } from '../../composables/useFocusState'
+import { useSubmitAction } from '../../composables/useSubmit'
 
 interface Props extends ModifierProps, FocusStateProps {
   modelValue?: string
@@ -45,8 +46,14 @@ function onInput(e: Event) {
   emit('update:modelValue', (e.target as HTMLInputElement).value)
 }
 
+// Both channels fire: the field's own event for a caller wiring this one
+// field, and the inherited action for an onSubmit covering the screen.
+const submitAction = useSubmitAction()
+
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter') emit('submit')
+  if (e.key !== 'Enter') return
+  emit('submit')
+  submitAction?.()
 }
 </script>
 

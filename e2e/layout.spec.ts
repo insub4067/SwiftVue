@@ -42,7 +42,10 @@ for (const width of WIDTHS) {
       await page.getByRole('tab', { name: tab }).click()
       await page.waitForTimeout(150)
 
-      expect(await overflowOffenders(page), `${tab} tab at ${width}px`).toEqual([])
+      await expect.poll(
+        () => overflowOffenders(page),
+        { message: `${tab} tab at ${width}px`, timeout: 3_000 },
+      ).toEqual([])
 
       const bar = page.locator('.tab-bar')
       const box = await bar.boundingBox()
@@ -69,9 +72,16 @@ for (const tab of TABS) {
       const pushed = await back.waitFor({ state: 'visible', timeout: 1500 }).then(() => true, () => false)
 
       if (pushed) {
-        await page.waitForTimeout(350)
         const row = await rows.nth(i).textContent().catch(() => `row ${i}`)
-        expect(await overflowOffenders(page), `${tab} → ${row}`).toEqual([])
+        // Poll rather than sample once after a fixed wait. The pane arriving
+        // sits at translateX(100%) mid-push, and WebKit counts that towards
+        // the scroll width — so a single sample can catch the animation
+        // instead of the layout. A real overflow never settles, so the gate
+        // is as strict as before.
+        await expect.poll(
+          () => overflowOffenders(page),
+          { message: `${tab} → ${row}`, timeout: 3_000 },
+        ).toEqual([])
         await back.click()
         await page.waitForTimeout(400)
       } else {
@@ -262,6 +272,26 @@ test('pull gesture triggers refreshable', async ({ page }) => {
   await page.goto('/')
   await push(page, /Pull to Refresh/)
 
+  // The gesture is touch-only by design: only `touchmove` can preventDefault
+  // the native overscroll that a pull has to take over from. A browser that
+  // cannot build a touch sequence therefore cannot exercise it.
+  //
+  // The probe builds exactly what the gesture below builds. An earlier one
+  // only tried `new TouchEvent('touchstart')`, which WebKit allows — it is
+  // the `Touch` in the list that it refuses, so the probe passed and the
+  // gesture still threw.
+  const canTouch = await page.evaluate(() => {
+    try {
+      new TouchEvent('touchstart', {
+        touches: [new Touch({ identifier: 1, target: document.body, clientX: 0, clientY: 0 })],
+      })
+      return true
+    } catch {
+      return false
+    }
+  })
+  test.skip(!canTouch, 'this browser cannot construct a Touch; the gesture is touch-only by design')
+
   await page.getByTestId('refresh-area').locator('div').first().evaluate(async (scroller) => {
     const touch = (type: string, y: number) => scroller.dispatchEvent(new TouchEvent(type, {
       bubbles: true,
@@ -372,6 +402,26 @@ test('the gauge sweeps as its value changes', async ({ page }) => {
   const slider = page.locator('.nav-pane:not(.nav-pane--under) input[type="range"]').first()
   await slider.fill('1')
   await expect.poll(sweep).toBeGreaterThan(before)
+})
+
+// A covered pane stays mounted, so only a real push and pop can show that
+// onAppear fires again rather than staying at one.
+test('onAppear fires again when a screen is returned to', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+  await push(page, /onAppear/)
+
+  const appears = page.getByTestId('appear-count')
+  const disappears = page.getByTestId('disappear-count')
+  await expect(appears).toHaveText('1')
+  await expect(disappears).toHaveText('0')
+
+  await push(page, /화면 하나 더 쌓기/)
+  await page.getByLabel('Back').click()
+  await page.waitForTimeout(400)
+
+  await expect(appears, 'covered, then shown again').toHaveText('2')
+  await expect(disappears).toHaveText('1')
 })
 
 test('ZStack places children on the axis the alignment names', async ({ page }) => {

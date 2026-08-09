@@ -116,6 +116,7 @@ const darkMode = useState(false)
 - `List` — styled list (`items`, `listStyle`, `keyPath`)
 - `Section` — grouped card with `header`/`footer`; `collapsible` folds like DisclosureGroup (`defaultExpanded`)
 - `Form` — real `<form>` grouping Sections, `@submit`
+- `SwipeActions` — iOS swipe-to-reveal row (`leading`, `trailing`, `allowsFullSwipe`, `@select`)
 
 ### Navigation
 - `NavigationStack` — push/pop stack with back button and edge-swipe back (`title`, `displayMode`, `browserBack`, `historyKey`)
@@ -145,6 +146,85 @@ const darkMode = useState(false)
 <!-- .refreshable — pull down from the top; spinner holds until the promise settles -->
 <ScrollView :refreshable="reload">…</ScrollView>
 ```
+
+## onAppear & onDisappear
+
+```ts
+import { onAppear, onDisappear } from 'swiftvue'
+
+onAppear(() => reload())
+onDisappear(() => cancelPolling())
+```
+
+These follow the view's **visibility**, not its mount:
+
+| | |
+|---|---|
+| mounted, or unhidden by `v-if` | appears |
+| pushed over by a NavigationStack | disappears, though it stays mounted |
+| popped back to | appears again — this is where a list refreshes |
+| unmounted | disappears, unless it already had |
+
+A covered pane is still alive so popping back restores it exactly as it was
+left, which is why "appear" cannot mean "mount" here. For work that must
+outlive a push — an upload, a socket — use Vue's `onMounted`/`onUnmounted`:
+those follow the component, not what the user can see.
+
+## onSubmit
+
+```ts
+import { onSubmit } from 'swiftvue'
+
+onSubmit(() => search(query.value))
+```
+
+Runs when the user presses Return in any `TextField` or `SecureField` below
+this view, so one handler serves a screen of fields instead of each field
+wiring `@submit` itself. Nested handlers all run, innermost first — the order
+SwiftUI uses.
+
+A `<Form>` keeps its own `@submit` for the form's own submission. The two are
+different events and neither stands in for the other.
+
+## Swipe
+
+`useSwipe` is the gesture itself, on any element:
+
+```ts
+const row = ref<HTMLElement | null>(null)
+
+useSwipe(row, {
+  onSwipeLeft: ({ distance, velocity }) => reveal(),
+  onMove: ({ x }) => (offset.value = x),   // follow the finger
+  edge: 'left',                             // only start near an edge
+})
+```
+
+Pointer events, so finger, trackpad and stylus take one path. A drag that
+wanders off its axis is treated as a scroll and left alone, rather than
+fighting the scroller it belongs to.
+
+`SwipeActions` is SwiftUI's `.swipeActions` built on it — the iOS row that
+swipes open:
+
+```vue
+<SwipeActions
+  :trailing="[
+    { label: 'Delete', id: 'del', role: 'destructive' },
+    { label: 'Flag', id: 'flag', tint: 'orange' },
+  ]"
+  :leading="[{ label: 'Pin', id: 'pin' }]"
+  @select="onAction"
+>
+  <HStack :padding="[12, 16]"><Text>Inbox row</Text></HStack>
+</SwipeActions>
+```
+
+A swipe past most of the row runs the first action outright — SwiftUI's
+`allowsFullSwipe`, on by default, and skipped when the row has no measured
+width so a stray drag cannot delete something. Because a swipe is reachable
+by neither keyboard nor screen reader, the same actions are also rendered as
+real buttons, visually hidden until focused.
 
 ## onChange & Combine
 

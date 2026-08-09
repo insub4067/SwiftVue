@@ -5,9 +5,11 @@ import { usePreferredColorScheme } from '../src/composables/usePreferredColorSch
 import { withAnimation, Animations } from '../src/motion/withAnimation'
 import type { TransitionPreset } from '../src/components/motion/TransitionView.vue'
 import { onChange } from '../src/composables/onChange'
+import { onSubmit } from '../src/composables/useSubmit'
 import { publisher } from '../src/combine/publisher'
 import { version } from '../package.json'
 import CodeSample from './CodeSample.vue'
+import AppearCounter from './AppearCounter.vue'
 
 declare const __BUILD_TIME__: string
 const buildTime = __BUILD_TIME__
@@ -164,6 +166,21 @@ const contextActions = [
 ]
 const contextChoice = ref('아직 선택 없음')
 
+const inbox = ref([
+  { id: 1, from: 'Apple', subject: 'Your receipt' },
+  { id: 2, from: 'GitHub', subject: 'PR review requested' },
+  { id: 3, from: 'npm', subject: 'swiftvue published' },
+])
+const swipeLog = ref('행을 왼쪽으로 밀어보세요')
+function onSwipeAction(action: { label: string }, id: number) {
+  swipeLog.value = `${action.label} · #${id}`
+  if (action.label === 'Delete') inbox.value = inbox.value.filter(m => m.id !== id)
+}
+
+const submitQuery = ref('')
+const submitted = ref('아직 제출 없음')
+onSubmit(() => { submitted.value = submitQuery.value || '(빈 값)' })
+
 function toggleTodo(index: number) {
   todos.value[index].done = !todos.value[index].done
 }
@@ -255,6 +272,37 @@ const tabs = computed(() => [
 
 <!-- over 99 shows 99+, but assistive tech still hears the count -->`,
     sources: ['src/components/navigation/TabView.vue'],
+  },
+  lifecycle: {
+    code: `import { onAppear, onDisappear } from 'swiftvue'
+
+// visibility, not mount: a pane covered by a push has
+// disappeared even though it is still alive
+onAppear(() => reload())
+onDisappear(() => cancelPolling())`,
+    sources: ['src/composables/useLifecycle.ts'],
+  },
+  submitSwipe: {
+    code: `// one handler for every field on the screen
+onSubmit(() => search(query.value))
+
+<TextField v-model="query" placeholder="Search" />
+
+<!-- .swipeActions — full swipe runs the first action -->
+<SwipeActions
+  :trailing="[
+    { label: 'Delete', id: 'del', role: 'destructive' },
+    { label: 'Flag', id: 'flag', tint: 'orange' },
+  ]"
+  @select="onAction"
+>
+  <HStack :padding="[12, 16]">…</HStack>
+</SwipeActions>`,
+    sources: [
+      'src/composables/useSubmit.ts',
+      'src/composables/useSwipe.ts',
+      'src/components/data/SwipeActions.vue',
+    ],
   },
   navPath: {
     code: `<!-- browser-back: Back and Forward drive the stack, so the
@@ -899,6 +947,86 @@ onUnmounted(() => {
 
               <NavigationLink @tap="showSheet = true">
                 <Label system-image="📄">Sheet</Label>
+              </NavigationLink>
+            </Section>
+
+            <Section header="Gestures & Submit">
+              <NavigationLink route="swipe" destination-title="Swipe & Submit">
+                <Label system-image="👉">Swipe Actions / onSubmit</Label>
+                <template #destination>
+                  <VStack :spacing="20" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <Text font="subheadline" foreground-color="secondary">
+                      행을 왼쪽으로 밀면 액션이 나옵니다. 끝까지 밀면 첫 액션이 바로 실행됩니다.
+                    </Text>
+
+                    <VStack :spacing="1" :frame="{ width: '100%' }" background="separator" :corner-radius="12">
+                      <SwipeActions
+                        v-for="mail in inbox"
+                        :key="mail.id"
+                        :trailing="[
+                          { label: 'Delete', id: 'del', role: 'destructive', systemImage: '🗑' },
+                          { label: 'Flag', id: 'flag', tint: 'orange', systemImage: '🚩' },
+                        ]"
+                        :leading="[{ label: 'Pin', id: 'pin', tint: 'indigo', systemImage: '📌' }]"
+                        @select="onSwipeAction($event, mail.id)"
+                      >
+                        <HStack :spacing="12" :padding="[12, 16]" :frame="{ width: '100%' }">
+                          <VStack :spacing="2" alignment="leading">
+                            <Text font="headline">{{ mail.from }}</Text>
+                            <Text font="subheadline" foreground-color="secondary">{{ mail.subject }}</Text>
+                          </VStack>
+                          <Spacer />
+                        </HStack>
+                      </SwipeActions>
+                    </VStack>
+
+                    <Text font="subheadline" data-testid="swipe-log">{{ swipeLog }}</Text>
+
+                    <Divider />
+
+                    <Text font="subheadline" foreground-color="secondary">
+                      onSubmit — 아래 칸에서 Enter를 눌러보세요. 핸들러는 화면 하나에 한 번만 답니다.
+                    </Text>
+                    <TextField v-model="submitQuery" placeholder="Search" text-field-style="roundedBorder" />
+                    <Text font="subheadline" data-testid="submit-log">{{ submitted }}</Text>
+
+                    <CodeSample v-bind="samples.submitSwipe" />
+                  </VStack>
+                </template>
+              </NavigationLink>
+            </Section>
+
+            <Section header="Lifecycle">
+              <NavigationLink route="appear" destination-title="onAppear">
+                <Label system-image="👋">onAppear / onDisappear</Label>
+                <template #destination>
+                  <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <Text font="subheadline" foreground-color="secondary">
+                      아래 화면으로 들어갔다 뒤로 나와 보세요. 이 화면은 언마운트되지 않지만
+                      가려졌다가 다시 보였으므로 두 숫자가 모두 올라갑니다.
+                    </Text>
+                    <VStack
+                      :spacing="8"
+                      :padding="[12, 16]"
+                      background="secondaryBackground"
+                      :corner-radius="12"
+                      :frame="{ width: '100%' }"
+                    >
+                      <AppearCounter />
+                    </VStack>
+
+                    <NavigationLink route="appear-detail" destination-title="Detail">
+                      <Label system-image="➡️">화면 하나 더 쌓기</Label>
+                      <template #destination>
+                        <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                          <Text>뒤로 가면 앞 화면의 onAppear가 다시 호출됩니다.</Text>
+                        </VStack>
+                      </template>
+                    </NavigationLink>
+
+                    <CodeSample v-bind="samples.lifecycle" />
+                  </VStack>
+                </template>
               </NavigationLink>
             </Section>
 
