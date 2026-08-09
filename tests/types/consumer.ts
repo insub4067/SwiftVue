@@ -7,7 +7,7 @@ import {
   LazyVGrid, TransitionView, List,
   Image, AsyncImage, Form, DatePicker, Menu, ContextMenu, Gauge,
   useFocusState, usePreferredColorScheme, useNavigation, onChange, publisher,
-  onAppear, onDisappear,
+  onAppear, onDisappear, onSubmit, useSwipe, SwipeActions,
   withAnimation, Animations,
   type GridItem, type ColorScheme, type ModifierProps,
   type AlertAction, type PickerOption, type TabItem, type TransitionPreset,
@@ -15,6 +15,7 @@ import {
   type ImageProps, type AsyncImageProps, type AsyncImagePhase,
   type FormProps, type DatePickerProps, type MenuAction, type NavigationStackProps,
   type ContextMenuProps, type GaugeProps, type RouteRef, type RouteFactory,
+  type SwipeAction, type SwipeActionsProps, type SwipeSample, type SwipeDirection,
 } from 'swiftvue'
 
 // the option/action shapes users write by hand
@@ -34,10 +35,12 @@ const stackProps: NavigationStackProps = { title: 'Home', browserBack: true, his
 const contextProps: ContextMenuProps = { actions: menuActions, longPressDelay: 400 }
 const gaugeProps: GaugeProps = { value: 0.5, min: 0, max: 1, gaugeStyle: 'circular', tint: 'green' }
 const route: RouteRef = { id: 'user', param: '42' }
+const swipeActions: SwipeAction[] = [{ label: 'Delete', id: 'del', role: 'destructive' }]
+const swipeProps: SwipeActionsProps = { trailing: swipeActions, allowsFullSwipe: false }
 const buildRoute: RouteFactory = (param) => ({ title: `User ${param}`, content: () => h(Text, () => 'user') })
 void [actions, options, tabs, preset, sectionProps, listProps,
      menuActions, imageProps, asyncProps, phase, formProps, dateProps, stackProps,
-     contextProps, gaugeProps, route, buildRoute]
+     contextProps, gaugeProps, route, buildRoute, swipeActions, swipeProps]
 
 // h()'s slots argument is loosely typed, so naming a slot there proves
 // nothing. Read the slot off the component's declared type instead — this
@@ -58,6 +61,12 @@ export default defineComponent({
     const nav = useNavigation()
 
     onAppear(() => void 0)
+    onSubmit(() => void 0)
+    const swipeTarget = ref<HTMLElement | null>(null)
+    useSwipe(swipeTarget, {
+      edge: 'left',
+      onSwipeLeft: (sample: SwipeSample) => void (sample.direction satisfies SwipeDirection),
+    })
     onDisappear(() => void 0)
     onChange(text, (value, oldValue) => void [value, oldValue])
     publisher(text).map(s => s.trim()).removeDuplicates().debounce(300).sink(q => void q)
@@ -91,6 +100,7 @@ export default defineComponent({
       h(Menu, { label: 'More', actions: menuActions, onSelect: (a: MenuAction) => void a }),
       h(ContextMenu, contextProps, () => h(Text, () => 'long press me')),
       h(Gauge, gaugeProps),
+      h(SwipeActions, swipeProps, () => h(Text, () => 'row')),
     ])
   },
 })

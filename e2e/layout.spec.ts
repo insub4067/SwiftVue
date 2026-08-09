@@ -42,7 +42,10 @@ for (const width of WIDTHS) {
       await page.getByRole('tab', { name: tab }).click()
       await page.waitForTimeout(150)
 
-      expect(await overflowOffenders(page), `${tab} tab at ${width}px`).toEqual([])
+      await expect.poll(
+        () => overflowOffenders(page),
+        { message: `${tab} tab at ${width}px`, timeout: 3_000 },
+      ).toEqual([])
 
       const bar = page.locator('.tab-bar')
       const box = await bar.boundingBox()
@@ -69,9 +72,16 @@ for (const tab of TABS) {
       const pushed = await back.waitFor({ state: 'visible', timeout: 1500 }).then(() => true, () => false)
 
       if (pushed) {
-        await page.waitForTimeout(350)
         const row = await rows.nth(i).textContent().catch(() => `row ${i}`)
-        expect(await overflowOffenders(page), `${tab} → ${row}`).toEqual([])
+        // Poll rather than sample once after a fixed wait. The pane arriving
+        // sits at translateX(100%) mid-push, and WebKit counts that towards
+        // the scroll width — so a single sample can catch the animation
+        // instead of the layout. A real overflow never settles, so the gate
+        // is as strict as before.
+        await expect.poll(
+          () => overflowOffenders(page),
+          { message: `${tab} → ${row}`, timeout: 3_000 },
+        ).toEqual([])
         await back.click()
         await page.waitForTimeout(400)
       } else {
@@ -261,6 +271,18 @@ test('pull gesture triggers refreshable', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 780 })
   await page.goto('/')
   await push(page, /Pull to Refresh/)
+
+  // The gesture is touch-only by design: only `touchmove` can preventDefault
+  // the native overscroll that a pull has to take over from. A browser that
+  // cannot construct a TouchEvent therefore cannot exercise it.
+  const canTouch = await page.evaluate(() => {
+    try {
+      return Boolean(new TouchEvent('touchstart'))
+    } catch {
+      return false
+    }
+  })
+  test.skip(!canTouch, 'no constructible TouchEvent in this browser')
 
   await page.getByTestId('refresh-area').locator('div').first().evaluate(async (scroller) => {
     const touch = (type: string, y: number) => scroller.dispatchEvent(new TouchEvent(type, {

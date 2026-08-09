@@ -29,6 +29,7 @@ import ForEach from './components/data/ForEach.vue'
 import SVList from './components/data/SVList.vue'
 import Section from './components/data/Section.vue'
 import Form from './components/data/Form.vue'
+import SwipeActions from './components/data/SwipeActions.vue'
 
 import NavigationStack from './components/navigation/NavigationStack.vue'
 import NavigationLink from './components/navigation/NavigationLink.vue'
@@ -64,6 +65,7 @@ const components: Record<string, Component> = {
   List: SVList as unknown as Component,
   Section,
   Form,
+  SwipeActions,
   // Navigation
   NavigationStack, NavigationLink, TabView, Sheet,
   // Feedback

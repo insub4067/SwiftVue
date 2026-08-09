@@ -25,13 +25,14 @@ export default defineConfig({
       // viewport, `dvh` lying during a keyboard animation. Chromium cannot
       // see any of them.
       //
-      // Desktop Safari rather than an iPhone descriptor, so the only thing
-      // that changes between the two projects is the engine — the specs set
-      // their own viewports, and flipping `isMobile`/`hasTouch` as well would
-      // make a failure ambiguous. Touch emulation is worth adding next, as
-      // its own project.
+      // Desktop Safari rather than an iPhone descriptor, so the engine is
+      // near enough the only thing that differs from the chromium project —
+      // the specs set their own viewports, and `isMobile` would change
+      // layout as well and make a failure ambiguous. `hasTouch` is the one
+      // exception: the pull and swipe gestures are touch-driven, and without
+      // it they are unreachable rather than merely untested.
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      use: { ...devices['Desktop Safari'], hasTouch: true },
     },
   ],
   webServer: {
