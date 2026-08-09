@@ -36,6 +36,7 @@ function dismiss() {
 
 function onOverlayKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') {
+    e.preventDefault()
     dismiss()
     return
   }
@@ -83,10 +84,14 @@ watch(visible, async (val) => {
     previouslyFocused = document.activeElement as HTMLElement
     lockScroll()
     await nextTick()
+    // With nothing focusable inside, focus the sheet itself — otherwise
+    // Escape lands on whatever held focus before and never reaches the
+    // overlay's handler, and the sheet cannot be dismissed by keyboard.
     const firstFocusable = sheetEl.value?.querySelector<HTMLElement>(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     )
-    firstFocusable?.focus()
+    if (firstFocusable) firstFocusable.focus()
+    else sheetEl.value?.focus()
   } else {
     unlockScroll()
     previouslyFocused?.focus()
@@ -109,7 +114,7 @@ onUnmounted(unlockScroll)
         @click.self="dismiss"
         @keydown="onOverlayKeydown"
       >
-        <div ref="sheetEl" class="sheet-container" :style="containerStyle">
+        <div ref="sheetEl" class="sheet-container" tabindex="-1" :style="containerStyle">
           <div class="sheet-handle" />
           <div class="sheet-content">
             <slot />

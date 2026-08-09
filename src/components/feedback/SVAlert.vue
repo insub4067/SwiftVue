@@ -26,6 +26,7 @@ const emit = defineEmits<{
 }>()
 
 const alertBox = ref<HTMLElement | null>(null)
+const overlay = ref<HTMLElement | null>(null)
 let previouslyFocused: HTMLElement | null = null
 
 function handleAction(action: AlertAction) {
@@ -35,8 +36,14 @@ function handleAction(action: AlertAction) {
 
 function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') {
-    const cancelAction = props.actions.find(a => a.role === 'cancel')
-    handleAction(cancelAction ?? props.actions[props.actions.length - 1])
+    e.preventDefault()
+    // An alert with no actions still has to close. Reaching for the last of
+    // an empty list read `.label` off undefined and took the app down.
+    const cancel = props.actions.find(a => a.role === 'cancel')
+    const fallback = props.actions[props.actions.length - 1]
+    const action = cancel ?? fallback
+    if (action) handleAction(action)
+    else emit('update:isPresented', false)
     return
   }
   if (e.key === 'Tab' && alertBox.value) {
@@ -59,8 +66,11 @@ watch(() => props.isPresented, async (val) => {
   if (val) {
     previouslyFocused = document.activeElement as HTMLElement
     await nextTick()
+    // With no button to take focus, focus the dialog itself — otherwise
+    // Escape lands on whatever held focus before and never reaches here.
     const firstBtn = alertBox.value?.querySelector<HTMLElement>('button')
-    firstBtn?.focus()
+    if (firstBtn) firstBtn.focus()
+    else overlay.value?.focus()
   } else {
     previouslyFocused?.focus()
     previouslyFocused = null
@@ -73,7 +83,9 @@ watch(() => props.isPresented, async (val) => {
     <Transition name="alert">
       <div
         v-if="isPresented"
+        ref="overlay"
         class="alert-overlay"
+        tabindex="-1"
         role="alertdialog"
         aria-modal="true"
         :aria-label="title"
