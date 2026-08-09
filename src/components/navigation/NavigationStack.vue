@@ -1,14 +1,24 @@
-<script setup lang="ts">
-import { computed, provide, readonly, ref } from 'vue'
-import { useModifiers, type ModifierProps } from '../../utils/modifiers'
-import { navigationKey, type NavigationEntry } from '../../composables/useNavigation'
+<script lang="ts">
+import type { ModifierProps } from '../../utils/modifiers'
 
-interface Props extends ModifierProps {
+export interface NavigationStackProps extends ModifierProps {
   title?: string
   displayMode?: 'large' | 'inline'
+  /**
+   * Mirror the stack into browser history, so Back, refresh and a shared URL
+   * behave the way a web user expects. Off by default: a page can hold more
+   * than one stack, and only one of them can own history.
+   */
+  path?: boolean
 }
+</script>
 
-const props = withDefaults(defineProps<Props>(), {
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, provide, readonly, ref } from 'vue'
+import { useModifiers } from '../../utils/modifiers'
+import { navigationKey, type NavigationEntry } from '../../composables/useNavigation'
+
+const props = withDefaults(defineProps<NavigationStackProps>(), {
   displayMode: 'large',
 })
 
@@ -18,19 +28,61 @@ const stack = ref<NavigationEntry[]>([])
 const direction = ref<'push' | 'pop'>('push')
 const depth = computed(() => stack.value.length)
 
+// --- browser history (path) ---------------------------------------------
+// History only carries the depth. Entry contents are closures owned by the
+// component that pushed them, so a reload legitimately lands back at the
+// root rather than resurrecting views the app never re-created.
+const HISTORY_KEY = 'swiftvue-nav-depth'
+let syncingFromHistory = false
+
+const historyEnabled = () => props.path && typeof history !== 'undefined'
+
+function recordDepth(next: number, replace = false) {
+  if (!historyEnabled() || syncingFromHistory) return
+  const state = { ...(history.state ?? {}), [HISTORY_KEY]: next }
+  if (replace) history.replaceState(state, '')
+  else history.pushState(state, '')
+}
+
+function onPopState(event: PopStateEvent) {
+  if (!props.path) return
+  const target = Number(event.state?.[HISTORY_KEY] ?? 0)
+  if (!Number.isFinite(target) || target === depth.value) return
+
+  syncingFromHistory = true
+  direction.value = target < depth.value ? 'pop' : 'push'
+  // Forward past entries we no longer hold closures for stops at what we have.
+  stack.value = stack.value.slice(0, Math.min(target, stack.value.length))
+  syncingFromHistory = false
+}
+
+onMounted(() => {
+  if (!historyEnabled()) return
+  recordDepth(0, true) // stamp the root so Back from depth 1 has a target
+  window.addEventListener('popstate', onPopState)
+})
+
+onBeforeUnmount(() => {
+  if (typeof window !== 'undefined') window.removeEventListener('popstate', onPopState)
+})
+
 function push(entry: NavigationEntry) {
   direction.value = 'push'
   stack.value = [...stack.value, entry]
+  recordDepth(stack.value.length)
 }
 
 function pop() {
   if (!stack.value.length) return
+  // Let the browser drive, so its Back stack and ours never disagree.
+  if (historyEnabled() && !syncingFromHistory) { history.back(); return }
   direction.value = 'pop'
   stack.value = stack.value.slice(0, -1)
 }
 
 function popToRoot() {
   if (!stack.value.length) return
+  if (historyEnabled() && !syncingFromHistory) { history.go(-stack.value.length); return }
   direction.value = 'pop'
   stack.value = []
 }

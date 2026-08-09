@@ -32,11 +32,14 @@ export { default as Toggle } from './components/controls/Toggle.vue'
 export { default as Slider } from './components/controls/SVSlider.vue'
 export { default as Picker } from './components/controls/Picker.vue'
 export { default as Stepper } from './components/controls/Stepper.vue'
+export { default as DatePicker } from './components/controls/DatePicker.vue'
+export { default as Menu } from './components/controls/Menu.vue'
 
 // Data
 export { default as ForEach } from './components/data/ForEach.vue'
 export { default as List } from './components/data/SVList.vue'
 export { default as Section } from './components/data/Section.vue'
+export { default as Form } from './components/data/Form.vue'
 
 // Navigation
 export { default as NavigationStack } from './components/navigation/NavigationStack.vue'
@@ -53,8 +56,18 @@ export type { AlertAction, AlertProps } from './components/feedback/SVAlert.vue'
 export type { PickerOption, PickerProps } from './components/controls/Picker.vue'
 export type { TabItem, TabViewProps } from './components/navigation/TabView.vue'
 export type { SectionProps } from './components/data/Section.vue'
+export type { FormProps } from './components/data/Form.vue'
+export type { DatePickerProps } from './components/controls/DatePicker.vue'
+export type { MenuAction, MenuProps } from './components/controls/Menu.vue'
+export type { NavigationStackProps } from './components/navigation/NavigationStack.vue'
 export type { ListProps } from './components/data/SVList.vue'
 export type { TransitionPreset } from './components/motion/TransitionView.vue'
+
+// Media
+export { default as Image } from './components/media/SVImage.vue'
+export { default as AsyncImage } from './components/media/AsyncImage.vue'
+export type { ImageProps } from './components/media/SVImage.vue'
+export type { AsyncImageProps, AsyncImagePhase } from './components/media/AsyncImage.vue'
 
 // Motion
 export { default as TransitionView } from './components/motion/TransitionView.vue'

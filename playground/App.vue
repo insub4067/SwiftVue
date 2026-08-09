@@ -40,7 +40,26 @@ function shuffle() {
   shuffled.value = [...shuffled.value].sort(() => Math.random() - 0.5)
 }
 
+const sampleImage = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200">
+     <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+       <stop offset="0" stop-color="#0A84FF"/><stop offset="1" stop-color="#BF5AF2"/>
+     </linearGradient></defs>
+     <rect width="320" height="200" fill="url(#g)"/>
+     <circle cx="235" cy="55" r="30" fill="#FFD60A"/>
+   </svg>`)
 const advancedOpen = ref(true)
+const dueDate = ref('2026-08-09')
+const meetingTime = ref('14:30')
+const menuChoice = ref('아직 선택 없음')
+const formName = ref('')
+const formSubmitted = ref('')
+function submitForm() { formSubmitted.value = `제출됨: ${formName.value || '(이름 없음)'} · ${dueDate.value}` }
+const menuActions = [
+  { label: 'Rename', id: 'rename', systemImage: '✏️' },
+  { label: 'Duplicate', id: 'dup', systemImage: '📄' },
+  { label: 'Delete', id: 'del', systemImage: '🗑️', role: 'destructive' as const },
+]
 const refreshLog = ref<string[]>(['처음 항목 — 아래로 당겨서 새로고침'])
 async function reload() {
   await new Promise(r => setTimeout(r, 900))
@@ -148,6 +167,44 @@ const completedCount = computed(() => todos.value.filter(t => t.done).length)
 const completionPercent = computed(() => Math.round((completedCount.value / todos.value.length) * 100))
 
 const samples: Record<string, { code: string; sources: string[] }> = {
+  media: {
+    code: `<!-- .resizable().aspectRatio(contentMode:) -->
+<Image src="/photo.jpg" alt="Sunset" resizable content-mode="fill"
+  :frame="{ width: 120, height: 120 }" :corner-radius="12" />
+
+<!-- AsyncImage(url:) with its loading phases -->
+<AsyncImage url="/remote.jpg" alt="Remote" :frame="{ height: 140 }">
+  <template #placeholder>Loading…</template>
+  <template #error>Could not load</template>
+</AsyncImage>`,
+    sources: ['src/components/media/SVImage.vue', 'src/components/media/AsyncImage.vue'],
+  },
+  form: {
+    code: `<Form @submit="save">
+  <Section header="Details">
+    <TextField v-model="name" placeholder="Name" />
+    <DatePicker v-model="due" displayed-components="date" />
+  </Section>
+  <!-- every other button defaults to type="button" -->
+  <Button type="submit" button-style="borderedProminent">Save</Button>
+</Form>`,
+    sources: ['src/components/data/Form.vue', 'src/components/controls/DatePicker.vue'],
+  },
+  menu: {
+    code: `<Menu label="More" :actions="[
+  { label: 'Rename', id: 'rename', systemImage: '✏️' },
+  { label: 'Delete', id: 'del', role: 'destructive' },
+]" @select="onSelect" />`,
+    sources: ['src/components/controls/Menu.vue'],
+  },
+  navPath: {
+    code: `<!-- mirror the stack into browser history:
+     Back, refresh and a shared URL all behave -->
+<NavigationStack title="Settings" path>
+  <NavigationLink destination-title="General">…</NavigationLink>
+</NavigationStack>`,
+    sources: ['src/components/navigation/NavigationStack.vue'],
+  },
   typography: {
     code: `<Text font="largeTitle">Large Title</Text>
 <Text font="headline">Headline</Text>
@@ -771,6 +828,89 @@ onUnmounted(() => {
                       </HStack>
                     </VStack>
                     <CodeSample v-bind="samples.animation" />
+                  </VStack>
+                </template>
+              </NavigationLink>
+            </Section>
+
+            <Section header="Media">
+              <NavigationLink destination-title="Image">
+                <Label system-image="🖼️">Image & AsyncImage</Label>
+                <template #destination>
+                  <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <Text font="subheadline" foreground-color="secondary">Image — contentMode</Text>
+                    <HStack :spacing="12" wrap>
+                      <VStack :spacing="4">
+                        <Image :src="sampleImage" alt="fit" resizable content-mode="fit"
+                          :frame="{ width: '110px', height: '110px' }" :corner-radius="12"
+                          background="secondaryBackground" />
+                        <Text font="caption2" foreground-color="secondary">fit</Text>
+                      </VStack>
+                      <VStack :spacing="4">
+                        <Image :src="sampleImage" alt="fill" resizable content-mode="fill"
+                          :frame="{ width: '110px', height: '110px' }" :corner-radius="12" />
+                        <Text font="caption2" foreground-color="secondary">fill</Text>
+                      </VStack>
+                      <VStack :spacing="4">
+                        <Image :src="sampleImage" alt="circle" resizable content-mode="fill"
+                          :frame="{ width: '110px', height: '110px' }" clip-shape="circle" />
+                        <Text font="caption2" foreground-color="secondary">clipShape</Text>
+                      </VStack>
+                    </HStack>
+
+                    <Text font="subheadline" foreground-color="secondary">AsyncImage — 로딩 / 실패</Text>
+                    <HStack :spacing="12" wrap>
+                      <AsyncImage :url="sampleImage" alt="loaded"
+                        :frame="{ width: '110px', height: '110px' }" :corner-radius="12"
+                        background="secondaryBackground" />
+                      <AsyncImage url="/does-not-exist.png" alt="broken"
+                        :frame="{ width: '110px', height: '110px' }" :corner-radius="12"
+                        background="secondaryBackground" />
+                    </HStack>
+                    <CodeSample v-bind="samples.media" />
+                  </VStack>
+                </template>
+              </NavigationLink>
+            </Section>
+
+            <Section header="Forms">
+              <NavigationLink destination-title="Form & DatePicker">
+                <Label system-image="📝">Form & DatePicker</Label>
+                <template #destination>
+                  <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
+                    <Form @submit="submitForm">
+                      <Section header="Details" footer="Enter 또는 Save로 제출됩니다.">
+                        <div class="swift-list-row">
+                          <VStack :spacing="6" alignment="leading" :frame="{ width: '100%' }">
+                            <Label for="form-name">Name</Label>
+                            <TextField id="form-name" v-model="formName" placeholder="Name" text-field-style="roundedBorder" />
+                          </VStack>
+                        </div>
+                        <div class="swift-list-row">
+                          <HStack><Text>Due date</Text><Spacer /><DatePicker v-model="dueDate" label="Due date" /></HStack>
+                        </div>
+                        <div class="swift-list-row">
+                          <HStack><Text>Time</Text><Spacer /><DatePicker v-model="meetingTime" displayed-components="hourAndMinute" label="Time" /></HStack>
+                        </div>
+                      </Section>
+                      <Button type="submit" button-style="borderedProminent" full-width>Save</Button>
+                    </Form>
+                    <Text v-if="formSubmitted" font="subheadline" foreground-color="green">{{ formSubmitted }}</Text>
+                    <CodeSample v-bind="samples.form" />
+                  </VStack>
+                </template>
+              </NavigationLink>
+
+              <NavigationLink destination-title="Menu">
+                <Label system-image="⋯">Menu</Label>
+                <template #destination>
+                  <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <Menu label="More" :actions="menuActions" @select="menuChoice = `선택: ${$event.label}`" />
+                    <Text font="subheadline" data-testid="menu-choice">{{ menuChoice }}</Text>
+                    <Text font="caption" foreground-color="secondary">
+                      ↓/↑로 이동, Esc로 닫기, 바깥을 누르면 닫힙니다.
+                    </Text>
+                    <CodeSample v-bind="samples.menu" />
                   </VStack>
                 </template>
               </NavigationLink>

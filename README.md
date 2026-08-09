@@ -107,11 +107,14 @@ const darkMode = useState(false)
 - `Slider` — range input (`v-model`, `min`, `max`, `step`)
 - `Picker` — select/segmented (`v-model`, `options`, `pickerStyle`)
 - `Stepper` — increment/decrement (`v-model`, `min`, `max`, `step`)
+- `DatePicker` — date/time input (`v-model`, `displayedComponents`, `min`, `max`)
+- `Menu` — dropdown of actions (`label`, `actions`, `@select`)
 
 ### Data
 - `ForEach` — list rendering (`items`, `keyPath`, scoped slot)
 - `List` — styled list (`items`, `listStyle`, `keyPath`)
 - `Section` — grouped card with `header`/`footer`; `collapsible` folds like DisclosureGroup (`defaultExpanded`)
+- `Form` — real `<form>` grouping Sections, `@submit`
 
 ### Navigation
 - `NavigationStack` — push/pop stack with back button and edge-swipe back (`title`, `displayMode`)
@@ -122,6 +125,10 @@ const darkMode = useState(false)
 ### Feedback
 - `Alert` — alert dialog (`v-model:isPresented`, `title`, `message`, `actions`)
 - `ProgressView` — loading indicator (`value`, `total`, `progressViewStyle`)
+
+### Media
+- `Image` — image (`src`, `alt`, `resizable`, `contentMode`)
+- `AsyncImage` — remote image with `#placeholder` / `#error` slots (`url`)
 
 ## Sections & Pull to Refresh
 
@@ -198,6 +205,60 @@ nav?.popToRoot()
 
 `NavigationLink` with a `to` prop still renders a `router-link` for
 vue-router projects.
+
+## Images
+
+```vue
+<!-- .resizable().aspectRatio(contentMode:) -->
+<Image src="/photo.jpg" alt="Sunset" resizable content-mode="fill"
+  :frame="{ width: 120, height: 120 }" clip-shape="circle" />
+
+<!-- AsyncImage(url:) — its phases are slots -->
+<AsyncImage url="/remote.jpg" alt="Remote">
+  <template #placeholder>Loading…</template>
+  <template #error>Could not load</template>
+</AsyncImage>
+```
+
+Without `alt` an image is treated as decorative and hidden from assistive
+technology, rather than announced as an unlabeled graphic.
+
+## Forms
+
+```vue
+<Form @submit="save">
+  <Section header="Details">
+    <TextField v-model="name" placeholder="Name" />
+    <DatePicker v-model="due" displayed-components="date" />
+  </Section>
+  <Button type="submit" button-style="borderedProminent">Save</Button>
+</Form>
+
+<Menu label="More" :actions="[
+  { label: 'Rename', id: 'rename' },
+  { label: 'Delete', id: 'del', role: 'destructive' },
+]" @select="onSelect" />
+```
+
+`Form` renders a real `<form>`, so Enter submits and browser validation
+works. Every button in the library defaults to `type="button"`, so only an
+explicit `type="submit"` triggers it. `Menu` supports arrow-key navigation,
+Escape, and dismissal on an outside press.
+
+## Browser history
+
+`NavigationStack` keeps its stack in memory by default. Add `path` to mirror
+it into browser history, so Back, refresh and a shared URL behave the way a
+web user expects:
+
+```vue
+<NavigationStack title="Settings" path>…</NavigationStack>
+```
+
+History carries the stack depth only — pushed views are closures the app
+owns, so a reload lands back at the root rather than resurrecting views
+nothing re-created. Leave it off when a page holds more than one stack;
+only one of them can own history.
 
 ## Motion
 

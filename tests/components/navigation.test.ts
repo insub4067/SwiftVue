@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent, h, ref } from 'vue'
 import NavigationStack from '../../src/components/navigation/NavigationStack.vue'
@@ -269,5 +269,95 @@ describe('Sheet', () => {
     expect(dialog?.getAttribute('aria-modal')).toBe('true')
     expect(dialog?.getAttribute('aria-label')).toBe('SwiftVue Demo')
     wrapper.unmount()
+  })
+})
+
+describe('NavigationStack browser history', () => {
+  const Pusher = defineComponent({
+    setup() {
+      const nav = useNavigation()!
+      return () => h('button', {
+        id: 'go',
+        onClick: () => nav.push({ title: 'Detail', content: () => h('p', 'detail') }),
+      }, 'go')
+    },
+  })
+
+  function mountStack(path: boolean) {
+    return mount(NavigationStack, {
+      props: { title: 'Home', path },
+      slots: { default: () => h(Pusher) },
+      attachTo: document.body,
+    })
+  }
+
+  it('stays out of history unless asked', async () => {
+    const push = vi.spyOn(history, 'pushState')
+    const wrapper = mountStack(false)
+    await wrapper.find('#go').trigger('click')
+    await flushPromises()
+    expect(push).not.toHaveBeenCalled()
+    expect(wrapper.vm.depth).toBe(1)
+    push.mockRestore()
+    wrapper.unmount()
+  })
+
+  it('records the depth so Back has somewhere to return to', async () => {
+    const push = vi.spyOn(history, 'pushState')
+    const wrapper = mountStack(true)
+    await wrapper.find('#go').trigger('click')
+    await flushPromises()
+
+    expect(push).toHaveBeenCalledOnce()
+    expect(push.mock.calls[0][0]).toMatchObject({ 'swiftvue-nav-depth': 1 })
+    push.mockRestore()
+    wrapper.unmount()
+  })
+
+  it('the back button delegates to the browser rather than popping twice', async () => {
+    const back = vi.spyOn(history, 'back').mockImplementation(() => {})
+    const wrapper = mountStack(true)
+    await wrapper.find('#go').trigger('click')
+    await flushPromises()
+
+    wrapper.vm.pop()
+    await flushPromises()
+    expect(back).toHaveBeenCalledOnce()
+    // the stack waits for popstate, so the browser stays the source of truth
+    expect(wrapper.vm.depth).toBe(1)
+    back.mockRestore()
+    wrapper.unmount()
+  })
+
+  it('a browser Back pops the stack', async () => {
+    const wrapper = mountStack(true)
+    await wrapper.find('#go').trigger('click')
+    await flushPromises()
+    expect(wrapper.vm.depth).toBe(1)
+
+    window.dispatchEvent(new PopStateEvent('popstate', { state: { 'swiftvue-nav-depth': 0 } }))
+    await flushPromises()
+    expect(wrapper.vm.depth).toBe(0)
+    wrapper.unmount()
+  })
+
+  it('forward past views it no longer holds stops at what it has', async () => {
+    const wrapper = mountStack(true)
+    window.dispatchEvent(new PopStateEvent('popstate', { state: { 'swiftvue-nav-depth': 5 } }))
+    await flushPromises()
+    expect(wrapper.vm.depth).toBe(0)
+    wrapper.unmount()
+  })
+
+  it('stops listening once unmounted', async () => {
+    const wrapper = mountStack(true)
+    await wrapper.find('#go').trigger('click')
+    await flushPromises()
+    wrapper.unmount()
+
+    // no error, and nothing left listening to move a dead stack
+    expect(() => window.dispatchEvent(
+      new PopStateEvent('popstate', { state: { 'swiftvue-nav-depth': 0 } }),
+    )).not.toThrow()
   })
 })

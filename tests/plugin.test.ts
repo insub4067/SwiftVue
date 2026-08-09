@@ -6,11 +6,11 @@ const ALL_NAMES = [
   'VStack', 'HStack', 'ZStack', 'Spacer', 'Divider', 'ScrollView', 'LazyVGrid', 'LazyHGrid',
   'Text', 'Label',
   'TextField', 'SecureField', 'TextEditor',
-  'Button', 'Toggle', 'Slider', 'Picker', 'Stepper',
-  'ForEach', 'List', 'Section',
+  'Button', 'Toggle', 'Slider', 'Picker', 'Stepper', 'DatePicker', 'Menu',
+  'ForEach', 'List', 'Section', 'Form',
   'NavigationStack', 'NavigationLink', 'TabView', 'Sheet',
   'Alert', 'ProgressView',
-  'TransitionView',
+  'TransitionView', 'Image', 'AsyncImage',
 ]
 
 function appWith(options?: { prefix?: string }) {
