@@ -1,15 +1,31 @@
-<script setup lang="ts">
-import { computed } from 'vue'
-import { useModifiers, type ModifierProps } from '../../utils/modifiers'
+<script lang="ts">
+import type { ModifierProps } from '../../utils/modifiers'
 
-interface Props extends ModifierProps {
-  items?: any[]
+export interface ListProps<T> extends ModifierProps {
+  items?: T[]
   listStyle?: 'plain' | 'insetGrouped' | 'grouped' | 'sidebar'
+  /**
+   * Field identifying each row. Without it rows are keyed by position, so
+   * sorting or inserting hands a row's DOM — and any state inside it — to a
+   * different item.
+   */
+  keyPath?: keyof T
 }
+</script>
 
-const props = withDefaults(defineProps<Props>(), {
+<script setup lang="ts" generic="T">
+import { computed } from 'vue'
+import { useModifiers } from '../../utils/modifiers'
+
+const props = withDefaults(defineProps<ListProps<T>>(), {
   listStyle: 'insetGrouped',
 })
+
+function rowKey(item: T, index: number) {
+  if (!props.keyPath) return index
+  const key = item?.[props.keyPath]
+  return key as string | number ?? index
+}
 
 const modifierStyle = useModifiers(props)
 const style = computed(() => modifierStyle.value)
@@ -20,7 +36,7 @@ const listClass = computed(() => `swift-list swift-list--${props.listStyle}`)
 <template>
   <div :class="listClass" :style="style">
     <template v-if="items">
-      <div v-for="(item, index) in items" :key="index" class="swift-list-row">
+      <div v-for="(item, index) in items" :key="rowKey(item, index)" class="swift-list-row">
         <slot :item="item" :index="index" />
       </div>
     </template>

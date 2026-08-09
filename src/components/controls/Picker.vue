@@ -1,15 +1,23 @@
+<script lang="ts">
+export interface PickerOption {
+  value: string | number
+  label: string
+}
+
+export interface PickerProps extends ModifierProps {
+  modelValue?: string | number
+  options: PickerOption[]
+  pickerStyle?: 'automatic' | 'menu' | 'segmented'
+  disabled?: boolean
+}
+</script>
+
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useModifiers, type ModifierProps } from '../../utils/modifiers'
 
-interface Props extends ModifierProps {
-  modelValue?: string | number
-  options: Array<{ value: string | number; label: string }>
-  pickerStyle?: 'automatic' | 'menu' | 'segmented'
-  disabled?: boolean
-}
 
-const props = withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<PickerProps>(), {
   pickerStyle: 'automatic',
 })
 

@@ -55,25 +55,42 @@ function onOverlayKeydown(e: KeyboardEvent) {
   }
 }
 
+// Remember what the page had rather than assuming '' — another overlay may
+// already own the scroll lock, and clearing it would let the page scroll
+// behind it.
+let restoreOverflow: string | null = null
+
+function lockScroll() {
+  if (restoreOverflow !== null) return
+  restoreOverflow = document.body.style.overflow
+  document.body.style.overflow = 'hidden'
+}
+
+function unlockScroll() {
+  if (restoreOverflow === null) return
+  document.body.style.overflow = restoreOverflow
+  restoreOverflow = null
+}
+
+// immediate: a sheet mounted already open must still trap focus and lock
+// scrolling — otherwise the very first render skips both.
 watch(() => props.isPresented, async (val) => {
   if (val) {
     previouslyFocused = document.activeElement as HTMLElement
-    document.body.style.overflow = 'hidden'
+    lockScroll()
     await nextTick()
     const firstFocusable = sheetEl.value?.querySelector<HTMLElement>(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     )
     firstFocusable?.focus()
   } else {
-    document.body.style.overflow = ''
+    unlockScroll()
     previouslyFocused?.focus()
     previouslyFocused = null
   }
-})
+}, { immediate: true })
 
-onUnmounted(() => {
-  document.body.style.overflow = ''
-})
+onUnmounted(unlockScroll)
 </script>
 
 <template>

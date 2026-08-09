@@ -73,8 +73,8 @@ describe('Label', () => {
     const wrapper = mount(SVLabel, {
       slots: { default: 'No Icon' },
     })
-    const spans = wrapper.findAll('span')
-    expect(spans).toHaveLength(1)
+    // the root is itself a <span>; only the text span sits inside it
+    expect(wrapper.findAll('span[aria-hidden="true"]')).toHaveLength(0)
     expect(wrapper.text()).toBe('No Icon')
   })
 })

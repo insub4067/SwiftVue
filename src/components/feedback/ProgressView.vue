@@ -18,9 +18,14 @@ const props = withDefaults(defineProps<Props>(), {
 const modifierStyle = useModifiers(props)
 const style = computed(() => modifierStyle.value)
 const isIndeterminate = computed(() => props.value == null)
-const pct = computed(() =>
-  props.value != null && props.total ? Math.min(100, (props.value / props.total) * 100) : 0
-)
+
+// A non-positive total has no meaningful fraction, and a value outside
+// [0, total] would otherwise render a negative or overlong bar.
+const pct = computed(() => {
+  const { value, total = 1 } = props
+  if (value == null || !Number.isFinite(value) || !Number.isFinite(total) || total <= 0) return 0
+  return Math.min(100, Math.max(0, (value / total) * 100))
+})
 </script>
 
 <template>

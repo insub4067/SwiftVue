@@ -48,6 +48,14 @@ export { default as Sheet } from './components/navigation/Sheet.vue'
 export { default as Alert } from './components/feedback/SVAlert.vue'
 export { default as ProgressView } from './components/feedback/ProgressView.vue'
 
+// Component prop/option types users write themselves
+export type { AlertAction, AlertProps } from './components/feedback/SVAlert.vue'
+export type { PickerOption, PickerProps } from './components/controls/Picker.vue'
+export type { TabItem, TabViewProps } from './components/navigation/TabView.vue'
+export type { SectionProps } from './components/data/Section.vue'
+export type { ListProps } from './components/data/SVList.vue'
+export type { TransitionPreset } from './components/motion/TransitionView.vue'
+
 // Motion
 export { default as TransitionView } from './components/motion/TransitionView.vue'
 export { withAnimation, Animations } from './motion/withAnimation'
