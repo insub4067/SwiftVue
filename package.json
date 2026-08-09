@@ -75,12 +75,14 @@
     "accessibility"
   ],
   "license": "MIT",
+  "author": "insub4067",
+  "homepage": "https://insub4067.github.io/SwiftVue/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/insub4067/swiftvue.git"
+    "url": "git+https://github.com/insub4067/SwiftVue.git"
   },
   "bugs": {
-    "url": "https://github.com/insub4067/swiftvue/issues"
+    "url": "https://github.com/insub4067/SwiftVue/issues"
   },
   "engines": {
     "node": ">=22.0.0"
