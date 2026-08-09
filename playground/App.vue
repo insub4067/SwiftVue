@@ -570,7 +570,7 @@ onUnmounted(() => {
               <Divider />
 
               <!-- ScrollView -->
-              <VStack :spacing="12" alignment="leading">
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">ScrollView (horizontal)</Text>
                 <ScrollView axes="horizontal" :shows-indicators="false" :frame="{ height: '100px' }">
                   <HStack :spacing="12" :padding="[0, 4]">
