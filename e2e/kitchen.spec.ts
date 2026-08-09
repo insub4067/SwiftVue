@@ -77,24 +77,47 @@ test('Return in the title field saves, the same as the button', async ({ page })
   await expect(page.getByText('Book a table')).toBeVisible()
 })
 
-test('a swipe reveals the row actions and deleting removes the row', async ({ page }) => {
+/** A drag towards the leading edge, the way a finger does it. */
+async function swipeRow(page: Page, box: { x: number, y: number, width: number, height: number }, distance: number) {
+  const y = box.y + box.height / 2
+  const from = box.x + box.width - 8
+  await page.mouse.move(from, y)
+  await page.mouse.down()
+  await page.mouse.move(from - distance, y, { steps: 12 })
+  await page.mouse.up()
+}
+
+test('a swipe parks the row open and the revealed action works', async ({ page }) => {
+  await fresh(page)
+
+  const row = page.locator('.swipe-row').filter({ hasText: 'Buy milk' }).first()
+  const box = await row.boundingBox()
+  expect(box, 'the row is laid out').not.toBeNull()
+
+  // Far enough to uncover both 84px actions, well short of the 60% of the
+  // row that would run the first one outright.
+  await swipeRow(page, box!, 180)
+
+  // By class, not by role: the drawn actions are `aria-hidden`, because a
+  // screen reader gets the visually hidden fallback buttons instead. Asking
+  // for "the Delete button" finds that fallback — which sits off-screen by
+  // design, and is what the unit tests already cover.
+  const del = row.locator('.swipe-action', { hasText: 'Delete' })
+  await expect(del).toBeVisible()
+  await del.click()
+  await expect(page.getByText('Buy milk')).toHaveCount(0)
+})
+
+test('a swipe most of the way runs the first action outright', async ({ page }) => {
   await fresh(page)
 
   const row = page.locator('.swipe-row').filter({ hasText: 'Buy milk' }).first()
   const box = await row.boundingBox()
   expect(box).not.toBeNull()
 
-  // A pointer drag, the way a finger does it — not a click on the hidden
-  // keyboard fallback, which the unit tests already cover.
-  const y = box!.y + box!.height / 2
-  await page.mouse.move(box!.x + box!.width - 20, y)
-  await page.mouse.down()
-  await page.mouse.move(box!.x + box!.width - 140, y, { steps: 12 })
-  await page.mouse.up()
-
-  const del = page.getByRole('button', { name: 'Delete' }).first()
-  await expect(del).toBeVisible()
-  await del.click()
+  // SwiftUI's allowsFullSwipe: past 60% of the row, no tap needed. Measured
+  // from the row rather than assumed, so the test does not encode a width.
+  await swipeRow(page, box!, Math.round(box!.width * 0.75))
   await expect(page.getByText('Buy milk')).toHaveCount(0)
 })
 
