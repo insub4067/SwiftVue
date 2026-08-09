@@ -274,15 +274,23 @@ test('pull gesture triggers refreshable', async ({ page }) => {
 
   // The gesture is touch-only by design: only `touchmove` can preventDefault
   // the native overscroll that a pull has to take over from. A browser that
-  // cannot construct a TouchEvent therefore cannot exercise it.
+  // cannot build a touch sequence therefore cannot exercise it.
+  //
+  // The probe builds exactly what the gesture below builds. An earlier one
+  // only tried `new TouchEvent('touchstart')`, which WebKit allows — it is
+  // the `Touch` in the list that it refuses, so the probe passed and the
+  // gesture still threw.
   const canTouch = await page.evaluate(() => {
     try {
-      return Boolean(new TouchEvent('touchstart'))
+      new TouchEvent('touchstart', {
+        touches: [new Touch({ identifier: 1, target: document.body, clientX: 0, clientY: 0 })],
+      })
+      return true
     } catch {
       return false
     }
   })
-  test.skip(!canTouch, 'no constructible TouchEvent in this browser')
+  test.skip(!canTouch, 'this browser cannot construct a Touch; the gesture is touch-only by design')
 
   await page.getByTestId('refresh-area').locator('div').first().evaluate(async (scroller) => {
     const touch = (type: string, y: number) => scroller.dispatchEvent(new TouchEvent(type, {
