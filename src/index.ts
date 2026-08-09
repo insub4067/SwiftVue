@@ -13,6 +13,8 @@ export { default as ZStack } from './components/layout/ZStack.vue'
 export { default as Spacer } from './components/layout/Spacer.vue'
 export { default as Divider } from './components/layout/Divider.vue'
 export { default as ScrollView } from './components/layout/ScrollView.vue'
+export { default as LazyVGrid } from './components/layout/LazyVGrid.vue'
+export { default as LazyHGrid } from './components/layout/LazyHGrid.vue'
 
 // Text
 export { default as Text } from './components/text/SText.vue'
@@ -59,3 +61,5 @@ export { resolveColor, resolveFont, SwiftColors, SwiftFonts } from './utils/them
 export type { SwiftColorName, SwiftFontStyle } from './utils/theme'
 export { buildModifierStyle, useModifiers } from './utils/modifiers'
 export type { ModifierProps, FrameModifier, ShadowModifier } from './utils/modifiers'
+export { resolveTracks } from './utils/grid'
+export type { GridItem } from './utils/grid'

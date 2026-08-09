@@ -75,6 +75,8 @@ const darkMode = useState(false)
 - `Spacer` — flexible space (`minLength`)
 - `Divider` — horizontal line (`color`, `thickness`)
 - `ScrollView` — scrollable area (`axes`, `showsIndicators`)
+- `LazyVGrid` — grid flowing down (`columns`, `spacing`, `alignment`)
+- `LazyHGrid` — grid flowing sideways (`rows`, `spacing`, `alignment`)
 
 ### Text & Input
 - `Text` — text display (`font`, `bold`, `italic`, `lineLimit`, `foregroundColor`)
@@ -103,6 +105,35 @@ const darkMode = useState(false)
 ### Feedback
 - `Alert` — alert dialog (`v-model:isPresented`, `title`, `message`, `actions`)
 - `ProgressView` — loading indicator (`value`, `total`, `progressViewStyle`)
+
+## Grids
+
+`columns`/`rows` take either a track count or a `GridItem[]`:
+
+```vue
+<!-- three equal columns -->
+<LazyVGrid :columns="3" :spacing="12">…</LazyVGrid>
+
+<!-- as many ≥100px columns as fit -->
+<LazyVGrid :columns="[{ adaptive: { minimum: 100 } }]">…</LazyVGrid>
+
+<!-- a fixed sidebar next to a flexible column -->
+<LazyVGrid :columns="[{ fixed: 80 }, { flexible: { maximum: 400 } }]">…</LazyVGrid>
+
+<!-- two rows, scrolling sideways -->
+<ScrollView axes="horizontal">
+  <LazyHGrid :rows="2" :spacing="8">…</LazyHGrid>
+</ScrollView>
+```
+
+| `GridItem` | SwiftUI | Result |
+|---|---|---|
+| `{ fixed: 80 }` | `.fixed(80)` | an 80px track |
+| `{ flexible: {} }` | `.flexible()` | fills the leftover space |
+| `{ flexible: { minimum: 50, maximum: 200 } }` | `.flexible(minimum:maximum:)` | fills, clamped |
+| `{ adaptive: 100 }` | `.adaptive(minimum: 100)` | as many ≥100px tracks as fit |
+
+CSS permits one auto-repeat per axis, so keep `adaptive` the only item in the list.
 
 ## Modifiers (as props)
 
