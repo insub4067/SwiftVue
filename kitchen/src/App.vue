@@ -25,14 +25,32 @@ watchEffect(() => {
 </script>
 
 <template>
-  <TabView v-model="tab" :tabs="tabs">
+  <div class="swift-app swift-app-fullscreen">
     <!--
-      A tab's content is a named slot, and only the selected one renders.
-      Only the todos stack answers the browser Back button: history is a
-      single list, and two stacks pushing onto it would undo each other's
-      entries.
+      `swift-app-fullscreen` is what makes an app that fills the window
+      work: TabView and NavigationStack are `height: 100%`, and a percentage
+      height needs a parent that has one. Without it the app collapses to
+      its content height and the tab bar sits on top of the list.
+
+      A tab's content is a named slot. Each tab is built the first time it
+      is opened and kept from then on, so coming back to one finds it as it
+      was left. Only the todos stack answers the browser Back button:
+      history is a single list, and two stacks pushing onto it would undo
+      each other's entries.
     -->
-    <template #todos><TodosView /></template>
-    <template #settings><SettingsView /></template>
-  </TabView>
+    <TabView v-model="tab" :tabs="tabs">
+      <template #todos><TodosView /></template>
+      <template #settings><SettingsView /></template>
+    </TabView>
+  </div>
 </template>
+
+<style>
+/* A page hosting a full-window app should not scroll behind it. */
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--swift-grouped-background);
+  overflow: hidden;
+}
+</style>

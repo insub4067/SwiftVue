@@ -5,6 +5,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { nextTick } from 'vue'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import App from '../../kitchen/src/App.vue'
 import TodosView from '../../kitchen/src/screens/TodosView.vue'
 import TodoDetailView from '../../kitchen/src/screens/TodoDetailView.vue'
@@ -20,6 +22,27 @@ beforeEach(() => {
 })
 
 describe('the app shell', () => {
+  // The shell is the difference between an app and a pile of components.
+  // TabView and NavigationStack are `height: 100%`, and a percentage height
+  // needs a parent that has one — which `<body>` has not. Without it
+  // everything collapses to content height and the tab bar lands on the
+  // list. happy-dom does no layout, so this asserts the cause rather than
+  // the symptom; `e2e/kitchen.spec.ts` is what sees the symptom.
+  it('is wrapped in the full-screen shell', () => {
+    const wrapper = mount(App, { attachTo: document.body })
+    const root = wrapper.element as HTMLElement
+    expect(root.classList.contains('swift-app-fullscreen'),
+      'without this the tab bar sits on top of the list').toBe(true)
+    expect(root.classList.contains('swift-app')).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('and the library actually ships that shell', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/styles/swift.css'), 'utf8')
+    const rule = css.slice(css.indexOf('.swift-app-fullscreen'))
+    expect(rule.slice(0, rule.indexOf('}'))).toMatch(/position:\s*fixed/)
+  })
+
   it('mounts, and the tab bar counts what is still open', async () => {
     const wrapper = mount(App, { attachTo: document.body })
     await flushPromises()

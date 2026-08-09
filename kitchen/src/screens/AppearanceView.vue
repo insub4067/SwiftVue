@@ -32,7 +32,7 @@ const SWATCHES = [
   <ScrollView>
     <VStack :spacing="16" :padding="[8, 0, 24]">
       <Section header="Appearance" footer="System follows the OS setting and changes with it.">
-        <HStack :padding="[11, 16]" :spacing="12">
+        <HStack :padding="[11, 16]" :spacing="12" data-testid="theme-row">
           <Text>Theme</Text>
           <Spacer />
           <Picker v-model="selected" :options="OPTIONS" />

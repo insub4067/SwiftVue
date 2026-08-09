@@ -37,11 +37,24 @@ the way they do in a real project:
 
 **Finding bugs.** Kitchen is type-checked and linted alongside the library,
 and its screens are mounted in the unit suite — including a test that fails
-on any Vue warning. Building the first version turned up three library
-defects that a per-component test had no way to see: `padding` rejected the
-three-value CSS shorthand, every `NavigationLink` warned about a missing
-`router-link` in projects with no router, and a tab's navigation state is
-still lost when you switch away and back.
+on any Vue warning. Building the first version turned up four library
+defects that a per-component test had no way to see:
+
+- `padding` rejected the three-value CSS shorthand, so `[8, 0, 24]` — a
+  screen leaving room for the tab bar — would not type-check.
+- Every `NavigationLink` warned about a missing `router-link` in a project
+  with no vue-router.
+- A tab you came back to was rebuilt from scratch, losing its navigation
+  depth and anything half-typed.
+- **The library had no app shell.** `TabView` and `NavigationStack` are
+  `height: 100%` and `<body>` has none, so the app collapsed to its content
+  height and the tab bar landed on top of the list. The playground had
+  solved this privately a year earlier and nobody had noticed the library
+  never shipped it. `swift-app-fullscreen` does now.
+
+That last one is the argument for Kitchen in one item. Nothing was broken
+in any component; the library simply could not be assembled into an app
+without a piece it did not provide, and only building an app could show it.
 
 **Checking the things only a browser knows.** `e2e/kitchen.spec.ts` drives
 it in Chromium and WebKit: no horizontal overflow at 320–430px, a real

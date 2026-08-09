@@ -63,7 +63,10 @@ function onReset(label: string) {
         </Section>
 
         <Section header="Language & Region" footer="Right to left mirrors the whole app, swipe gestures included.">
-          <FormRow title="Writing direction">
+          <!-- A covered pane stays mounted, so a test reaching for "the first
+               combobox on the page" would find one on whichever screen is
+               underneath. Named, so it cannot. -->
+          <FormRow title="Writing direction" data-testid="direction-row">
             <Picker v-model="settings.direction.value" :options="DIRECTIONS" />
           </FormRow>
         </Section>

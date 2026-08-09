@@ -23,9 +23,15 @@ working code is called out under *Breaking* with the change you need to make.
 
 **Added**
 
+- `swift-app-fullscreen` — the shell an app that fills the window needs.
+  `TabView` and `NavigationStack` are `height: 100%` and `<body>` has no
+  height, so without a shell the whole app collapsed to its content height
+  and the tab bar landed on top of the list. Every app built on SwiftVue hit
+  this and solved it privately; now the library ships it, opt-in, and
+  `docs/LAYOUT.md` explains it as rule 0.
 - **Kitchen** — a small real app (todos and settings) built out of SwiftVue,
   at `/kitchen/` on the demo site. It is type-checked, linted and mounted in
-  the unit suite; the three fixes above are all things it found.
+  the unit suite; everything above is something it found.
 
 ## 0.2.1
 

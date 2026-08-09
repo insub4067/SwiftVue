@@ -8,8 +8,13 @@ import { test, expect, type Page } from '@playwright/test'
 const KITCHEN = 'http://localhost:4174'
 const WIDTHS = [320, 360, 390, 430]
 
-/** Every state written by a previous test, gone. */
-async function fresh(page: Page, path = '/') {
+/**
+ * Every state written by a previous test, gone — and a phone-shaped window,
+ * because that is the only shape this app is designed for. The default
+ * 1280×720 is not a size any of these screens claims to work at.
+ */
+async function fresh(page: Page, { width = 390, path = '/' } = {}) {
+  await page.setViewportSize({ width, height: 780 })
   await page.goto(`${KITCHEN}${path}`)
   await page.evaluate(() => localStorage.clear())
   await page.goto(`${KITCHEN}${path}`)
@@ -32,8 +37,7 @@ async function overflowOffenders(page: Page): Promise<string[]> {
 
 for (const width of WIDTHS) {
   test(`fits a ${width}px phone, on both tabs`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 780 })
-    await fresh(page)
+    await fresh(page, { width })
 
     expect(await overflowOffenders(page)).toEqual([])
     await page.getByRole('tab', { name: /Settings/ }).click()
@@ -43,7 +47,6 @@ for (const width of WIDTHS) {
 }
 
 test('the tab bar stays above the fold with the keyboard open', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 780 })
   await fresh(page)
 
   const bar = page.locator('.tab-bar')
@@ -149,7 +152,7 @@ test('the dark theme reaches the tokens', async ({ page }) => {
   await page.getByRole('tab', { name: /Settings/ }).click()
   await page.getByText('Appearance').click()
 
-  await page.getByRole('combobox').first().selectOption('dark')
+  await page.getByTestId('theme-row').getByRole('combobox').selectOption('dark')
 
   const background = await page.evaluate(() =>
     getComputedStyle(document.documentElement).getPropertyValue('--swift-background').trim())
@@ -160,8 +163,7 @@ test('right to left mirrors the app rather than only the text', async ({ page })
   await fresh(page)
   await page.getByRole('tab', { name: /Settings/ }).click()
 
-  const direction = page.getByRole('combobox').last()
-  await direction.selectOption('rtl')
+  await page.getByTestId('direction-row').getByRole('combobox').selectOption('rtl')
 
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
 
