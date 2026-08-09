@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useAppStorage } from '../src/composables/useAppStorage'
+import { version } from '../package.json'
 
 const activeTab = ref('components')
 const showSheet = ref(false)
@@ -748,6 +749,13 @@ const completionPercent = computed(() => Math.round((completedCount.value / todo
                   Toggle dark mode to see all components adapt to the color scheme.
                   This preference is saved via useAppStorage.
                 </Text>
+              </VStack>
+
+              <Divider />
+
+              <!-- Version -->
+              <VStack :spacing="4" alignment="center" :frame="{ width: '100%' }">
+                <Text font="footnote" foreground-color="secondary">SwiftVue v{{ version }}</Text>
               </VStack>
 
               <Spacer :min-length="20" />
