@@ -111,7 +111,7 @@ const completionPercent = computed(() => Math.round((completedCount.value / todo
 
 <template>
   <div class="swift-app playground-shell" :style="{ colorScheme: darkMode ? 'dark' : 'light' }">
-    <TabView :tabs="tabs" v-model="activeTab" :frame="{ height: '100vh' }">
+    <TabView :tabs="tabs" v-model="activeTab" :frame="{ height: '100dvh' }">
 
       <!-- === COMPONENTS TAB === -->
       <template #components>
@@ -823,7 +823,15 @@ body {
 #app,
 .playground-shell {
   width: 100%;
-  min-height: 100dvh;
+  height: 100dvh;
+  height: 100vh; /* fallback */
+  height: 100dvh;
+}
+
+.playground-shell .tab-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
 }
 
 .playground-shell .nav-header,
@@ -835,6 +843,7 @@ body {
 .playground-shell .tab-bar {
   min-height: calc(58px + env(safe-area-inset-bottom, 0px));
   padding-top: 6px;
+  padding-bottom: env(safe-area-inset-bottom, 8px);
   background: color-mix(in srgb, var(--swift-secondary-background) 92%, transparent);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
