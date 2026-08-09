@@ -820,28 +820,26 @@ const completionPercent = computed(() => Math.round((completedCount.value / todo
 </template>
 
 <style>
-body {
+html, body {
   margin: 0;
   padding: 0;
-  min-width: 320px;
+  height: 100%;
   overflow: hidden;
   background: var(--swift-grouped-background);
 }
 
-#app,
 .playground-shell {
-  width: 100%;
-  height: 100%;
-}
-
-html, body {
-  height: 100%;
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .playground-shell > div {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
 }
 
 .playground-shell .tab-content {
@@ -851,21 +849,13 @@ html, body {
 }
 
 .playground-shell .tab-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  flex-shrink: 0;
   z-index: 100;
-  min-height: calc(58px + env(safe-area-inset-bottom, 0px));
   padding-top: 6px;
   padding-bottom: env(safe-area-inset-bottom, 8px);
   background: color-mix(in srgb, var(--swift-secondary-background) 92%, transparent);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-}
-
-.playground-shell .tab-content {
-  padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px));
 }
 
 .playground-shell .tab-item {
@@ -887,9 +877,7 @@ html, body {
 
   .playground-shell .tab-bar {
     width: min(calc(100% - 32px), 720px);
-    left: 50%;
-    transform: translateX(-50%);
-    bottom: 12px;
+    margin: 0 auto 12px;
     border: 1px solid var(--swift-separator);
     border-radius: 18px;
     box-shadow: 0 12px 32px rgb(0 0 0 / 12%);
