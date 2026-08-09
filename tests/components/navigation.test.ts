@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import NavigationStack from '../../src/components/navigation/NavigationStack.vue'
 import TabView from '../../src/components/navigation/TabView.vue'
+import Sheet from '../../src/components/navigation/Sheet.vue'
 
 describe('NavigationStack', () => {
   it('renders title in large mode', () => {
@@ -65,5 +66,19 @@ describe('TabView', () => {
   it('has tabpanel role on content', () => {
     const wrapper = mount(TabView, { props: { tabs } })
     expect(wrapper.find('[role="tabpanel"]').exists()).toBe(true)
+  })
+})
+
+describe('Sheet', () => {
+  it('exposes an accessible dialog name', () => {
+    const wrapper = mount(Sheet, {
+      props: { isPresented: true, label: 'SwiftVue Demo' },
+      attachTo: document.body,
+    })
+
+    const dialog = document.body.querySelector('[role="dialog"]')
+    expect(dialog?.getAttribute('aria-modal')).toBe('true')
+    expect(dialog?.getAttribute('aria-label')).toBe('SwiftVue Demo')
+    wrapper.unmount()
   })
 })

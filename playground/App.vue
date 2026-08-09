@@ -110,7 +110,7 @@ const completionPercent = computed(() => Math.round((completedCount.value / todo
 </script>
 
 <template>
-  <div class="swift-app" :style="{ colorScheme: darkMode ? 'dark' : 'light' }">
+  <div class="swift-app playground-shell" :style="{ colorScheme: darkMode ? 'dark' : 'light' }">
     <TabView :tabs="tabs" v-model="activeTab" :frame="{ height: '100vh' }">
 
       <!-- === COMPONENTS TAB === -->
@@ -759,7 +759,11 @@ const completionPercent = computed(() => Math.round((completedCount.value / todo
     </TabView>
 
     <!-- Sheet -->
-    <Sheet v-model:is-presented="showSheet" :detents="['medium', 'large']">
+    <Sheet
+      v-model:is-presented="showSheet"
+      :detents="['medium', 'large']"
+      label="SwiftVue Demo"
+    >
       <VStack :spacing="16" :padding="[24, 16]" alignment="leading">
         <Text font="title2">SwiftVue Demo</Text>
         <Divider />
@@ -811,6 +815,60 @@ const completionPercent = computed(() => Math.round((completedCount.value / todo
 body {
   margin: 0;
   padding: 0;
+  min-width: 320px;
+  overflow: hidden;
+  background: var(--swift-grouped-background);
+}
+
+#app,
+.playground-shell {
+  width: 100%;
+  min-height: 100dvh;
+}
+
+.playground-shell .nav-header,
+.playground-shell .nav-content > div > div {
+  width: min(100%, 1080px);
+  margin-inline: auto;
+}
+
+.playground-shell .tab-bar {
+  min-height: calc(58px + env(safe-area-inset-bottom, 0px));
+  padding-top: 6px;
+  background: color-mix(in srgb, var(--swift-secondary-background) 92%, transparent);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.playground-shell .tab-item {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+@media (min-width: 768px) {
+  .playground-shell .nav-header,
+  .playground-shell .nav-content > div > div {
+    padding-inline: 24px !important;
+  }
+
+  .playground-shell .tab-bar {
+    width: min(calc(100% - 32px), 720px);
+    margin: 0 auto 12px;
+    border: 1px solid var(--swift-separator);
+    border-radius: 18px;
+    box-shadow: 0 12px 32px rgb(0 0 0 / 12%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .playground-shell *,
+  .playground-shell *::before,
+  .playground-shell *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 .color-grid {

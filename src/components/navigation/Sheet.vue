@@ -5,6 +5,7 @@ import { useModifiers, type ModifierProps } from '../../utils/modifiers'
 interface Props extends ModifierProps {
   isPresented: boolean
   detents?: ('medium' | 'large')[]
+  label?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -83,6 +84,7 @@ onUnmounted(() => {
         class="sheet-overlay"
         role="dialog"
         aria-modal="true"
+        :aria-label="label"
         @click.self="dismiss"
         @keydown="onOverlayKeydown"
       >
@@ -115,6 +117,8 @@ onUnmounted(() => {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  color: var(--swift-label);
+  box-shadow: 0 -16px 48px rgba(0, 0, 0, 0.2);
 }
 .sheet-handle {
   width: 36px;
@@ -139,5 +143,23 @@ onUnmounted(() => {
 .sheet-enter-from, .sheet-leave-to { opacity: 0; }
 .sheet-enter-from .sheet-container, .sheet-leave-to .sheet-container {
   transform: translateY(100%);
+}
+
+@media (min-width: 768px) {
+  .sheet-overlay { align-items: center; padding: 24px; }
+  .sheet-container {
+    width: min(100%, 560px);
+    max-height: min(82vh, 720px) !important;
+    border-radius: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-enter-active,
+  .sheet-leave-active,
+  .sheet-enter-active .sheet-container,
+  .sheet-leave-active .sheet-container {
+    transition-duration: 0.01ms;
+  }
 }
 </style>
