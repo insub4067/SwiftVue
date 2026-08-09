@@ -81,9 +81,9 @@ const darkMode = useState(false)
 ### Text & Input
 - `Text` — text display (`font`, `bold`, `italic`, `lineLimit`, `foregroundColor`)
 - `Label` — icon + text (`systemImage`, `iconColor`)
-- `TextField` — text input (`v-model`, `placeholder`, `textFieldStyle`)
-- `SecureField` — password input (`v-model`, `placeholder`)
-- `TextEditor` — multi-line text (`v-model`, `placeholder`)
+- `TextField` — text input (`v-model`, `placeholder`, `textFieldStyle`, `v-model:focused`)
+- `SecureField` — password input (`v-model`, `placeholder`, `v-model:focused`)
+- `TextEditor` — multi-line text (`v-model`, `placeholder`, `v-model:focused`)
 
 ### Controls
 - `Button` — button (`@tap`, `buttonStyle`, `role`, `fullWidth`)
@@ -164,6 +164,43 @@ All components accept SwiftUI-style modifier props:
 | `@Binding` | `useBinding(get, set)` | `const val = useBinding(() => x, v => x = v)` |
 | `@AppStorage` | `useAppStorage(key, default)` | `const theme = useAppStorage('theme', 'light')` |
 | `@Environment` | `useEnvironment(key)` | `const config = useEnvironment(ConfigKey)` |
+| `@FocusState` | `useFocusState()` | `const focused = useFocusState<Field>()` |
+
+## Focus
+
+`useFocusState` mirrors `@FocusState`, and `v-model:focused` stands in for
+`.focused(_:)`. Writing to the state moves focus; the user moving focus writes
+back.
+
+```vue
+<script setup>
+import { useFocusState } from 'swiftvue'
+const focused = useFocusState()   // one field
+</script>
+
+<template>
+  <TextField v-model="name" v-model:focused="focused" />
+  <Button @tap="focused = true">Edit</Button>
+</template>
+```
+
+Add `focus-value` to track which of several fields holds focus — the analogue
+of `.focused($field, equals:)`:
+
+```vue
+<script setup>
+const field = useFocusState<'id' | 'password'>()
+</script>
+
+<template>
+  <TextField v-model:focused="field" focus-value="id" @submit="field = 'password'" />
+  <SecureField v-model:focused="field" focus-value="password" @submit="field = null" />
+</template>
+```
+
+Setting the state to `null` (or `false` in the boolean form) dismisses focus.
+`TextField`, `SecureField`, and `TextEditor` also expose `focus()` and `blur()`
+through a template ref.
 
 ## Theme
 

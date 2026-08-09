@@ -55,6 +55,8 @@ export {
   createEnvironmentKey,
 } from './composables/useEnvironment'
 export { useAppStorage } from './composables/useAppStorage'
+export { useFocusState, useFocusBinding } from './composables/useFocusState'
+export type { FocusStateProps } from './composables/useFocusState'
 
 // Utilities
 export { resolveColor, resolveFont, SwiftColors, SwiftFonts } from './utils/theme'
