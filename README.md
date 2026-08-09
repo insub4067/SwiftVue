@@ -618,6 +618,17 @@ directions. Available tokens:
 - `background`, `secondaryBackground`, `tertiaryBackground`
 - `separator`, `fill`
 
+## What it runs on
+
+Node 22/24/26, Vue 3.5+, and any browser with CSS logical properties. Which
+of those are covered by a test and which are only expected to work is set
+out in [docs/SUPPORT.md](docs/SUPPORT.md), along with an honest account of
+what has and has not been checked for accessibility.
+
+Changes between versions are in [CHANGELOG.md](CHANGELOG.md). SwiftVue is
+pre-1.0: while the major version is 0, a minor bump may change behaviour and
+a patch only fixes it.
+
 ## License
 
 MIT
