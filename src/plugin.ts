@@ -21,10 +21,13 @@ import Toggle from './components/controls/Toggle.vue'
 import SVSlider from './components/controls/SVSlider.vue'
 import Picker from './components/controls/Picker.vue'
 import Stepper from './components/controls/Stepper.vue'
+import DatePicker from './components/controls/DatePicker.vue'
+import Menu from './components/controls/Menu.vue'
 
 import ForEach from './components/data/ForEach.vue'
 import SVList from './components/data/SVList.vue'
 import Section from './components/data/Section.vue'
+import Form from './components/data/Form.vue'
 
 import NavigationStack from './components/navigation/NavigationStack.vue'
 import NavigationLink from './components/navigation/NavigationLink.vue'
@@ -33,6 +36,9 @@ import Sheet from './components/navigation/Sheet.vue'
 
 import SVAlert from './components/feedback/SVAlert.vue'
 import ProgressView from './components/feedback/ProgressView.vue'
+
+import SVImage from './components/media/SVImage.vue'
+import AsyncImage from './components/media/AsyncImage.vue'
 
 import TransitionView from './components/motion/TransitionView.vue'
 
@@ -50,16 +56,20 @@ const components: Record<string, Component> = {
   Button: SVButton,
   Toggle,
   Slider: SVSlider,
-  Picker, Stepper,
+  Picker, Stepper, DatePicker, Menu,
   // Data — generic components don't satisfy Component structurally
   ForEach: ForEach as unknown as Component,
   List: SVList as unknown as Component,
   Section,
+  Form,
   // Navigation
   NavigationStack, NavigationLink, TabView, Sheet,
   // Feedback
   Alert: SVAlert,
   ProgressView,
+  // Media
+  Image: SVImage,
+  AsyncImage,
   // Motion
   TransitionView,
 }

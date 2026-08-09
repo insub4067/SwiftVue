@@ -5,11 +5,14 @@ import { defineComponent, h, ref } from 'vue'
 import {
   NavigationStack, NavigationLink, Section, ScrollView, Button, Text, TextField,
   LazyVGrid, TransitionView, List,
+  Image, AsyncImage, Form, DatePicker, Menu,
   useFocusState, usePreferredColorScheme, useNavigation, onChange, publisher,
   withAnimation, Animations,
   type GridItem, type ColorScheme, type ModifierProps,
   type AlertAction, type PickerOption, type TabItem, type TransitionPreset,
   type SectionProps, type ListProps,
+  type ImageProps, type AsyncImageProps, type AsyncImagePhase,
+  type FormProps, type DatePickerProps, type MenuAction, type NavigationStackProps,
 } from 'swiftvue'
 
 // the option/action shapes users write by hand
@@ -19,7 +22,15 @@ const tabs: TabItem[] = [{ id: 'home', label: 'Home', icon: '🏠' }]
 const preset: TransitionPreset = 'moveBottom'
 const sectionProps: SectionProps = { header: 'Group', collapsible: true, defaultExpanded: false }
 const listProps: ListProps<{ id: number }> = { items: [{ id: 1 }], keyPath: 'id' }
-void [actions, options, tabs, preset, sectionProps, listProps]
+const menuActions: MenuAction[] = [{ label: 'Rename', id: 1 }, { label: 'Delete', role: 'destructive' }]
+const imageProps: ImageProps = { src: '/a.png', alt: 'A', resizable: true, contentMode: 'fill' }
+const asyncProps: AsyncImageProps = { url: '/b.png', alt: 'B' }
+const phase: AsyncImagePhase = 'success'
+const formProps: FormProps = { spacing: 16 }
+const dateProps: DatePickerProps = { modelValue: '2026-08-09', displayedComponents: 'dateAndTime' }
+const stackProps: NavigationStackProps = { title: 'Home', path: true }
+void [actions, options, tabs, preset, sectionProps, listProps,
+     menuActions, imageProps, asyncProps, phase, formProps, dateProps, stackProps]
 
 // h()'s slots argument is loosely typed, so naming a slot there proves
 // nothing. Read the slot off the component's declared type instead — this
@@ -62,6 +73,10 @@ export default defineComponent({
       h(List as never, listProps, { default: () => h(Text, () => 'row') }),
       h(Text, { font: 'title', ...modifiers }, () => String(scheme)),
       h(Section, {}, { header: sectionHeaderSlot, default: () => h(Text, () => 'row') }),
+      h(Image, imageProps),
+      h(AsyncImage, asyncProps, { placeholder: () => h(Text, () => '…'), error: () => h(Text, () => '!') }),
+      h(Form, { ...formProps, onSubmit: () => {} }, () => h(DatePicker, dateProps)),
+      h(Menu, { label: 'More', actions: menuActions, onSelect: (a: MenuAction) => void a }),
     ])
   },
 })
