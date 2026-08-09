@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, type VNodeChild } from 'vue'
+import { computed, watchEffect, type VNodeChild } from 'vue'
 import { useModifiers, composeStyle, type ModifierProps } from '../../utils/modifiers'
 import { serializeRoute, useNavigation, type NavigationEntry } from '../../composables/useNavigation'
 
@@ -46,10 +46,12 @@ const entry = (): NavigationEntry => ({
 const registryId = computed(() =>
   props.param == null ? props.route : serializeRoute({ id: props.route!, param: props.param }))
 
-onMounted(() => {
+// An effect rather than a mount hook: a row inside a ForEach is reused as
+// the list changes, and a registration made once would keep answering to the
+// name the row used to have.
+watchEffect((onCleanup) => {
   if (!props.route || !pushes.value) return
-  const stop = navigation!.registerRoute(registryId.value!, entry)
-  onBeforeUnmount(stop)
+  onCleanup(navigation!.registerRoute(registryId.value!, entry))
 })
 
 function activate() {

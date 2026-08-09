@@ -397,6 +397,12 @@ On its own it moves the stack but says nothing about where you are:
 The reason is that a closure has no name, and history can only carry names.
 Give your screens names and all four rows turn green — see below.
 
+`browser-back` can be turned on and off while the stack is alive — a tab
+that becomes the page's main content takes the seat and hands it back when it
+stops being. `history-key` cannot: entries already in browser history carry
+the old name, so renaming would leave them unreachable. Changing it warns in
+development.
+
 **One stack per page answers the back button.** Browser history is a single
 linear list: `history.back()` undoes the most recent entry no matter who
 pushed it, and nothing can reach into the middle to remove one — so two

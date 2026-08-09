@@ -25,6 +25,11 @@ export interface NavigationStackProps extends ModifierProps {
    * A screen is named by `NavigationLink route="…"` or by
    * `useNavigation().registerRoute()`; one pushed as a bare closure has no
    * name, and the link stops at the last named screen above it.
+   *
+   * Read once, when the stack first answers the back button. Entries already
+   * in history carry the old name, so renaming mid-life would leave them
+   * unreachable — changing it warns in development and is otherwise ignored.
+   * `browserBack` may be toggled freely.
    */
   historyKey?: string
 }
@@ -46,7 +51,7 @@ function releaseHistory(token: symbol) {
 </script>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, provide, readonly, ref, useId } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, provide, readonly, ref, useId, watch } from 'vue'
 import { useModifiers, composeStyle } from '../../utils/modifiers'
 import { warnDev } from '../../utils/warn'
 import { isRTL } from '../../utils/direction'
@@ -66,10 +71,17 @@ const props = withDefaults(defineProps<NavigationStackProps>(), {
 
 const modifierStyle = useModifiers(props)
 
+// Each screen carries an id of its own. Keying the panes by array position
+// instead lets two different screens that land at the same depth share a
+// key, and Vue then patches one into the other rather than remounting — the
+// replacement inherits the state of what it replaced.
+let nextPaneId = 0
+interface Pane { id: number; entry: NavigationEntry }
+
 // `entries` holds every screen we still have a closure for; `cursor` is how
 // many of them are showing. They differ only after a history Back, which
 // leaves the popped entries behind so Forward has somewhere to go.
-const entries = ref<NavigationEntry[]>([])
+const entries = ref<Pane[]>([])
 const cursor = ref(0)
 const stack = computed(() => entries.value.slice(0, cursor.value))
 const direction = ref<'push' | 'pop'>('push')
@@ -105,9 +117,9 @@ const urlEnabled = () => historyEnabled() && !!props.historyKey && typeof locati
  */
 function serializableRoutes(): string {
   const named: string[] = []
-  for (const entry of stack.value) {
-    if (!entry.route) break
-    named.push(serializeRoute(entry.route))
+  for (const pane of stack.value) {
+    if (!pane.entry.route) break
+    named.push(serializeRoute(pane.entry.route))
   }
   return named.join('/')
 }
@@ -156,7 +168,7 @@ function drainPending() {
       const entry = lookup(pending[0])
       if (!entry) break // its link has not mounted yet, or never will
       const route = pending.shift()!
-      entries.value = [...entries.value.slice(0, cursor.value), { ...entry, route }]
+      entries.value = [...entries.value.slice(0, cursor.value), { id: nextPaneId++, entry: { ...entry, route } }]
       cursor.value = entries.value.length
       restored = true
     }
@@ -195,8 +207,8 @@ function onPopState(event: PopStateEvent) {
   syncingFromHistory = false
 }
 
-onMounted(() => {
-  if (!props.browserBack || typeof history === 'undefined') return
+function takeHistory() {
+  if (typeof history === 'undefined' || ownsHistory.value) return
   if (!claimHistory(ownerToken)) {
     warnDev(
       'NavigationStack: another stack on this page already answers the back button, ' +
@@ -214,13 +226,31 @@ onMounted(() => {
   recordDepth(0, true) // stamp the root so Back from depth 1 has a target
   window.addEventListener('popstate', onPopState)
   drainPending()
-})
+}
 
-onBeforeUnmount(() => {
+function giveUpHistory() {
   releaseHistory(ownerToken)
   ownsHistory.value = false
   if (typeof window !== 'undefined') window.removeEventListener('popstate', onPopState)
+}
+
+// browserBack can be turned on and off while the stack lives — a tab that
+// becomes the main content takes the seat, and hands it back when it stops
+// being. `historyKey` cannot: entries already in history carry the old key,
+// and renaming would orphan them.
+onMounted(() => {
+  if (props.browserBack) takeHistory()
 })
+
+watch(() => props.browserBack, (on) => (on ? takeHistory() : giveUpHistory()))
+
+watch(() => props.historyKey, () => warnDev(
+  'NavigationStack: historyKey is read once, when the stack first answers the ' +
+  'back button. Entries already in history carry the old name, so changing it ' +
+  'now would leave them unreachable. Give the stack a key that does not change.',
+))
+
+onBeforeUnmount(giveUpHistory)
 
 function push(entry: NavigationEntry) {
   // A push during a restore would fight the URL we are replaying.
@@ -228,7 +258,7 @@ function push(entry: NavigationEntry) {
   direction.value = 'push'
   // A push after a Back forks: whatever Forward pointed at is unreachable
   // now, exactly as pushState drops the browser's own forward entries.
-  entries.value = [...entries.value.slice(0, cursor.value), entry]
+  entries.value = [...entries.value.slice(0, cursor.value), { id: nextPaneId++, entry }]
   cursor.value = entries.value.length
   recordDepth(cursor.value)
 }
@@ -255,15 +285,15 @@ function popToRoot() {
 provide(navigationKey, { depth: readonly(depth), push, pop, popToRoot, pushRoute, registerRoute })
 defineExpose({ push, pop, popToRoot, pushRoute, registerRoute, depth })
 
-const top = computed(() => stack.value[stack.value.length - 1])
+const top = computed(() => stack.value[stack.value.length - 1]?.entry)
 const currentTitle = computed(() => top.value?.title ?? props.title)
 const backLabel = computed(() => {
-  if (depth.value > 1) return stack.value[depth.value - 2].title ?? 'Back'
+  if (depth.value > 1) return stack.value[depth.value - 2].entry.title ?? 'Back'
   return props.title ?? 'Back'
 })
 // index 0 is the root slot; entries follow. A content closure ignoring its
 // arguments is a valid functional component.
-const panes = computed(() => [null, ...stack.value] as Array<NavigationEntry | null>)
+const panes = computed(() => [null, ...stack.value] as Array<Pane | null>)
 
 // iOS edge-swipe back: begin near the leading edge, travel right, pop.
 let swipeStart: { x: number; y: number } | null = null
@@ -317,15 +347,15 @@ const style = computed(() => composeStyle(modifierStyle.value, {
       -->
       <TransitionGroup :name="`swift-nav-${direction}`">
         <div
-          v-for="(entry, i) in panes"
-          :key="i"
+          v-for="(pane, i) in panes"
+          :key="pane ? `pane-${pane.id}` : 'root'"
           class="nav-pane"
           :class="{ 'nav-pane--under': i < depth }"
           :inert="i < depth"
         >
           <NavPane :active="i === depth">
             <slot v-if="i === 0" />
-            <component :is="entry!.content" v-else />
+            <component :is="pane!.entry.content" v-else />
           </NavPane>
         </div>
       </TransitionGroup>
