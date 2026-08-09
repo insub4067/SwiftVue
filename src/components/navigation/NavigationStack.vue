@@ -15,13 +15,32 @@ export interface NavigationStackProps extends ModifierProps {
    * should not answer the back button.
    */
   browserBack?: boolean
+  /**
+   * A stable name for this stack. Give it one and, together with
+   * `browserBack`, named screens are written to the URL as
+   * `?<historyKey>=general/profile~42` — so a reload or a shared link
+   * reopens them. Without it the stack still works, it just cannot be
+   * described in a URL.
+   *
+   * A screen is named by `NavigationLink route="…"` or by
+   * `useNavigation().registerRoute()`; one pushed as a bare closure has no
+   * name, and the link stops at the last named screen above it.
+   */
+  historyKey?: string
 }
 </script>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, provide, readonly, ref, useId } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, provide, readonly, ref, useId } from 'vue'
 import { useModifiers, composeStyle } from '../../utils/modifiers'
-import { navigationKey, type NavigationEntry } from '../../composables/useNavigation'
+import {
+  navigationKey,
+  parseRoutes,
+  serializeRoute,
+  type NavigationEntry,
+  type RouteFactory,
+  type RouteRef,
+} from '../../composables/useNavigation'
 
 const props = withDefaults(defineProps<NavigationStackProps>(), {
   displayMode: 'large',
@@ -39,28 +58,109 @@ const direction = ref<'push' | 'pop'>('push')
 const depth = computed(() => cursor.value)
 
 // --- browser history (browserBack) --------------------------------------
-// History carries the depth, nothing more: entry contents are closures owned
-// by the component that pushed them, and no closure survives a reload. So a
-// refresh legitimately lands back at the root instead of resurrecting views
-// the app never re-created.
+// History carries the depth. An entry's content is a closure owned by the
+// component that pushed it, and no closure survives a reload — so a screen
+// comes back only if it also has a name the route registry can rebuild it
+// from. Unnamed screens legitimately end at the root on refresh.
 //
 // The key is per stack, so a tabbed app can give every tab its own history.
 // A popstate that does not move this stack's depth leaves it alone.
-const HISTORY_KEY = `swiftvue-nav-${useId()}`
+const fallbackKey = `swiftvue-nav-${useId()}`
+const HISTORY_KEY = computed(() => props.historyKey ?? fallbackKey)
 let syncingFromHistory = false
 
 const historyEnabled = () => props.browserBack && typeof history !== 'undefined'
+// Only a stack with a name of its own can claim a query parameter.
+const urlEnabled = () => historyEnabled() && !!props.historyKey && typeof location !== 'undefined'
+
+/**
+ * The named prefix of the stack. A screen pushed as a bare closure has no
+ * name, so the URL describes the last named screen above it rather than
+ * inventing one.
+ */
+function serializableRoutes(): string {
+  const named: string[] = []
+  for (const entry of stack.value) {
+    if (!entry.route) break
+    named.push(serializeRoute(entry.route))
+  }
+  return named.join('/')
+}
+
+function nextUrl(): string | undefined {
+  if (!urlEnabled()) return undefined
+  const url = new URL(location.href)
+  const value = serializableRoutes()
+  if (value) url.searchParams.set(props.historyKey!, value)
+  else url.searchParams.delete(props.historyKey!)
+  return url.pathname + url.search + url.hash
+}
 
 function recordDepth(next: number, replace = false) {
   if (!historyEnabled() || syncingFromHistory) return
-  const state = { ...(history.state ?? {}), [HISTORY_KEY]: next }
-  if (replace) history.replaceState(state, '')
-  else history.pushState(state, '')
+  const state = { ...(history.state ?? {}), [HISTORY_KEY.value]: next }
+  if (replace) history.replaceState(state, '', nextUrl())
+  else history.pushState(state, '', nextUrl())
+}
+
+// --- route registry ------------------------------------------------------
+// Registered by NavigationLink as rows mount, or by hand through
+// useNavigation().registerRoute. Restoring a deep link is therefore staged:
+// each screen that comes back mounts the links that can rebuild the next.
+const registry = new Map<string, RouteFactory>()
+let pending: RouteRef[] = []
+let restoring = false
+let drainQueued = false
+
+function lookup(route: RouteRef): NavigationEntry | null {
+  // A link inside a ForEach registers under its own param, so a list row is
+  // reachable by name; a hand-written factory registers the bare id instead.
+  const exact = route.param == null ? null : registry.get(serializeRoute(route))
+  const build = exact ?? registry.get(route.id)
+  return build ? build(route.param) : null
+}
+
+function drainPending() {
+  if (drainQueued || !pending.length) return
+  drainQueued = true
+  nextTick(() => {
+    drainQueued = false
+    restoring = true
+    let restored = false
+    while (pending.length) {
+      const entry = lookup(pending[0])
+      if (!entry) break // its link has not mounted yet, or never will
+      const route = pending.shift()!
+      entries.value = [...entries.value.slice(0, cursor.value), { ...entry, route }]
+      cursor.value = entries.value.length
+      restored = true
+    }
+    restoring = false
+    // Replace rather than push: reopening a link is where the user already
+    // is, not somewhere they navigated to.
+    if (restored) recordDepth(cursor.value, true)
+    if (pending.length && restored) drainPending()
+  })
+}
+
+function registerRoute(id: string, build: RouteFactory) {
+  registry.set(id, build)
+  drainPending()
+  return () => {
+    if (registry.get(id) === build) registry.delete(id)
+  }
+}
+
+function pushRoute(id: string, param?: string) {
+  const route: RouteRef = param == null ? { id } : { id, param }
+  const entry = lookup(route)
+  if (!entry) return
+  push({ ...entry, route })
 }
 
 function onPopState(event: PopStateEvent) {
   if (!props.browserBack) return
-  const target = Number(event.state?.[HISTORY_KEY] ?? 0)
+  const target = Number(event.state?.[HISTORY_KEY.value] ?? 0)
   if (!Number.isFinite(target) || target === cursor.value) return
 
   syncingFromHistory = true
@@ -72,8 +172,13 @@ function onPopState(event: PopStateEvent) {
 
 onMounted(() => {
   if (!historyEnabled()) return
+  if (urlEnabled()) {
+    const value = new URL(location.href).searchParams.get(props.historyKey!)
+    if (value) pending = parseRoutes(value)
+  }
   recordDepth(0, true) // stamp the root so Back from depth 1 has a target
   window.addEventListener('popstate', onPopState)
+  drainPending()
 })
 
 onBeforeUnmount(() => {
@@ -81,6 +186,8 @@ onBeforeUnmount(() => {
 })
 
 function push(entry: NavigationEntry) {
+  // A push during a restore would fight the URL we are replaying.
+  if (restoring) return
   direction.value = 'push'
   // A push after a Back forks: whatever Forward pointed at is unreachable
   // now, exactly as pushState drops the browser's own forward entries.
@@ -108,8 +215,8 @@ function popToRoot() {
   entries.value = []
 }
 
-provide(navigationKey, { depth: readonly(depth), push, pop, popToRoot })
-defineExpose({ push, pop, popToRoot, depth })
+provide(navigationKey, { depth: readonly(depth), push, pop, popToRoot, pushRoute, registerRoute })
+defineExpose({ push, pop, popToRoot, pushRoute, registerRoute, depth })
 
 const top = computed(() => stack.value[stack.value.length - 1])
 const currentTitle = computed(() => top.value?.title ?? props.title)

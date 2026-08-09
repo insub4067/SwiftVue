@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useFocusState } from '../src/composables/useFocusState'
 import { usePreferredColorScheme } from '../src/composables/usePreferredColorScheme'
 import { withAnimation, Animations } from '../src/motion/withAnimation'
@@ -13,7 +13,18 @@ declare const __BUILD_TIME__: string
 const buildTime = __BUILD_TIME__
 const staleBuild = ref(false)
 
-const activeTab = ref('components')
+// The stacks put their own screens in the URL under `?components=…`; the tab
+// has to go there too, or a shared link opens the right screen in a stack
+// nobody is looking at.
+const TAB_IDS = ['components', 'controls', 'layout', 'styles']
+const tabFromUrl = new URLSearchParams(location.search).get('tab')
+const activeTab = ref(TAB_IDS.includes(tabFromUrl ?? '') ? tabFromUrl! : 'components')
+
+watch(activeTab, (tab) => {
+  const url = new URL(location.href)
+  url.searchParams.set('tab', tab)
+  history.replaceState(history.state, '', url)
+})
 const showSheet = ref(false)
 const showAlert = ref(false)
 const showDeleteAlert = ref(false)
@@ -134,12 +145,24 @@ const colors = [
   { name: 'Brown', var: 'var(--swift-brown)' },
 ]
 
-const tabs = [
-  { id: 'components', label: 'Components', icon: '🧩' },
+const unread = ref(3)
+const tabs = computed(() => [
+  { id: 'components', label: 'Components', icon: '🧩', badge: unread.value },
   { id: 'controls', label: 'Controls', icon: '🎛️' },
   { id: 'layout', label: 'Layout', icon: '📐' },
   { id: 'styles', label: 'Styles', icon: '🎨' },
+])
+
+const signal = ref(0.68)
+const battery = ref(42)
+
+const contextActions = [
+  { label: 'Copy', id: 'copy', systemImage: '📋' },
+  { label: 'Duplicate', id: 'dup', systemImage: '📄' },
+  { label: 'Archive', id: 'archive', systemImage: '📦', disabled: true },
+  { label: 'Delete', id: 'del', systemImage: '🗑', role: 'destructive' as const },
 ]
+const contextChoice = ref('아직 선택 없음')
 
 function toggleTodo(index: number) {
   todos.value[index].done = !todos.value[index].done
@@ -197,14 +220,67 @@ const samples: Record<string, { code: string; sources: string[] }> = {
 ]" @select="onSelect" />`,
     sources: ['src/components/controls/Menu.vue'],
   },
+  contextMenu: {
+    code: `<!-- long press on touch, right click on desktop,
+     Shift+F10 from the keyboard -->
+<ContextMenu label="Photo actions" :actions="[
+  { label: 'Copy', id: 'copy', systemImage: '📋' },
+  { label: 'Archive', id: 'archive', disabled: true },
+  { label: 'Delete', id: 'del', role: 'destructive' },
+]" @select="onSelect">
+  <VStack>…</VStack>
+</ContextMenu>`,
+    sources: ['src/components/controls/ContextMenu.vue'],
+  },
+  gauge: {
+    code: `<!-- circular is SwiftUI's accessoryCircular dial -->
+<Gauge :value="signal" label="Signal" current-value-label="68%" />
+<Gauge :value="battery" :min="0" :max="100" label="Battery"
+       tint="green" :size="72" />
+
+<!-- linear is the capacity bar, with optional end captions -->
+<Gauge gauge-style="linear" :value="battery" :min="0" :max="100"
+       label="Battery" current-value-label="42%"
+       minimum-value-label="0" maximum-value-label="100" />`,
+    sources: ['src/components/feedback/Gauge.vue'],
+  },
+  badge: {
+    code: `<!-- SwiftUI's .badge() — 0 and '' draw nothing -->
+const tabs = computed(() => [
+  { id: 'inbox', label: 'Inbox', icon: '📥', badge: unread.value },
+  { id: 'sent', label: 'Sent', icon: '📤' },
+])
+
+<TabView :tabs="tabs" v-model="activeTab">…</TabView>
+
+<!-- over 99 shows 99+, but assistive tech still hears the count -->`,
+    sources: ['src/components/navigation/TabView.vue'],
+  },
   navPath: {
-    code: `<!-- Back and Forward drive the stack, so the system
-     back gesture pops instead of leaving the app.
-     The URL never changes: a reload starts at the root. -->
-<NavigationStack title="Settings" browser-back>
-  <NavigationLink destination-title="General">…</NavigationLink>
-</NavigationStack>`,
-    sources: ['src/components/navigation/NavigationStack.vue'],
+    code: `<!-- browser-back: Back and Forward drive the stack, so the
+     system back gesture pops instead of leaving the app.
+     history-key + route: named screens go in the URL, so a
+     reload or a shared link reopens them. -->
+<NavigationStack title="Settings" browser-back history-key="settings">
+  <NavigationLink route="general" destination-title="General">
+    <template #destination>…</template>
+  </NavigationLink>
+
+  <!-- rows sharing a route tell themselves apart by param -->
+  <ForEach :items="users" key-path="id">
+    <template #default="{ item }">
+      <NavigationLink route="user" :param="item.id">
+        <template #destination>…</template>
+      </NavigationLink>
+    </template>
+  </ForEach>
+</NavigationStack>
+
+<!-- ?settings=general  ·  ?settings=user~42 -->`,
+    sources: [
+      'src/components/navigation/NavigationStack.vue',
+      'src/components/navigation/NavigationLink.vue',
+    ],
   },
   typography: {
     code: `<Text font="largeTitle">Large Title</Text>
@@ -592,11 +668,11 @@ onUnmounted(() => {
 
       <!-- ============ COMPONENTS TAB ============ -->
       <template #components>
-        <NavigationStack title="Components" display-mode="large" browser-back>
+        <NavigationStack title="Components" display-mode="large" browser-back history-key="components">
           <VStack :spacing="24" :padding="[16, 0]" alignment="leading" :frame="{ width: '100%' }">
 
             <Section header="Text">
-              <NavigationLink destination-title="Typography">
+              <NavigationLink route="typography" destination-title="Typography">
                 <Label system-image="🔤">Typography</Label>
                 <template #destination>
                   <VStack :spacing="20" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -641,7 +717,7 @@ onUnmounted(() => {
                 </template>
               </NavigationLink>
 
-              <NavigationLink destination-title="Label">
+              <NavigationLink route="label" destination-title="Label">
                 <Label system-image="🏷️">Label</Label>
                 <template #destination>
                   <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -656,7 +732,7 @@ onUnmounted(() => {
             </Section>
 
             <Section header="Buttons & Inputs">
-              <NavigationLink destination-title="Buttons">
+              <NavigationLink route="buttons" destination-title="Buttons">
                 <Label system-image="🔘">Button Styles</Label>
                 <template #destination>
                   <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -679,7 +755,7 @@ onUnmounted(() => {
                 </template>
               </NavigationLink>
 
-              <NavigationLink destination-title="Text Fields">
+              <NavigationLink route="text-fields" destination-title="Text Fields">
                 <Label system-image="⌨️">Text Fields</Label>
                 <template #destination>
                   <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ maxWidth: '400px', width: '100%' }">
@@ -708,7 +784,7 @@ onUnmounted(() => {
                 </template>
               </NavigationLink>
 
-              <NavigationLink destination-title="FocusState">
+              <NavigationLink route="focusstate" destination-title="FocusState">
                 <Label system-image="🎯">FocusState</Label>
                 <template #destination>
                   <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ maxWidth: '400px', width: '100%' }">
@@ -745,7 +821,7 @@ onUnmounted(() => {
             </Section>
 
             <Section header="Feedback">
-              <NavigationLink destination-title="Progress & Alerts">
+              <NavigationLink route="progress-alerts" destination-title="Progress & Alerts">
                 <Label system-image="⏳">Progress & Alerts</Label>
                 <template #destination>
                   <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -775,13 +851,59 @@ onUnmounted(() => {
                 </template>
               </NavigationLink>
 
+              <NavigationLink route="gauge" destination-title="Gauge">
+                <Label system-image="🎚">Gauge</Label>
+                <template #destination>
+                  <VStack :spacing="20" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <HStack :spacing="24" alignment="center" wrap>
+                      <Gauge :value="signal" label="Signal" :current-value-label="`${Math.round(signal * 100)}%`" />
+                      <Gauge :value="battery" :min="0" :max="100" label="Battery" tint="green" :size="72" />
+                      <Gauge :value="3.4" :min="0" :max="5" label="Rating" tint="orange" current-value-label="3.4" />
+                    </HStack>
+
+                    <Slider v-model="signal" :min="0" :max="1" :step="0.01" label="Signal" />
+
+                    <Gauge
+                      gauge-style="linear"
+                      :value="battery"
+                      :min="0"
+                      :max="100"
+                      label="Battery"
+                      :current-value-label="`${battery}%`"
+                      minimum-value-label="0"
+                      maximum-value-label="100"
+                      tint="green"
+                    />
+                    <Stepper v-model="battery" :min="0" :max="100" :step="5" label="Battery" />
+
+                    <CodeSample v-bind="samples.gauge" />
+                  </VStack>
+                </template>
+              </NavigationLink>
+
+              <NavigationLink route="tab-badge" destination-title="Tab Badge">
+                <Label system-image="🔴">Tab Badge</Label>
+                <template #destination>
+                  <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <Text font="subheadline" foreground-color="secondary">
+                      Components 탭을 보세요 — 아래 숫자가 그대로 반영됩니다.
+                    </Text>
+                    <Stepper v-model="unread" :min="0" :max="120" label="Unread" />
+                    <Text font="footnote" foreground-color="secondary">
+                      0이면 뱃지가 사라지고, 99를 넘으면 99+로 줄지만 스크린리더는 실제 숫자를 읽습니다.
+                    </Text>
+                    <CodeSample v-bind="samples.badge" />
+                  </VStack>
+                </template>
+              </NavigationLink>
+
               <NavigationLink @tap="showSheet = true">
                 <Label system-image="📄">Sheet</Label>
               </NavigationLink>
             </Section>
 
             <Section header="Motion">
-              <NavigationLink destination-title="Animation">
+              <NavigationLink route="animation" destination-title="Animation">
                 <Label system-image="✨">Animation</Label>
                 <template #destination>
                   <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -835,7 +957,7 @@ onUnmounted(() => {
             </Section>
 
             <Section header="Media">
-              <NavigationLink destination-title="Image">
+              <NavigationLink route="image" destination-title="Image">
                 <Label system-image="🖼️">Image & AsyncImage</Label>
                 <template #destination>
                   <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -875,7 +997,7 @@ onUnmounted(() => {
             </Section>
 
             <Section header="Forms">
-              <NavigationLink destination-title="Form & DatePicker">
+              <NavigationLink route="form-datepicker" destination-title="Form & DatePicker">
                 <Label system-image="📝">Form & DatePicker</Label>
                 <template #destination>
                   <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
@@ -902,7 +1024,7 @@ onUnmounted(() => {
                 </template>
               </NavigationLink>
 
-              <NavigationLink destination-title="Menu">
+              <NavigationLink route="menu" destination-title="Menu">
                 <Label system-image="⋯">Menu</Label>
                 <template #destination>
                   <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -915,10 +1037,39 @@ onUnmounted(() => {
                   </VStack>
                 </template>
               </NavigationLink>
+
+              <NavigationLink route="context-menu" destination-title="Context Menu">
+                <Label system-image="👆">Context Menu</Label>
+                <template #destination>
+                  <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <Text font="subheadline" foreground-color="secondary">
+                      길게 누르거나(모바일), 우클릭하거나, Shift+F10을 눌러보세요.
+                    </Text>
+                    <ContextMenu
+                      label="Photo actions"
+                      :actions="contextActions"
+                      @select="contextChoice = `선택: ${$event.label}`"
+                    >
+                      <VStack
+                        :spacing="6"
+                        :padding="[24, 20]"
+                        alignment="center"
+                        background="secondaryBackground"
+                        :corner-radius="14"
+                      >
+                        <Text font="largeTitle">🏔</Text>
+                        <Text font="subheadline">Mountain.jpg</Text>
+                      </VStack>
+                    </ContextMenu>
+                    <Text font="subheadline" data-testid="context-choice">{{ contextChoice }}</Text>
+                    <CodeSample v-bind="samples.contextMenu" />
+                  </VStack>
+                </template>
+              </NavigationLink>
             </Section>
 
             <Section header="Data" footer="이 화면 자체가 NavigationStack + Section + NavigationLink 조합입니다.">
-              <NavigationLink destination-title="Section">
+              <NavigationLink route="section" destination-title="Section">
                 <Label system-image="📚">Section & Collapsible</Label>
                 <template #destination>
                   <VStack :spacing="20" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -949,7 +1100,7 @@ onUnmounted(() => {
                 </template>
               </NavigationLink>
 
-              <NavigationLink destination-title="Pull to Refresh">
+              <NavigationLink route="pull-to-refresh" destination-title="Pull to Refresh">
                 <Label system-image="🔄">Pull to Refresh</Label>
                 <template #destination>
                   <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -978,11 +1129,11 @@ onUnmounted(() => {
 
       <!-- ============ CONTROLS TAB ============ -->
       <template #controls>
-        <NavigationStack title="Controls" display-mode="large" browser-back>
+        <NavigationStack title="Controls" display-mode="large" browser-back history-key="controls">
           <VStack :spacing="24" :padding="[16, 0]" alignment="leading" :frame="{ width: '100%' }">
 
             <Section header="Controls">
-              <NavigationLink destination-title="Toggle">
+              <NavigationLink route="toggle" destination-title="Toggle">
                 <Label system-image="🟢">Toggle</Label>
                 <template #destination>
                   <VStack :spacing="0" :padding="16" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
@@ -1021,7 +1172,7 @@ onUnmounted(() => {
                 </template>
               </NavigationLink>
 
-              <NavigationLink destination-title="Slider">
+              <NavigationLink route="slider" destination-title="Slider">
                 <Label system-image="🎚️">Slider</Label>
                 <template #destination>
                   <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
@@ -1059,7 +1210,7 @@ onUnmounted(() => {
                 </template>
               </NavigationLink>
 
-              <NavigationLink destination-title="Stepper">
+              <NavigationLink route="stepper" destination-title="Stepper">
                 <Label system-image="➕">Stepper</Label>
                 <template #destination>
                   <VStack :spacing="0" :padding="16" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
@@ -1087,7 +1238,7 @@ onUnmounted(() => {
                 </template>
               </NavigationLink>
 
-              <NavigationLink destination-title="Picker">
+              <NavigationLink route="picker" destination-title="Picker">
                 <Label system-image="📋">Picker</Label>
                 <template #destination>
                   <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
@@ -1112,7 +1263,7 @@ onUnmounted(() => {
             </Section>
 
             <Section header="Reactive">
-              <NavigationLink destination-title="onChange & Combine">
+              <NavigationLink route="onchange-combine" destination-title="onChange & Combine">
                 <Label system-image="⚡">onChange & Combine</Label>
                 <template #destination>
                   <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
@@ -1144,11 +1295,11 @@ onUnmounted(() => {
 
       <!-- ============ LAYOUT TAB ============ -->
       <template #layout>
-        <NavigationStack title="Layout" display-mode="large" browser-back>
+        <NavigationStack title="Layout" display-mode="large" browser-back history-key="layout">
           <VStack :spacing="24" :padding="[16, 0]" alignment="leading" :frame="{ width: '100%' }">
 
             <Section header="Stacks">
-              <NavigationLink destination-title="VStack">
+              <NavigationLink route="vstack" destination-title="VStack">
                 <Label system-image="⬇️">VStack</Label>
                 <template #destination>
                   <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -1177,7 +1328,7 @@ onUnmounted(() => {
                 </template>
               </NavigationLink>
 
-              <NavigationLink destination-title="HStack">
+              <NavigationLink route="hstack" destination-title="HStack">
                 <Label system-image="➡️">HStack</Label>
                 <template #destination>
                   <VStack :spacing="8" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -1204,7 +1355,7 @@ onUnmounted(() => {
                 </template>
               </NavigationLink>
 
-              <NavigationLink destination-title="ZStack & Spacer">
+              <NavigationLink route="zstack-spacer" destination-title="ZStack & Spacer">
                 <Label system-image="🔳">ZStack & Spacer</Label>
                 <template #destination>
                   <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -1248,7 +1399,7 @@ onUnmounted(() => {
             </Section>
 
             <Section header="Grids">
-              <NavigationLink destination-title="LazyVGrid">
+              <NavigationLink route="lazyvgrid" destination-title="LazyVGrid">
                 <Label system-image="🔲">LazyVGrid</Label>
                 <template #destination>
                   <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -1286,7 +1437,7 @@ onUnmounted(() => {
                 </template>
               </NavigationLink>
 
-              <NavigationLink destination-title="LazyHGrid">
+              <NavigationLink route="lazyhgrid" destination-title="LazyHGrid">
                 <Label system-image="↔️">LazyHGrid</Label>
                 <template #destination>
                   <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -1307,7 +1458,7 @@ onUnmounted(() => {
             </Section>
 
             <Section header="Scroll & Data">
-              <NavigationLink destination-title="ScrollView">
+              <NavigationLink route="scrollview" destination-title="ScrollView">
                 <Label system-image="📜">ScrollView (horizontal)</Label>
                 <template #destination>
                   <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -1332,7 +1483,7 @@ onUnmounted(() => {
                 </template>
               </NavigationLink>
 
-              <NavigationLink destination-title="ForEach">
+              <NavigationLink route="foreach" destination-title="ForEach">
                 <Label system-image="🔁">ForEach</Label>
                 <template #destination>
                   <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -1351,7 +1502,7 @@ onUnmounted(() => {
                 </template>
               </NavigationLink>
 
-              <NavigationLink destination-title="List">
+              <NavigationLink route="list" destination-title="List">
                 <Label system-image="📃">List + Interactive</Label>
                 <template #destination>
                   <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -1386,11 +1537,11 @@ onUnmounted(() => {
 
       <!-- ============ STYLES TAB ============ -->
       <template #styles>
-        <NavigationStack title="Styles" display-mode="large" browser-back>
+        <NavigationStack title="Styles" display-mode="large" browser-back history-key="styles">
           <VStack :spacing="24" :padding="[16, 0]" alignment="leading" :frame="{ width: '100%' }">
 
             <Section header="Styling">
-              <NavigationLink destination-title="Modifiers">
+              <NavigationLink route="modifiers" destination-title="Modifiers">
                 <Label system-image="🧩">Modifiers</Label>
                 <template #destination>
                   <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -1440,7 +1591,7 @@ onUnmounted(() => {
                 </template>
               </NavigationLink>
 
-              <NavigationLink destination-title="Clip Shape">
+              <NavigationLink route="clip-shape" destination-title="Clip Shape">
                 <Label system-image="✂️">Clip Shape</Label>
                 <template #destination>
                   <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -1462,7 +1613,7 @@ onUnmounted(() => {
             </Section>
 
             <Section header="Colors & Lists">
-              <NavigationLink destination-title="System Colors">
+              <NavigationLink route="system-colors" destination-title="System Colors">
                 <Label system-image="🎨">System Colors</Label>
                 <template #destination>
                   <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
@@ -1477,7 +1628,7 @@ onUnmounted(() => {
                 </template>
               </NavigationLink>
 
-              <NavigationLink destination-title="List Styles">
+              <NavigationLink route="list-styles" destination-title="List Styles">
                 <Label system-image="📑">List Styles</Label>
                 <template #destination>
                   <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ width: '100%' }">

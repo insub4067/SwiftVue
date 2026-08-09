@@ -456,3 +456,153 @@ describe('NavigationStack browser history', () => {
     )).not.toThrow()
   })
 })
+
+describe('NavigationStack deep links', () => {
+  beforeEach(() => {
+    history.replaceState(null, '', '/')
+  })
+
+  const Rows = defineComponent({
+    setup: () => () => [
+      h(NavigationLink, { route: 'general', destinationTitle: 'General' }, {
+        default: () => 'General',
+        destination: () => h(NavigationLink, { route: 'sound', destinationTitle: 'Sound' }, {
+          default: () => 'Sound',
+          destination: () => h('p', 'sound-screen'),
+        }),
+      }),
+      h(NavigationLink, { route: 'user', param: '42', destinationTitle: 'Ada' }, {
+        default: () => 'Ada',
+        destination: () => h('p', 'user-42'),
+      }),
+      h(NavigationLink, { route: 'user', param: '7', destinationTitle: 'Grace' }, {
+        default: () => 'Grace',
+        destination: () => h('p', 'user-7'),
+      }),
+    ],
+  })
+
+  const mountStack = () => mount(NavigationStack, {
+    props: { title: 'Settings', browserBack: true, historyKey: 'nav' },
+    slots: { default: () => h(Rows) },
+    attachTo: document.body,
+  })
+
+  const search = () => new URL(location.href).searchParams.get('nav')
+
+  it('a named push names the URL', async () => {
+    const wrapper = mountStack()
+    await wrapper.findAll('.nav-link')[0].trigger('click')
+    await flushPromises()
+
+    expect(search()).toBe('general')
+    expect(wrapper.find('h1').text()).toBe('General')
+    wrapper.unmount()
+  })
+
+  it('the param travels in the URL and picks the right row', async () => {
+    const wrapper = mountStack()
+    await wrapper.findAll('.nav-link')[2].trigger('click')
+    await flushPromises()
+
+    expect(search()).toBe('user~7')
+    expect(wrapper.text()).toContain('user-7')
+    wrapper.unmount()
+  })
+
+  // The whole point: a reload is a fresh mount with only the URL to go on.
+  it('reopens a screen from a link someone else shared', async () => {
+    history.replaceState(null, '', '/?nav=user~42')
+    const wrapper = mountStack()
+    await flushPromises()
+
+    expect(wrapper.vm.depth).toBe(1)
+    expect(wrapper.text(), 'the row the param names, not the last one').toContain('user-42')
+    wrapper.unmount()
+  })
+
+  // Level 2's link only exists once level 1 is back, so the restore has to
+  // wait for it rather than give up on the first miss.
+  it('restores a screen whose link only appears once its parent is back', async () => {
+    history.replaceState(null, '', '/?nav=general/sound')
+    const wrapper = mountStack()
+    await flushPromises()
+    await flushPromises()
+
+    expect(wrapper.vm.depth).toBe(2)
+    expect(wrapper.text()).toContain('sound-screen')
+    expect(wrapper.find('h1').text()).toBe('Sound')
+    wrapper.unmount()
+  })
+
+  it('stops at the last screen it can name', async () => {
+    history.replaceState(null, '', '/?nav=general/nowhere')
+    const wrapper = mountStack()
+    await flushPromises()
+    await flushPromises()
+
+    expect(wrapper.vm.depth, 'general came back, nowhere could not').toBe(1)
+    wrapper.unmount()
+  })
+
+  // Restoring is where the user already is, so it must not add a history
+  // entry — otherwise Back would return them to the same screen.
+  it('a restore replaces the entry rather than pushing one', async () => {
+    history.replaceState(null, '', '/?nav=general')
+    const push = vi.spyOn(history, 'pushState')
+    const wrapper = mountStack()
+    await flushPromises()
+
+    expect(wrapper.vm.depth).toBe(1)
+    expect(push).not.toHaveBeenCalled()
+    push.mockRestore()
+    wrapper.unmount()
+  })
+
+  it('popping takes the screen back out of the URL', async () => {
+    const wrapper = mountStack()
+    await wrapper.findAll('.nav-link')[0].trigger('click')
+    await flushPromises()
+    expect(search()).toBe('general')
+
+    window.dispatchEvent(new PopStateEvent('popstate', { state: {} }))
+    await flushPromises()
+    expect(wrapper.vm.depth).toBe(0)
+    wrapper.unmount()
+  })
+
+  // An unnamed screen cannot be described, so the URL says where the naming
+  // stopped instead of claiming the user is somewhere they are not.
+  it('the URL stops at the last named screen', async () => {
+    const wrapper = mountStack()
+    await wrapper.findAll('.nav-link')[0].trigger('click')
+    await flushPromises()
+
+    wrapper.vm.push({ title: 'Ad hoc', content: () => h('p', 'closure') })
+    await flushPromises()
+    expect(wrapper.vm.depth).toBe(2)
+    expect(search(), 'named prefix only').toBe('general')
+
+    // A named screen above an unnamed one cannot be reached by replaying the
+    // URL, so skipping the gap would describe a stack that never existed.
+    wrapper.vm.pushRoute('user', '42')
+    await flushPromises()
+    expect(wrapper.vm.depth).toBe(3)
+    expect(search(), 'the gap ends the link, it does not close up').toBe('general')
+    wrapper.unmount()
+  })
+
+  it('a stack without a historyKey leaves the URL alone', async () => {
+    const wrapper = mount(NavigationStack, {
+      props: { title: 'Settings', browserBack: true },
+      slots: { default: () => h(Rows) },
+      attachTo: document.body,
+    })
+    await wrapper.findAll('.nav-link')[0].trigger('click')
+    await flushPromises()
+
+    expect(wrapper.vm.depth).toBe(1)
+    expect(location.search).toBe('')
+    wrapper.unmount()
+  })
+})
