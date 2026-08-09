@@ -119,9 +119,28 @@ const completionPercent = computed(() => Math.round((completedCount.value / todo
 // iOS Safari positions `fixed` elements against the large viewport, so the
 // bottom edge hides behind the browser toolbar. visualViewport reports the
 // actually-visible height, which we mirror into a CSS variable.
+let restingHeight = 0
+let lastWidth = 0
+
+// A software keyboard shrinks the visual viewport far more than the browser
+// toolbars do. Following it would lift the tab bar into the middle of the
+// screen and strand a gap underneath, so hold the keyboard-free height and
+// let the keyboard overlay the page instead.
+const KEYBOARD_THRESHOLD = 150
+
 function syncAppHeight() {
-  const h = window.visualViewport?.height ?? window.innerHeight
-  document.documentElement.style.setProperty('--app-height', `${h}px`)
+  const viewport = window.visualViewport
+  const height = viewport?.height ?? window.innerHeight
+  const width = viewport?.width ?? window.innerWidth
+
+  if (width !== lastWidth) {
+    lastWidth = width
+    restingHeight = 0 // rotation or a real resize — re-measure from scratch
+  }
+  if (restingHeight && restingHeight - height > KEYBOARD_THRESHOLD) return
+
+  restingHeight = Math.max(restingHeight, height)
+  document.documentElement.style.setProperty('--app-height', `${height}px`)
 }
 
 onMounted(() => {
@@ -153,7 +172,7 @@ onUnmounted(() => {
             <VStack :spacing="24" :padding="16" alignment="leading">
 
               <!-- Text & Typography -->
-              <VStack :spacing="12" alignment="leading">
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">Text & Typography</Text>
                 <VStack :spacing="6" alignment="leading" :padding="[12, 16]" background="secondaryBackground" :corner-radius="12">
                   <Text font="largeTitle">Large Title</Text>
@@ -169,7 +188,7 @@ onUnmounted(() => {
                   <Text font="caption2">Caption 2</Text>
                 </VStack>
 
-                <HStack :spacing="16">
+                <HStack :spacing="16" wrap>
                   <Text bold>Bold</Text>
                   <Text italic>Italic</Text>
                   <Text underline>Underline</Text>
@@ -186,7 +205,7 @@ onUnmounted(() => {
               <Divider />
 
               <!-- Label -->
-              <VStack :spacing="12" alignment="leading">
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">Label</Text>
                 <VStack :spacing="8" alignment="leading">
                   <Label system-image="📁">Documents</Label>
@@ -199,15 +218,15 @@ onUnmounted(() => {
               <Divider />
 
               <!-- Buttons -->
-              <VStack :spacing="12" alignment="leading">
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">Button Styles</Text>
-                <HStack :spacing="8">
+                <HStack :spacing="8" wrap>
                   <Button button-style="borderedProminent">Prominent</Button>
                   <Button button-style="bordered">Bordered</Button>
                   <Button button-style="borderless">Borderless</Button>
                   <Button button-style="plain">Plain</Button>
                 </HStack>
-                <HStack :spacing="8">
+                <HStack :spacing="8" wrap>
                   <Button button-style="borderedProminent" role="destructive">Delete</Button>
                   <Button button-style="bordered" role="cancel">Cancel</Button>
                   <Button button-style="borderedProminent" disabled>Disabled</Button>
@@ -220,7 +239,7 @@ onUnmounted(() => {
               <Divider />
 
               <!-- Input Fields -->
-              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '400px' }">
+              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '400px', width: '100%' }">
                 <Text font="title2" foreground-color="primary">Input Fields</Text>
 
                 <VStack :spacing="4" alignment="leading">
@@ -274,7 +293,7 @@ onUnmounted(() => {
                   @submit="focusedField = null"
                 />
 
-                <HStack :spacing="8">
+                <HStack :spacing="8" wrap>
                   <Button button-style="bordered" @tap="focusedField = 'id'">Focus ID</Button>
                   <Button button-style="bordered" @tap="focusedField = 'password'">Focus Password</Button>
                   <Button button-style="plain" @tap="focusedField = null">Dismiss</Button>
@@ -288,10 +307,10 @@ onUnmounted(() => {
               <Divider />
 
               <!-- List & Navigation -->
-              <VStack :spacing="12" alignment="leading">
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">List & NavigationLink</Text>
 
-                <List list-style="insetGrouped" :frame="{ maxWidth: '500px' }">
+                <List list-style="insetGrouped" :frame="{ maxWidth: '500px', width: '100%' }">
                   <NavigationLink v-for="item in menuItems" :key="item.id" @tap="showAlert = true">
                     <HStack :spacing="12">
                       <Text font="title3">{{ item.icon }}</Text>
@@ -307,10 +326,10 @@ onUnmounted(() => {
               <Divider />
 
               <!-- Feedback -->
-              <VStack :spacing="12" alignment="leading">
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">Feedback</Text>
 
-                <HStack :spacing="24" alignment="center">
+                <HStack :spacing="24" alignment="center" wrap>
                   <VStack :spacing="8">
                     <ProgressView label="Loading" />
                     <Text font="caption" foreground-color="secondary">Indeterminate</Text>
@@ -327,7 +346,7 @@ onUnmounted(() => {
 
                 <Button button-style="bordered" @tap="simulateProgress">Simulate Progress</Button>
 
-                <HStack :spacing="12">
+                <HStack :spacing="12" wrap>
                   <Button button-style="borderedProminent" @tap="showAlert = true">Show Alert</Button>
                   <Button button-style="bordered" role="destructive" @tap="showDeleteAlert = true">
                     Delete Alert
@@ -348,9 +367,9 @@ onUnmounted(() => {
             <VStack :spacing="24" :padding="16" alignment="leading">
 
               <!-- Toggle -->
-              <VStack :spacing="12" alignment="leading">
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">Toggle</Text>
-                <List list-style="insetGrouped" :frame="{ maxWidth: '500px' }">
+                <List list-style="insetGrouped" :frame="{ maxWidth: '500px', width: '100%' }">
                   <div class="swift-list-row">
                     <HStack>
                       <Label system-image="🌙">Dark Mode</Label>
@@ -392,7 +411,7 @@ onUnmounted(() => {
               <Divider />
 
               <!-- Slider -->
-              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '500px' }">
+              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
                 <Text font="title2" foreground-color="primary">Slider</Text>
 
                 <VStack :spacing="4" alignment="leading">
@@ -432,7 +451,7 @@ onUnmounted(() => {
               <Divider />
 
               <!-- Stepper -->
-              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '500px' }">
+              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
                 <Text font="title2" foreground-color="primary">Stepper</Text>
 
                 <List list-style="insetGrouped">
@@ -459,7 +478,7 @@ onUnmounted(() => {
               <Divider />
 
               <!-- Picker -->
-              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '500px' }">
+              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
                 <Text font="title2" foreground-color="primary">Picker</Text>
 
                 <VStack :spacing="8" alignment="leading">
@@ -493,7 +512,7 @@ onUnmounted(() => {
             <VStack :spacing="24" :padding="16" alignment="leading">
 
               <!-- VStack -->
-              <VStack :spacing="12" alignment="leading">
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">VStack</Text>
                 <HStack :spacing="16">
                   <VStack :spacing="4" alignment="leading" :padding="12" background="secondaryBackground" :corner-radius="8">
@@ -520,7 +539,7 @@ onUnmounted(() => {
               <Divider />
 
               <!-- HStack -->
-              <VStack :spacing="12" alignment="leading">
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">HStack</Text>
                 <VStack :spacing="8" alignment="leading">
                   <HStack :spacing="8" alignment="top" :padding="12" background="secondaryBackground" :corner-radius="8">
@@ -547,7 +566,7 @@ onUnmounted(() => {
               <Divider />
 
               <!-- ZStack -->
-              <VStack :spacing="12" alignment="leading">
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">ZStack</Text>
                 <HStack :spacing="16">
                   <ZStack :frame="{ width: '120px', height: '120px' }">
@@ -574,7 +593,7 @@ onUnmounted(() => {
               <Divider />
 
               <!-- Spacer -->
-              <VStack :spacing="12" alignment="leading">
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">Spacer</Text>
                 <HStack :padding="12" background="secondaryBackground" :corner-radius="8" :frame="{ width: '100%' }">
                   <Text foreground-color="blue">Left</Text>
@@ -593,7 +612,7 @@ onUnmounted(() => {
               <Divider />
 
               <!-- ForEach -->
-              <VStack :spacing="12" alignment="leading">
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">ForEach</Text>
                 <HStack :spacing="8">
                   <ForEach :items="['🍎', '🍌', '🍒', '🍇', '🍊']">
@@ -687,14 +706,14 @@ onUnmounted(() => {
               <Divider />
 
               <!-- Todo List with ForEach in List -->
-              <VStack :spacing="12" alignment="leading">
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">List + Interactive</Text>
                 <HStack :spacing="8">
                   <Text font="subheadline" foreground-color="secondary">
                     {{ completedCount }}/{{ todos.length }} completed ({{ completionPercent }}%)
                   </Text>
                 </HStack>
-                <List :items="todos" list-style="insetGrouped" :frame="{ maxWidth: '500px' }">
+                <List :items="todos" list-style="insetGrouped" :frame="{ maxWidth: '500px', width: '100%' }">
                   <template #default="{ item, index }">
                     <HStack :spacing="12">
                       <Text :foreground-color="item.done ? 'green' : 'secondary'" font="title3">
@@ -725,7 +744,7 @@ onUnmounted(() => {
             <VStack :spacing="24" :padding="16" alignment="leading">
 
               <!-- Modifiers -->
-              <VStack :spacing="12" alignment="leading">
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">Modifiers</Text>
 
                 <HStack :spacing="12">
@@ -785,7 +804,7 @@ onUnmounted(() => {
               <Divider />
 
               <!-- Clip Shape -->
-              <VStack :spacing="12" alignment="leading">
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">Clip Shape</Text>
                 <HStack :spacing="16">
                   <VStack :padding="20" background="orange" clip-shape="circle" foreground-color="white">
@@ -803,7 +822,7 @@ onUnmounted(() => {
               <Divider />
 
               <!-- Font Weights -->
-              <VStack :spacing="12" alignment="leading">
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">Font Weights</Text>
                 <VStack :spacing="4" alignment="leading" :padding="[12, 16]" background="secondaryBackground" :corner-radius="12">
                   <Text font-weight="ultraLight">ultraLight</Text>
@@ -834,7 +853,7 @@ onUnmounted(() => {
               <Divider />
 
               <!-- List Styles -->
-              <VStack :spacing="12" alignment="leading">
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
                 <Text font="title2" foreground-color="primary">List Styles</Text>
 
                 <HStack :spacing="16" alignment="top">
@@ -860,7 +879,7 @@ onUnmounted(() => {
               <Divider />
 
               <!-- Dark Mode Toggle -->
-              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '500px' }">
+              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
                 <Text font="title2" foreground-color="primary">Theme</Text>
                 <HStack :padding="16" background="secondaryBackground" :corner-radius="12">
                   <Label system-image="🌙">Dark Mode</Label>
@@ -897,7 +916,7 @@ onUnmounted(() => {
       <VStack :spacing="16" :padding="[24, 16]" alignment="leading">
         <Text font="title2">SwiftVue Demo</Text>
         <Divider />
-        <VStack :spacing="12" alignment="leading">
+        <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
           <Label system-image="🧩">24 Components</Label>
           <Label system-image="🎨">iOS Design System Colors</Label>
           <Label system-image="📐">SwiftUI-style Layout</Label>

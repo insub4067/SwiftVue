@@ -52,6 +52,14 @@ describe('HStack', () => {
     const wrapper = mount(HStack, { props: { alignment: 'bottom' } })
     expect(wrapper.element.style.alignItems).toBe('flex-end')
   })
+
+  it('stays on one line by default', () => {
+    expect(mount(HStack).element.style.flexWrap).toBe('')
+  })
+
+  it('flows onto more lines when wrap is set', () => {
+    expect(mount(HStack, { props: { wrap: true } }).element.style.flexWrap).toBe('wrap')
+  })
 })
 
 describe('ZStack', () => {

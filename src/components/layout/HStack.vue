@@ -5,6 +5,11 @@ import { useModifiers, type ModifierProps } from '../../utils/modifiers'
 interface Props extends ModifierProps {
   spacing?: number
   alignment?: 'top' | 'center' | 'bottom' | 'firstTextBaseline'
+  /**
+   * Web addition with no SwiftUI counterpart: let the row flow onto more lines
+   * instead of overflowing a narrow viewport.
+   */
+  wrap?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -21,6 +26,7 @@ const style = computed(() => ({
   flexDirection: 'row' as const,
   alignItems: alignMap[props.alignment],
   gap: `${props.spacing}px`,
+  ...(props.wrap ? { flexWrap: 'wrap' as const } : {}),
 }))
 </script>
 
