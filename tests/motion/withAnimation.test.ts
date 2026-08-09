@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { withAnimation, Animations } from '../../src/motion/withAnimation'
 
 type VTDocument = Document & { startViewTransition?: (cb: () => Promise<void>) => { finished: Promise<void> } }
@@ -54,5 +54,47 @@ describe('withAnimation', () => {
     }
     const result = await withAnimation(() => 7)
     expect(result).toBe(7)
+  })
+})
+
+// Setting prefers-reduced-motion is an accessibility setting, not a
+// preference about polish: for some people the animation is what makes the
+// page unusable. So the reduced path is not "less animation" — it is none,
+// and the state change still has to land.
+describe('someone who has asked for less motion', () => {
+  const prefer = (reduce: boolean) =>
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: reduce && query.includes('prefers-reduced-motion: reduce'),
+      media: query,
+      addEventListener() {},
+      removeEventListener() {},
+    }))
+
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('gets the state change without the animation', async () => {
+    const calls: string[] = []
+    doc.startViewTransition = (update) => {
+      calls.push('start')
+      return { finished: update() }
+    }
+    prefer(true)
+
+    const result = await withAnimation(() => { calls.push('mutate'); return 'done' })
+
+    expect(calls, 'the view transition was never started').toEqual(['mutate'])
+    expect(result, 'and the mutation still applied').toBe('done')
+  })
+
+  it('and the animation is left alone for everyone else', async () => {
+    const calls: string[] = []
+    doc.startViewTransition = (update) => {
+      calls.push('start')
+      return { finished: update() }
+    }
+    prefer(false)
+
+    await withAnimation(() => calls.push('mutate'))
+    expect(calls).toEqual(['start', 'mutate'])
   })
 })
