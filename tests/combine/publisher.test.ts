@@ -2,7 +2,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { ref, nextTick } from 'vue'
 import { publisher } from '../../src/combine/publisher'
 
-beforeEach(() => vi.useFakeTimers())
+// Fake only what these tests use. The default set also fakes setImmediate
+// and friends, which Node 18's test-runner internals depend on — restoring
+// real timers then deadlocks and every hook times out.
+beforeEach(() => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] }))
 afterEach(() => vi.useRealTimers())
 
 async function tick() {
