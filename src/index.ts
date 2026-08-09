@@ -47,6 +47,11 @@ export { default as Sheet } from './components/navigation/Sheet.vue'
 export { default as Alert } from './components/feedback/SAlert.vue'
 export { default as ProgressView } from './components/feedback/ProgressView.vue'
 
+// Motion
+export { default as TransitionView } from './components/motion/TransitionView.vue'
+export { withAnimation, Animations } from './motion/withAnimation'
+export type { SwiftAnimation } from './motion/withAnimation'
+
 // Composables
 export { useState } from './composables/useState'
 export { useBinding, bindRef } from './composables/useBinding'

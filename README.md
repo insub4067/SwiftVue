@@ -122,6 +122,37 @@ const darkMode = useState(false)
 - `Alert` — alert dialog (`v-model:isPresented`, `title`, `message`, `actions`)
 - `ProgressView` — loading indicator (`value`, `total`, `progressViewStyle`)
 
+## Motion
+
+`withAnimation` mirrors SwiftUI: run a state change, and every visual
+difference it causes animates (via the View Transitions API; where
+unsupported, the change simply applies unanimated):
+
+```ts
+import { withAnimation, Animations } from 'swiftvue'
+
+withAnimation(() => { expanded.value = !expanded.value })
+withAnimation(() => items.value.sort(), Animations.spring)
+// presets: default · linear · easeIn/Out/InOut · spring · smooth · snappy · bouncy
+```
+
+`TransitionView` is `.transition(_:)` for a conditional view:
+
+```vue
+<TransitionView transition="scale">
+  <Text v-if="show">Hello</Text>
+</TransitionView>
+
+<!-- .asymmetric(insertion:removal:) -->
+<TransitionView insertion="moveBottom" removal="opacity">
+  <Banner v-if="visible" />
+</TransitionView>
+```
+
+Presets: `opacity` · `scale` · `slide` (in from leading, out toward trailing) ·
+`moveTop` · `moveBottom` · `moveLeading` · `moveTrailing`. Both APIs respect
+`prefers-reduced-motion`.
+
 ## Grids
 
 `columns`/`rows` take either a track count or a `GridItem[]`:

@@ -117,3 +117,46 @@
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.4;
 }
+
+/* --- Motion ------------------------------------------------------------ */
+
+/* withAnimation() drives these through the View Transitions API */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--swift-vt-duration, 250ms);
+  animation-timing-function: var(--swift-vt-easing, ease);
+}
+
+/* TransitionView presets. `-in` is the state entered FROM, `-out` the state
+   left TO; .swift-t-active carries the shared timing. */
+.swift-t-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.swift-t-opacity-in,
+.swift-t-opacity-out { opacity: 0; }
+
+.swift-t-scale-in,
+.swift-t-scale-out { opacity: 0; transform: scale(0.9); }
+
+/* .slide enters from the leading edge and leaves toward the trailing edge */
+.swift-t-slide-in  { opacity: 0; transform: translateX(-24px); }
+.swift-t-slide-out { opacity: 0; transform: translateX(24px); }
+
+.swift-t-moveTop-in,
+.swift-t-moveTop-out { opacity: 0; transform: translateY(-24px); }
+
+.swift-t-moveBottom-in,
+.swift-t-moveBottom-out { opacity: 0; transform: translateY(24px); }
+
+.swift-t-moveLeading-in,
+.swift-t-moveLeading-out { opacity: 0; transform: translateX(-24px); }
+
+.swift-t-moveTrailing-in,
+.swift-t-moveTrailing-out { opacity: 0; transform: translateX(24px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .swift-t-active { transition-duration: 0.01ms; }
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation-duration: 0.01ms; }
+}

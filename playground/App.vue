@@ -2,6 +2,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useFocusState } from '../src/composables/useFocusState'
 import { usePreferredColorScheme } from '../src/composables/usePreferredColorScheme'
+import { withAnimation, Animations } from '../src/motion/withAnimation'
+import type { TransitionPreset } from '../src/components/motion/TransitionView.vue'
 import { version } from '../package.json'
 
 declare const __BUILD_TIME__: string
@@ -20,6 +22,20 @@ const searchText = ref('')
 const loginId = ref('')
 const loginPassword = ref('')
 const focusedField = useFocusState<'id' | 'password'>()
+
+const showBox = ref(true)
+const boxTransition = ref<TransitionPreset>('scale')
+const transitionOptions = [
+  { value: 'opacity', label: 'opacity' },
+  { value: 'scale', label: 'scale' },
+  { value: 'slide', label: 'slide' },
+  { value: 'moveBottom', label: 'move' },
+]
+const expanded = ref(false)
+const shuffled = ref([1, 2, 3, 4, 5, 6])
+function shuffle() {
+  shuffled.value = [...shuffled.value].sort(() => Math.random() - 0.5)
+}
 
 const colorScheme = usePreferredColorScheme()
 const darkMode = computed({
@@ -340,6 +356,57 @@ onUnmounted(() => {
                 <Text font="caption" foreground-color="secondary">
                   Enter in ID moves focus to Password, just like SwiftUI's @FocusState.
                 </Text>
+              </VStack>
+
+              <Divider />
+
+              <!-- Animation -->
+              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
+                <Text font="title2" foreground-color="primary">Animation</Text>
+
+                <Text font="subheadline" foreground-color="secondary">TransitionView — .transition(_:)</Text>
+                <HStack :spacing="8" wrap>
+                  <Button button-style="bordered" @tap="showBox = !showBox">
+                    {{ showBox ? 'Hide' : 'Show' }}
+                  </Button>
+                  <Picker v-model="boxTransition" :options="transitionOptions" picker-style="segmented" />
+                </HStack>
+                <div :style="{ minHeight: '76px' }">
+                  <TransitionView :transition="boxTransition">
+                    <VStack v-if="showBox" data-testid="transition-box" :padding="16" background="blue"
+                      :corner-radius="12" foreground-color="white" :frame="{ width: '160px' }">
+                      <Text font="headline">{{ boxTransition }}</Text>
+                    </VStack>
+                  </TransitionView>
+                </div>
+
+                <Text font="subheadline" foreground-color="secondary">withAnimation — 카드 확장 + 리스트 셔플</Text>
+                <HStack :spacing="8" wrap>
+                  <Button button-style="bordered" @tap="withAnimation(() => { expanded = !expanded })">
+                    {{ expanded ? 'Collapse' : 'Expand' }}
+                  </Button>
+                  <Button button-style="bordered" @tap="withAnimation(() => shuffle(), Animations.spring)">
+                    Shuffle (spring)
+                  </Button>
+                  <Button button-style="bordered" @tap="withAnimation(() => shuffle(), Animations.bouncy)">
+                    Shuffle (bouncy)
+                  </Button>
+                </HStack>
+                <VStack :spacing="8" alignment="leading" :padding="16" background="secondaryBackground"
+                  :corner-radius="12" :frame="{ width: '100%' }">
+                  <Text font="headline">Animated card</Text>
+                  <Text v-if="expanded" font="subheadline" foreground-color="secondary">
+                    This extra content appears through the View Transitions API —
+                    every visual difference caused by the state change animates,
+                    exactly like SwiftUI's withAnimation.
+                  </Text>
+                  <HStack :spacing="8" wrap>
+                    <VStack v-for="n in shuffled" :key="n" :padding="[10, 14]" :corner-radius="8"
+                      :style="{ background: colors[(n - 1) % colors.length].var }">
+                      <Text font="caption" foreground-color="white" bold>{{ n }}</Text>
+                    </VStack>
+                  </HStack>
+                </VStack>
               </VStack>
 
               <Divider />
