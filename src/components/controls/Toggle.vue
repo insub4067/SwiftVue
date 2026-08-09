@@ -44,7 +44,8 @@ const thumbStyle = computed(() => ({
   boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
   position: 'absolute' as const,
   top: '2px',
-  left: props.modelValue ? '22px' : '2px',
+  // the knob slides towards the trailing edge, whichever side that is
+  insetInlineStart: props.modelValue ? '22px' : '2px',
   transition: 'left var(--swift-transition)',
   pointerEvents: 'none' as const,
 }))

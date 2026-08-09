@@ -91,7 +91,7 @@ function toggle() {
   background: none;
   font-family: inherit;
   cursor: pointer;
-  text-align: left;
+  text-align: start;
   width: 100%;
 }
 .section-header--button:focus-visible {

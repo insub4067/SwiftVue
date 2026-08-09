@@ -133,6 +133,18 @@ const darkMode = useState(false)
 - `Image` — image (`src`, `alt`, `resizable`, `contentMode`)
 - `AsyncImage` — remote image with `#placeholder` / `#error` slots (`url`)
 
+## Right to left
+
+`leading` and `trailing` follow the writing direction, as they do in SwiftUI.
+Set `dir="rtl"` on a container and the layout mirrors: text aligns to the
+right, chevrons point the other way, a `Toggle`'s knob travels the other way,
+`SwipeActions` opens its trailing actions from the left, and the back
+gesture starts at the right edge.
+
+Nothing in the library hard-codes `left` or `right` where a logical property
+would do — a test enforces it, since the mistake is invisible until someone
+opens the app in Arabic.
+
 ## How modifiers compose
 
 A modifier wraps the view, as it does in SwiftUI, so what you ask for beats
