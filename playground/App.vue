@@ -6,6 +6,7 @@ import { version } from '../package.json'
 
 declare const __BUILD_TIME__: string
 const buildTime = __BUILD_TIME__
+const staleBuild = ref(false)
 
 const activeTab = ref('components')
 const showSheet = ref(false)
@@ -143,12 +144,46 @@ function syncAppHeight() {
   document.documentElement.style.setProperty('--app-height', `${height}px`)
 }
 
+// Assets are content-hashed, but a cached index.html keeps pointing at the old
+// ones — the page then looks stale with no way to tell. Compare against the
+// stamp published beside the bundle and reload once when they diverge.
+async function checkForNewBuild() {
+  try {
+    const res = await fetch(`${import.meta.env.BASE_URL}version.json`, { cache: 'no-store' })
+    if (!res.ok) return
+    const latest = (await res.json())?.buildTime
+    if (!latest || latest === buildTime) {
+      staleBuild.value = false
+      return
+    }
+    // Reload at most once per deploy per session. If the document itself is
+    // still served from cache the reload won't help, so surface it on the
+    // badge rather than reloading forever.
+    const attempted = `swiftvue-reload-${latest}`
+    if (sessionStorage.getItem(attempted)) {
+      staleBuild.value = true
+      return
+    }
+    sessionStorage.setItem(attempted, '1')
+    location.reload()
+  } catch {
+    // Offline or blocked — keep showing what we already have.
+  }
+}
+
+function onVisible() {
+  if (document.visibilityState === 'visible') checkForNewBuild()
+}
+
 onMounted(() => {
   syncAppHeight()
   window.visualViewport?.addEventListener('resize', syncAppHeight)
   window.visualViewport?.addEventListener('scroll', syncAppHeight)
   window.addEventListener('resize', syncAppHeight)
   window.addEventListener('orientationchange', syncAppHeight)
+
+  checkForNewBuild()
+  document.addEventListener('visibilitychange', onVisible)
 })
 
 onUnmounted(() => {
@@ -156,12 +191,15 @@ onUnmounted(() => {
   window.visualViewport?.removeEventListener('scroll', syncAppHeight)
   window.removeEventListener('resize', syncAppHeight)
   window.removeEventListener('orientationchange', syncAppHeight)
+  document.removeEventListener('visibilitychange', onVisible)
 })
 </script>
 
 <template>
   <div class="swift-app playground-shell" :style="{ colorScheme: darkMode ? 'dark' : 'light' }">
-    <div class="version-badge">v{{ version }} · {{ buildTime }}</div>
+    <div class="version-badge" :class="{ stale: staleBuild }">
+      v{{ version }} · {{ buildTime }}<template v-if="staleBuild"> · outdated</template>
+    </div>
 
     <TabView :tabs="tabs" v-model="activeTab">
 
@@ -997,6 +1035,11 @@ html, body {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   pointer-events: none;
+}
+
+.version-badge.stale {
+  color: var(--swift-orange);
+  border-color: var(--swift-orange);
 }
 
 .playground-shell > div {
