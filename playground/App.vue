@@ -93,19 +93,11 @@ const sizes = [
 const todos = ref([
   { id: 1, title: 'Build SwiftVue components', done: true },
   { id: 2, title: 'Add accessibility support', done: true },
-  { id: 3, title: 'Write unit tests (118 tests)', done: true },
+  { id: 3, title: 'Write unit tests', done: true },
   { id: 4, title: 'Set up CI/CD pipeline', done: true },
   { id: 5, title: 'Publish to npm', done: false },
   { id: 6, title: 'Write documentation', done: false },
 ])
-
-const menuItems = [
-  { id: 'general', icon: '⚙️', title: 'General', subtitle: 'About, Software Update' },
-  { id: 'display', icon: '🔆', title: 'Display & Brightness', subtitle: 'Text Size, Bold' },
-  { id: 'sounds', icon: '🔔', title: 'Sounds & Haptics', subtitle: 'Volume, Ringtone' },
-  { id: 'privacy', icon: '🔒', title: 'Privacy & Security', subtitle: 'Location, Contacts' },
-  { id: 'battery', icon: '🔋', title: 'Battery', subtitle: 'Usage, Health' },
-]
 
 const colors = [
   { name: 'Red', var: 'var(--swift-red)' },
@@ -250,929 +242,826 @@ onUnmounted(() => {
 
     <TabView :tabs="tabs" v-model="activeTab">
 
-      <!-- === COMPONENTS TAB === -->
+      <!-- ============ COMPONENTS TAB ============ -->
       <template #components>
         <NavigationStack title="Components" display-mode="large">
-          <ScrollView>
-            <VStack :spacing="24" :padding="16" alignment="leading">
+          <VStack :spacing="24" :padding="[16, 0]" alignment="leading" :frame="{ width: '100%' }">
 
-              <!-- Text & Typography -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">Text & Typography</Text>
-                <VStack :spacing="6" alignment="leading" :padding="[12, 16]" background="secondaryBackground" :corner-radius="12">
-                  <Text font="largeTitle">Large Title</Text>
-                  <Text font="title">Title</Text>
-                  <Text font="title2">Title 2</Text>
-                  <Text font="title3">Title 3</Text>
-                  <Text font="headline">Headline</Text>
-                  <Text font="body">Body text</Text>
-                  <Text font="callout">Callout</Text>
-                  <Text font="subheadline">Subheadline</Text>
-                  <Text font="footnote">Footnote</Text>
-                  <Text font="caption">Caption</Text>
-                  <Text font="caption2">Caption 2</Text>
-                </VStack>
-
-                <HStack :spacing="16" wrap>
-                  <Text bold>Bold</Text>
-                  <Text italic>Italic</Text>
-                  <Text underline>Underline</Text>
-                  <Text strikethrough>Strike</Text>
-                </HStack>
-
-                <Text font="body" :line-limit="2">
-                  This is a long text that demonstrates the lineLimit modifier.
-                  It will be truncated after two lines with an ellipsis indicator.
-                  You should not see this third line because of the line limit.
-                </Text>
-              </VStack>
-
-              <Divider />
-
-              <!-- Label -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">Label</Text>
-                <VStack :spacing="8" alignment="leading">
-                  <Label system-image="📁">Documents</Label>
-                  <Label system-image="📷" icon-color="var(--swift-blue)">Photos</Label>
-                  <Label system-image="🎵" icon-color="var(--swift-red)">Music</Label>
-                  <Label system-image="⬇️" icon-color="var(--swift-green)">Downloads</Label>
-                </VStack>
-              </VStack>
-
-              <Divider />
-
-              <!-- Buttons -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">Button Styles</Text>
-                <HStack :spacing="8" wrap>
-                  <Button button-style="borderedProminent">Prominent</Button>
-                  <Button button-style="bordered">Bordered</Button>
-                  <Button button-style="borderless">Borderless</Button>
-                  <Button button-style="plain">Plain</Button>
-                </HStack>
-                <HStack :spacing="8" wrap>
-                  <Button button-style="borderedProminent" role="destructive">Delete</Button>
-                  <Button button-style="bordered" role="cancel">Cancel</Button>
-                  <Button button-style="borderedProminent" disabled>Disabled</Button>
-                </HStack>
-                <Button button-style="borderedProminent" full-width @tap="showSheet = true">
-                  Full Width Button (Open Sheet)
-                </Button>
-              </VStack>
-
-              <Divider />
-
-              <!-- Input Fields -->
-              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '400px', width: '100%' }">
-                <Text font="title2" foreground-color="primary">Input Fields</Text>
-
-                <VStack :spacing="4" alignment="leading">
-                  <Text font="caption" foreground-color="secondary">TextField (plain)</Text>
-                  <TextField v-model="username" placeholder="Username" />
-                </VStack>
-
-                <VStack :spacing="4" alignment="leading">
-                  <Text font="caption" foreground-color="secondary">TextField (roundedBorder)</Text>
-                  <TextField v-model="searchText" placeholder="Search..." text-field-style="roundedBorder" />
-                </VStack>
-
-                <VStack :spacing="4" alignment="leading">
-                  <Text font="caption" foreground-color="secondary">SecureField</Text>
-                  <SecureField v-model="password" placeholder="Password" />
-                </VStack>
-
-                <VStack :spacing="4" alignment="leading">
-                  <Text font="caption" foreground-color="secondary">TextEditor</Text>
-                  <TextEditor v-model="bio" placeholder="Write something..." />
-                </VStack>
-
-                <VStack :spacing="4" alignment="leading">
-                  <Text font="caption" foreground-color="secondary">Disabled TextField</Text>
-                  <TextField model-value="Read only" disabled text-field-style="roundedBorder" />
-                </VStack>
-              </VStack>
-
-              <Divider />
-
-              <!-- FocusState -->
-              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '400px', width: '100%' }">
-                <Text font="title2" foreground-color="primary">FocusState</Text>
-                <Text font="caption" foreground-color="secondary">
-                  Focused field: {{ focusedField ?? 'none' }}
-                </Text>
-
-                <TextField
-                  v-model="loginId"
-                  v-model:focused="focusedField"
-                  focus-value="id"
-                  placeholder="ID"
-                  text-field-style="roundedBorder"
-                  @submit="focusedField = 'password'"
-                />
-                <SecureField
-                  v-model="loginPassword"
-                  v-model:focused="focusedField"
-                  focus-value="password"
-                  placeholder="Password"
-                  @submit="focusedField = null"
-                />
-
-                <HStack :spacing="8" wrap>
-                  <Button button-style="bordered" @tap="focusedField = 'id'">Focus ID</Button>
-                  <Button button-style="bordered" @tap="focusedField = 'password'">Focus Password</Button>
-                  <Button button-style="plain" @tap="focusedField = null">Dismiss</Button>
-                </HStack>
-
-                <Text font="caption" foreground-color="secondary">
-                  Enter in ID moves focus to Password, just like SwiftUI's @FocusState.
-                </Text>
-              </VStack>
-
-              <Divider />
-
-              <!-- Animation -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">Animation</Text>
-
-                <Text font="subheadline" foreground-color="secondary">TransitionView — .transition(_:)</Text>
-                <HStack :spacing="8" wrap>
-                  <Button button-style="bordered" @tap="showBox = !showBox">
-                    {{ showBox ? 'Hide' : 'Show' }}
-                  </Button>
-                  <Picker v-model="boxTransition" :options="transitionOptions" picker-style="segmented" />
-                </HStack>
-                <div :style="{ minHeight: '76px' }">
-                  <TransitionView :transition="boxTransition">
-                    <VStack v-if="showBox" data-testid="transition-box" :padding="16" background="blue"
-                      :corner-radius="12" foreground-color="white" :frame="{ width: '160px' }">
-                      <Text font="headline">{{ boxTransition }}</Text>
+            <Section header="Text">
+              <NavigationLink destination-title="Typography">
+                <Label system-image="🔤">Typography</Label>
+                <template #destination>
+                  <VStack :spacing="20" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <VStack :spacing="6" alignment="leading" :padding="[12, 16]" background="secondaryBackground" :corner-radius="12" :frame="{ width: '100%' }">
+                      <Text font="largeTitle">Large Title</Text>
+                      <Text font="title">Title</Text>
+                      <Text font="title2">Title 2</Text>
+                      <Text font="title3">Title 3</Text>
+                      <Text font="headline">Headline</Text>
+                      <Text font="body">Body text</Text>
+                      <Text font="callout">Callout</Text>
+                      <Text font="subheadline">Subheadline</Text>
+                      <Text font="footnote">Footnote</Text>
+                      <Text font="caption">Caption</Text>
+                      <Text font="caption2">Caption 2</Text>
                     </VStack>
-                  </TransitionView>
-                </div>
 
-                <Text font="subheadline" foreground-color="secondary">withAnimation — 카드 확장 + 리스트 셔플</Text>
-                <HStack :spacing="8" wrap>
-                  <Button button-style="bordered" @tap="withAnimation(() => { expanded = !expanded })">
-                    {{ expanded ? 'Collapse' : 'Expand' }}
-                  </Button>
-                  <Button button-style="bordered" @tap="withAnimation(() => shuffle(), Animations.spring)">
-                    Shuffle (spring)
-                  </Button>
-                  <Button button-style="bordered" @tap="withAnimation(() => shuffle(), Animations.bouncy)">
-                    Shuffle (bouncy)
-                  </Button>
-                </HStack>
-                <VStack :spacing="8" alignment="leading" :padding="16" background="secondaryBackground"
-                  :corner-radius="12" :frame="{ width: '100%' }">
-                  <Text font="headline">Animated card</Text>
-                  <Text v-if="expanded" font="subheadline" foreground-color="secondary">
-                    This extra content appears through the View Transitions API —
-                    every visual difference caused by the state change animates,
-                    exactly like SwiftUI's withAnimation.
-                  </Text>
-                  <HStack :spacing="8" wrap>
-                    <VStack v-for="n in shuffled" :key="n" :padding="[10, 14]" :corner-radius="8"
-                      :style="{ background: colors[(n - 1) % colors.length].var }">
-                      <Text font="caption" foreground-color="white" bold>{{ n }}</Text>
+                    <HStack :spacing="16" wrap>
+                      <Text bold>Bold</Text>
+                      <Text italic>Italic</Text>
+                      <Text underline>Underline</Text>
+                      <Text strikethrough>Strike</Text>
+                    </HStack>
+
+                    <Text font="body" :line-limit="2">
+                      This is a long text that demonstrates the lineLimit modifier.
+                      It will be truncated after two lines with an ellipsis indicator.
+                      You should not see this third line because of the line limit.
+                    </Text>
+
+                    <VStack :spacing="4" alignment="leading" :padding="[12, 16]" background="secondaryBackground" :corner-radius="12" :frame="{ width: '100%' }">
+                      <Text font-weight="ultraLight">ultraLight</Text>
+                      <Text font-weight="light">light</Text>
+                      <Text font-weight="regular">regular</Text>
+                      <Text font-weight="medium">medium</Text>
+                      <Text font-weight="semibold">semibold</Text>
+                      <Text font-weight="bold">bold</Text>
+                      <Text font-weight="black">black</Text>
                     </VStack>
-                  </HStack>
-                </VStack>
-              </VStack>
+                  </VStack>
+                </template>
+              </NavigationLink>
 
-              <Divider />
+              <NavigationLink destination-title="Label">
+                <Label system-image="🏷️">Label</Label>
+                <template #destination>
+                  <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <Label system-image="📁">Documents</Label>
+                    <Label system-image="📷" icon-color="var(--swift-blue)">Photos</Label>
+                    <Label system-image="🎵" icon-color="var(--swift-red)">Music</Label>
+                    <Label system-image="⬇️" icon-color="var(--swift-green)">Downloads</Label>
+                  </VStack>
+                </template>
+              </NavigationLink>
+            </Section>
 
-              <!-- List & Navigation -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">List & NavigationLink</Text>
-                <Text font="caption" foreground-color="secondary">
-                  처음 두 항목은 실제로 push됩니다 — 뒤로가기 버튼 또는 왼쪽 끝에서
-                  오른쪽으로 스와이프해서 돌아옵니다.
-                </Text>
+            <Section header="Buttons & Inputs">
+              <NavigationLink destination-title="Buttons">
+                <Label system-image="🔘">Button Styles</Label>
+                <template #destination>
+                  <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <HStack :spacing="8" wrap>
+                      <Button button-style="borderedProminent">Prominent</Button>
+                      <Button button-style="bordered">Bordered</Button>
+                      <Button button-style="borderless">Borderless</Button>
+                      <Button button-style="plain">Plain</Button>
+                    </HStack>
+                    <HStack :spacing="8" wrap>
+                      <Button button-style="borderedProminent" role="destructive">Delete</Button>
+                      <Button button-style="bordered" role="cancel">Cancel</Button>
+                      <Button button-style="borderedProminent" disabled>Disabled</Button>
+                    </HStack>
+                    <Button button-style="borderedProminent" full-width @tap="showSheet = true">
+                      Full Width Button (Open Sheet)
+                    </Button>
+                  </VStack>
+                </template>
+              </NavigationLink>
 
-                <List list-style="insetGrouped" :frame="{ maxWidth: '500px', width: '100%' }">
-                  <NavigationLink destination-title="General">
-                    <HStack :spacing="12">
-                      <Text font="title3">⚙️</Text>
-                      <VStack :spacing="2" alignment="leading">
-                        <Text font="body">General</Text>
-                        <Text font="caption" foreground-color="secondary">About, Software Update</Text>
+              <NavigationLink destination-title="Text Fields">
+                <Label system-image="⌨️">Text Fields</Label>
+                <template #destination>
+                  <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ maxWidth: '400px', width: '100%' }">
+                    <VStack :spacing="4" alignment="leading" :frame="{ width: '100%' }">
+                      <Text font="caption" foreground-color="secondary">TextField (plain)</Text>
+                      <TextField v-model="username" placeholder="Username" />
+                    </VStack>
+                    <VStack :spacing="4" alignment="leading" :frame="{ width: '100%' }">
+                      <Text font="caption" foreground-color="secondary">TextField (roundedBorder)</Text>
+                      <TextField v-model="searchText" placeholder="Search..." text-field-style="roundedBorder" />
+                    </VStack>
+                    <VStack :spacing="4" alignment="leading" :frame="{ width: '100%' }">
+                      <Text font="caption" foreground-color="secondary">SecureField</Text>
+                      <SecureField v-model="password" placeholder="Password" />
+                    </VStack>
+                    <VStack :spacing="4" alignment="leading" :frame="{ width: '100%' }">
+                      <Text font="caption" foreground-color="secondary">TextEditor</Text>
+                      <TextEditor v-model="bio" placeholder="Write something..." />
+                    </VStack>
+                    <VStack :spacing="4" alignment="leading" :frame="{ width: '100%' }">
+                      <Text font="caption" foreground-color="secondary">Disabled TextField</Text>
+                      <TextField model-value="Read only" disabled text-field-style="roundedBorder" />
+                    </VStack>
+                  </VStack>
+                </template>
+              </NavigationLink>
+
+              <NavigationLink destination-title="FocusState">
+                <Label system-image="🎯">FocusState</Label>
+                <template #destination>
+                  <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ maxWidth: '400px', width: '100%' }">
+                    <Text font="caption" foreground-color="secondary">
+                      Focused field: {{ focusedField ?? 'none' }}
+                    </Text>
+                    <TextField
+                      v-model="loginId"
+                      v-model:focused="focusedField"
+                      focus-value="id"
+                      placeholder="ID"
+                      text-field-style="roundedBorder"
+                      @submit="focusedField = 'password'"
+                    />
+                    <SecureField
+                      v-model="loginPassword"
+                      v-model:focused="focusedField"
+                      focus-value="password"
+                      placeholder="Password"
+                      @submit="focusedField = null"
+                    />
+                    <HStack :spacing="8" wrap>
+                      <Button button-style="bordered" @tap="focusedField = 'id'">Focus ID</Button>
+                      <Button button-style="bordered" @tap="focusedField = 'password'">Focus Password</Button>
+                      <Button button-style="plain" @tap="focusedField = null">Dismiss</Button>
+                    </HStack>
+                    <Text font="caption" foreground-color="secondary">
+                      Enter in ID moves focus to Password, just like SwiftUI's @FocusState.
+                    </Text>
+                  </VStack>
+                </template>
+              </NavigationLink>
+            </Section>
+
+            <Section header="Feedback">
+              <NavigationLink destination-title="Progress & Alerts">
+                <Label system-image="⏳">Progress & Alerts</Label>
+                <template #destination>
+                  <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <HStack :spacing="24" alignment="center" wrap>
+                      <VStack :spacing="8">
+                        <ProgressView label="Loading" />
+                        <Text font="caption" foreground-color="secondary">Indeterminate</Text>
+                      </VStack>
+                      <VStack :spacing="8">
+                        <ProgressView :value="downloadProgress" :total="100" />
+                        <Text font="caption" foreground-color="secondary">{{ downloadProgress }}%</Text>
+                      </VStack>
+                      <VStack :spacing="8" :frame="{ width: '150px' }">
+                        <ProgressView :value="progress" :total="100" progress-view-style="linear" label="Progress" />
+                        <Text font="caption" foreground-color="secondary">Linear {{ progress }}%</Text>
                       </VStack>
                     </HStack>
-                    <template #destination>
-                      <VStack :spacing="16" :padding="16" alignment="leading">
-                        <List list-style="insetGrouped" :frame="{ width: '100%' }">
-                          <div class="swift-list-row">
-                            <HStack><Text>Name</Text><Spacer /><Text foreground-color="secondary">SwiftVue Demo</Text></HStack>
-                          </div>
-                          <div class="swift-list-row">
-                            <HStack><Text>Version</Text><Spacer /><Text foreground-color="secondary">v{{ version }}</Text></HStack>
-                          </div>
-                          <div class="swift-list-row">
-                            <HStack><Text>Components</Text><Spacer /><Text foreground-color="secondary">27</Text></HStack>
-                          </div>
-                        </List>
-                        <Text font="caption" foreground-color="secondary">
-                          This view was pushed onto the NavigationStack, exactly like
-                          NavigationLink(destination:) in SwiftUI.
-                        </Text>
-                      </VStack>
-                    </template>
-                  </NavigationLink>
-
-                  <NavigationLink destination-title="Display & Brightness">
-                    <HStack :spacing="12">
-                      <Text font="title3">🔆</Text>
-                      <VStack :spacing="2" alignment="leading">
-                        <Text font="body">Display & Brightness</Text>
-                        <Text font="caption" foreground-color="secondary">Text Size, Bold</Text>
-                      </VStack>
+                    <Button button-style="bordered" @tap="simulateProgress">Simulate Progress</Button>
+                    <HStack :spacing="12" wrap>
+                      <Button button-style="borderedProminent" @tap="showAlert = true">Show Alert</Button>
+                      <Button button-style="bordered" role="destructive" @tap="showDeleteAlert = true">
+                        Delete Alert
+                      </Button>
                     </HStack>
-                    <template #destination>
-                      <VStack :spacing="16" :padding="16" alignment="leading">
-                        <VStack :spacing="8" alignment="leading" :padding="16" background="secondaryBackground"
-                          :corner-radius="12" :frame="{ width: '100%' }">
-                          <HStack>
-                            <Text>Brightness</Text>
-                            <Spacer />
-                            <Text foreground-color="secondary">{{ brightness }}%</Text>
-                          </HStack>
-                          <Slider v-model="brightness" :min="0" :max="100" tint="var(--swift-orange)" label="Brightness" />
+                  </VStack>
+                </template>
+              </NavigationLink>
+
+              <NavigationLink @tap="showSheet = true">
+                <Label system-image="📄">Sheet</Label>
+              </NavigationLink>
+            </Section>
+
+            <Section header="Motion">
+              <NavigationLink destination-title="Animation">
+                <Label system-image="✨">Animation</Label>
+                <template #destination>
+                  <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <Text font="subheadline" foreground-color="secondary">TransitionView — .transition(_:)</Text>
+                    <HStack :spacing="8" wrap>
+                      <Button button-style="bordered" @tap="showBox = !showBox">
+                        {{ showBox ? 'Hide' : 'Show' }}
+                      </Button>
+                      <Picker v-model="boxTransition" :options="transitionOptions" picker-style="segmented" />
+                    </HStack>
+                    <div :style="{ minHeight: '76px' }">
+                      <TransitionView :transition="boxTransition">
+                        <VStack v-if="showBox" data-testid="transition-box" :padding="16" background="blue"
+                          :corner-radius="12" foreground-color="white" :frame="{ width: '160px' }">
+                          <Text font="headline">{{ boxTransition }}</Text>
                         </VStack>
-                        <HStack :padding="16" background="secondaryBackground" :corner-radius="12" :frame="{ width: '100%' }">
+                      </TransitionView>
+                    </div>
+
+                    <Text font="subheadline" foreground-color="secondary">withAnimation — 카드 확장 + 리스트 셔플</Text>
+                    <HStack :spacing="8" wrap>
+                      <Button button-style="bordered" @tap="withAnimation(() => { expanded = !expanded })">
+                        {{ expanded ? 'Collapse' : 'Expand' }}
+                      </Button>
+                      <Button button-style="bordered" @tap="withAnimation(() => shuffle(), Animations.spring)">
+                        Shuffle (spring)
+                      </Button>
+                      <Button button-style="bordered" @tap="withAnimation(() => shuffle(), Animations.bouncy)">
+                        Shuffle (bouncy)
+                      </Button>
+                    </HStack>
+                    <VStack :spacing="8" alignment="leading" :padding="16" background="secondaryBackground"
+                      :corner-radius="12" :frame="{ width: '100%' }">
+                      <Text font="headline">Animated card</Text>
+                      <Text v-if="expanded" font="subheadline" foreground-color="secondary">
+                        This extra content appears through the View Transitions API —
+                        every visual difference caused by the state change animates,
+                        exactly like SwiftUI's withAnimation.
+                      </Text>
+                      <HStack :spacing="8" wrap>
+                        <VStack v-for="n in shuffled" :key="n" :padding="[10, 14]" :corner-radius="8"
+                          :style="{ background: colors[(n - 1) % colors.length].var }">
+                          <Text font="caption" foreground-color="white" bold>{{ n }}</Text>
+                        </VStack>
+                      </HStack>
+                    </VStack>
+                  </VStack>
+                </template>
+              </NavigationLink>
+            </Section>
+
+            <Section header="Data" footer="이 화면 자체가 NavigationStack + Section + NavigationLink 조합입니다.">
+              <NavigationLink destination-title="Section">
+                <Label system-image="📚">Section & Collapsible</Label>
+                <template #destination>
+                  <VStack :spacing="20" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <Section header="Profile" footer="Header와 footer는 SwiftUI Section 그대로입니다.">
+                      <div class="swift-list-row">
+                        <HStack><Text>Name</Text><Spacer /><Text foreground-color="secondary">Insub</Text></HStack>
+                      </div>
+                      <div class="swift-list-row">
+                        <HStack><Text>Team</Text><Spacer /><Text foreground-color="secondary">iOS</Text></HStack>
+                      </div>
+                    </Section>
+
+                    <Section v-model:expanded="advancedOpen" header="Advanced" collapsible
+                      footer="collapsible — 헤더를 눌러 접고 펼칩니다. 접혀도 내부 상태는 유지됩니다.">
+                      <div class="swift-list-row">
+                        <HStack>
+                          <Label system-image="🔔">Notifications</Label>
+                          <Spacer />
+                          <Toggle v-model="notifications" label="Notifications" />
+                        </HStack>
+                      </div>
+                      <div class="swift-list-row">
+                        <HStack><Text>Items</Text><Spacer /><Stepper v-model="count" :min="0" :max="99" label="Items" /></HStack>
+                      </div>
+                    </Section>
+                  </VStack>
+                </template>
+              </NavigationLink>
+
+              <NavigationLink destination-title="Pull to Refresh">
+                <Label system-image="🔄">Pull to Refresh</Label>
+                <template #destination>
+                  <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <Text font="caption" foreground-color="secondary">
+                      .refreshable — 목록 맨 위에서 아래로 당기면 새로고침됩니다.
+                    </Text>
+                    <div :style="{ height: '260px', display: 'flex', width: '100%' }" data-testid="refresh-area">
+                      <ScrollView :refreshable="reload" :frame="{ height: '260px' }"
+                        background="secondaryBackground" :corner-radius="12">
+                        <VStack :spacing="0" alignment="leading" :frame="{ width: '100%' }">
+                          <div v-for="(line, i) in refreshLog" :key="`${line}-${i}`" class="swift-list-row" :style="{ width: '100%' }">
+                            <Text font="subheadline">{{ line }}</Text>
+                          </div>
+                        </VStack>
+                      </ScrollView>
+                    </div>
+                  </VStack>
+                </template>
+              </NavigationLink>
+            </Section>
+
+          </VStack>
+        </NavigationStack>
+      </template>
+
+      <!-- ============ CONTROLS TAB ============ -->
+      <template #controls>
+        <NavigationStack title="Controls" display-mode="large">
+          <VStack :spacing="24" :padding="[16, 0]" alignment="leading" :frame="{ width: '100%' }">
+
+            <Section header="Controls">
+              <NavigationLink destination-title="Toggle">
+                <Label system-image="🟢">Toggle</Label>
+                <template #destination>
+                  <VStack :spacing="0" :padding="16" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
+                    <Section>
+                      <div class="swift-list-row">
+                        <HStack>
                           <Label system-image="🌙">Dark Mode</Label>
                           <Spacer />
                           <Toggle v-model="darkMode" label="Dark Mode" />
                         </HStack>
-                      </VStack>
-                    </template>
-                  </NavigationLink>
-
-                  <NavigationLink v-for="item in menuItems.slice(2)" :key="item.id" @tap="showAlert = true">
-                    <HStack :spacing="12">
-                      <Text font="title3">{{ item.icon }}</Text>
-                      <VStack :spacing="2" alignment="leading">
-                        <Text font="body">{{ item.title }}</Text>
-                        <Text font="caption" foreground-color="secondary">{{ item.subtitle }}</Text>
-                      </VStack>
-                    </HStack>
-                  </NavigationLink>
-                </List>
-              </VStack>
-
-              <Divider />
-
-              <!-- Section -->
-              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
-                <Text font="title2" foreground-color="primary">Section</Text>
-
-                <Section header="Profile" footer="Header와 footer는 SwiftUI Section 그대로입니다.">
-                  <div class="swift-list-row">
-                    <HStack><Text>Name</Text><Spacer /><Text foreground-color="secondary">Insub</Text></HStack>
-                  </div>
-                  <div class="swift-list-row">
-                    <HStack><Text>Team</Text><Spacer /><Text foreground-color="secondary">iOS</Text></HStack>
-                  </div>
-                </Section>
-
-                <Section v-model:expanded="advancedOpen" header="Advanced" collapsible
-                  footer="collapsible — 헤더를 눌러 접고 펼칩니다. 접혀도 내부 상태는 유지됩니다.">
-                  <div class="swift-list-row">
-                    <HStack>
-                      <Label system-image="🔔">Notifications</Label>
-                      <Spacer />
-                      <Toggle v-model="notifications" label="Notifications" />
-                    </HStack>
-                  </div>
-                  <div class="swift-list-row">
-                    <HStack><Text>Items</Text><Spacer /><Stepper v-model="count" :min="0" :max="99" label="Items" /></HStack>
-                  </div>
-                </Section>
-              </VStack>
-
-              <Divider />
-
-              <!-- Pull to refresh -->
-              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
-                <Text font="title2" foreground-color="primary">Pull to Refresh</Text>
-                <Text font="caption" foreground-color="secondary">
-                  .refreshable — 목록 맨 위에서 아래로 당기면 새로고침됩니다.
-                </Text>
-                <div :style="{ height: '200px', display: 'flex', width: '100%' }" data-testid="refresh-area">
-                  <ScrollView :refreshable="reload" :frame="{ height: '200px' }"
-                    background="secondaryBackground" :corner-radius="12">
-                    <VStack :spacing="0" alignment="leading" :frame="{ width: '100%' }">
-                      <div v-for="(line, i) in refreshLog" :key="`${line}-${i}`" class="swift-list-row" :style="{ width: '100%' }">
-                        <Text font="subheadline">{{ line }}</Text>
                       </div>
-                    </VStack>
-                  </ScrollView>
-                </div>
-              </VStack>
-
-              <Divider />
-
-              <!-- Feedback -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">Feedback</Text>
-
-                <HStack :spacing="24" alignment="center" wrap>
-                  <VStack :spacing="8">
-                    <ProgressView label="Loading" />
-                    <Text font="caption" foreground-color="secondary">Indeterminate</Text>
+                      <div class="swift-list-row">
+                        <HStack>
+                          <Label system-image="📶">Wi-Fi</Label>
+                          <Spacer />
+                          <Toggle v-model="wifiEnabled" label="Wi-Fi" />
+                        </HStack>
+                      </div>
+                      <div class="swift-list-row">
+                        <HStack>
+                          <Label system-image="🔵">Bluetooth</Label>
+                          <Spacer />
+                          <Toggle v-model="bluetoothEnabled" tint="var(--swift-blue)" label="Bluetooth" />
+                        </HStack>
+                      </div>
+                      <div class="swift-list-row">
+                        <HStack>
+                          <Label system-image="🚫">Disabled</Label>
+                          <Spacer />
+                          <Toggle :model-value="false" disabled label="Disabled" />
+                        </HStack>
+                      </div>
+                    </Section>
                   </VStack>
-                  <VStack :spacing="8">
-                    <ProgressView :value="downloadProgress" :total="100" />
-                    <Text font="caption" foreground-color="secondary">{{ downloadProgress }}%</Text>
-                  </VStack>
-                  <VStack :spacing="8" :frame="{ width: '150px' }">
-                    <ProgressView :value="progress" :total="100" progress-view-style="linear" label="Progress" />
-                    <Text font="caption" foreground-color="secondary">Linear {{ progress }}%</Text>
-                  </VStack>
-                </HStack>
+                </template>
+              </NavigationLink>
 
-                <Button button-style="bordered" @tap="simulateProgress">Simulate Progress</Button>
-
-                <HStack :spacing="12" wrap>
-                  <Button button-style="borderedProminent" @tap="showAlert = true">Show Alert</Button>
-                  <Button button-style="bordered" role="destructive" @tap="showDeleteAlert = true">
-                    Delete Alert
-                  </Button>
-                </HStack>
-              </VStack>
-
-              <Spacer :min-length="20" />
-            </VStack>
-          </ScrollView>
-        </NavigationStack>
-      </template>
-
-      <!-- === CONTROLS TAB === -->
-      <template #controls>
-        <NavigationStack title="Controls" display-mode="large">
-          <ScrollView>
-            <VStack :spacing="24" :padding="16" alignment="leading">
-
-              <!-- Toggle -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">Toggle</Text>
-                <List list-style="insetGrouped" :frame="{ maxWidth: '500px', width: '100%' }">
-                  <div class="swift-list-row">
-                    <HStack>
-                      <Label system-image="🌙">Dark Mode</Label>
-                      <Spacer />
-                      <Toggle v-model="darkMode" label="Dark Mode" />
-                    </HStack>
-                  </div>
-                  <div class="swift-list-row">
-                    <HStack>
-                      <Label system-image="📶">Wi-Fi</Label>
-                      <Spacer />
-                      <Toggle v-model="wifiEnabled" label="Wi-Fi" />
-                    </HStack>
-                  </div>
-                  <div class="swift-list-row">
-                    <HStack>
-                      <Label system-image="🔵">Bluetooth</Label>
-                      <Spacer />
-                      <Toggle v-model="bluetoothEnabled" tint="var(--swift-blue)" label="Bluetooth" />
-                    </HStack>
-                  </div>
-                  <div class="swift-list-row">
-                    <HStack>
-                      <Label system-image="🔔">Notifications</Label>
-                      <Spacer />
-                      <Toggle v-model="notifications" tint="var(--swift-red)" label="Notifications" />
-                    </HStack>
-                  </div>
-                  <div class="swift-list-row">
-                    <HStack>
-                      <Label system-image="🚫">Disabled</Label>
-                      <Spacer />
-                      <Toggle :model-value="false" disabled label="Disabled" />
-                    </HStack>
-                  </div>
-                </List>
-              </VStack>
-
-              <Divider />
-
-              <!-- Slider -->
-              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
-                <Text font="title2" foreground-color="primary">Slider</Text>
-
-                <VStack :spacing="4" alignment="leading">
-                  <HStack>
-                    <Text font="body">Volume</Text>
-                    <Spacer />
-                    <Text font="body" foreground-color="secondary">{{ volume }}%</Text>
-                  </HStack>
-                  <Slider v-model="volume" :min="0" :max="100" label="Volume" />
-                </VStack>
-
-                <VStack :spacing="4" alignment="leading">
-                  <HStack>
-                    <Text font="body">Brightness</Text>
-                    <Spacer />
-                    <Text font="body" foreground-color="secondary">{{ brightness }}%</Text>
-                  </HStack>
-                  <Slider v-model="brightness" :min="0" :max="100" tint="var(--swift-orange)" label="Brightness" />
-                </VStack>
-
-                <VStack :spacing="4" alignment="leading">
-                  <HStack>
-                    <Text font="body">Font Size</Text>
-                    <Spacer />
-                    <Text font="body" foreground-color="secondary">{{ fontSize }}px</Text>
-                  </HStack>
-                  <Slider v-model="fontSize" :min="10" :max="30" :step="1" tint="var(--swift-purple)" label="Font Size" />
-                  <Text :style="{ fontSize: fontSize + 'px' }">Preview text at {{ fontSize }}px</Text>
-                </VStack>
-
-                <VStack :spacing="4" alignment="leading">
-                  <Text font="body">Disabled</Text>
-                  <Slider :model-value="40" :min="0" :max="100" disabled label="Disabled" />
-                </VStack>
-              </VStack>
-
-              <Divider />
-
-              <!-- Stepper -->
-              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
-                <Text font="title2" foreground-color="primary">Stepper</Text>
-
-                <List list-style="insetGrouped">
-                  <div class="swift-list-row">
-                    <HStack>
-                      <Text>Quantity</Text>
-                      <Spacer />
-                      <Stepper v-model="count" :min="0" :max="99" label="Quantity" />
-                    </HStack>
-                  </div>
-                  <div class="swift-list-row">
-                    <HStack>
-                      <Text>Rating</Text>
-                      <Spacer />
-                      <HStack :spacing="4">
-                        <Text foreground-color="orange">{{ '★'.repeat(rating) }}{{ '☆'.repeat(5 - rating) }}</Text>
-                        <Stepper v-model="rating" :min="0" :max="5" label="Rating" />
+              <NavigationLink destination-title="Slider">
+                <Label system-image="🎚️">Slider</Label>
+                <template #destination>
+                  <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
+                    <VStack :spacing="4" alignment="leading" :frame="{ width: '100%' }">
+                      <HStack>
+                        <Text font="body">Volume</Text>
+                        <Spacer />
+                        <Text font="body" foreground-color="secondary">{{ volume }}%</Text>
                       </HStack>
-                    </HStack>
-                  </div>
-                </List>
-              </VStack>
+                      <Slider v-model="volume" :min="0" :max="100" label="Volume" />
+                    </VStack>
+                    <VStack :spacing="4" alignment="leading" :frame="{ width: '100%' }">
+                      <HStack>
+                        <Text font="body">Brightness</Text>
+                        <Spacer />
+                        <Text font="body" foreground-color="secondary">{{ brightness }}%</Text>
+                      </HStack>
+                      <Slider v-model="brightness" :min="0" :max="100" tint="var(--swift-orange)" label="Brightness" />
+                    </VStack>
+                    <VStack :spacing="4" alignment="leading" :frame="{ width: '100%' }">
+                      <HStack>
+                        <Text font="body">Font Size</Text>
+                        <Spacer />
+                        <Text font="body" foreground-color="secondary">{{ fontSize }}px</Text>
+                      </HStack>
+                      <Slider v-model="fontSize" :min="10" :max="30" :step="1" tint="var(--swift-purple)" label="Font Size" />
+                      <Text :style="{ fontSize: fontSize + 'px' }">Preview text at {{ fontSize }}px</Text>
+                    </VStack>
+                    <VStack :spacing="4" alignment="leading" :frame="{ width: '100%' }">
+                      <Text font="body">Disabled</Text>
+                      <Slider :model-value="40" :min="0" :max="100" disabled label="Disabled" />
+                    </VStack>
+                  </VStack>
+                </template>
+              </NavigationLink>
 
-              <Divider />
+              <NavigationLink destination-title="Stepper">
+                <Label system-image="➕">Stepper</Label>
+                <template #destination>
+                  <VStack :spacing="0" :padding="16" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
+                    <Section>
+                      <div class="swift-list-row">
+                        <HStack>
+                          <Text>Quantity</Text>
+                          <Spacer />
+                          <Stepper v-model="count" :min="0" :max="99" label="Quantity" />
+                        </HStack>
+                      </div>
+                      <div class="swift-list-row">
+                        <HStack>
+                          <Text>Rating</Text>
+                          <Spacer />
+                          <HStack :spacing="4">
+                            <Text foreground-color="orange">{{ '★'.repeat(rating) }}{{ '☆'.repeat(5 - rating) }}</Text>
+                            <Stepper v-model="rating" :min="0" :max="5" label="Rating" />
+                          </HStack>
+                        </HStack>
+                      </div>
+                    </Section>
+                  </VStack>
+                </template>
+              </NavigationLink>
 
-              <!-- Picker -->
-              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
-                <Text font="title2" foreground-color="primary">Picker</Text>
+              <NavigationLink destination-title="Picker">
+                <Label system-image="📋">Picker</Label>
+                <template #destination>
+                  <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
+                    <VStack :spacing="8" alignment="leading" :frame="{ width: '100%' }">
+                      <Text font="subheadline" foreground-color="secondary">Segmented</Text>
+                      <Picker v-model="selectedSize" :options="sizes" picker-style="segmented" />
+                      <Text font="caption" foreground-color="secondary">Selected: {{ selectedSize }}</Text>
+                    </VStack>
+                    <VStack :spacing="8" alignment="leading" :frame="{ width: '100%' }">
+                      <Text font="subheadline" foreground-color="secondary">Menu (Dropdown)</Text>
+                      <Picker v-model="selectedFruit" :options="fruits" picker-style="menu" />
+                      <Text font="caption" foreground-color="secondary">Selected: {{ selectedFruit }}</Text>
+                    </VStack>
+                    <VStack :spacing="8" alignment="leading" :frame="{ width: '100%' }">
+                      <Text font="subheadline" foreground-color="secondary">Disabled</Text>
+                      <Picker :model-value="'apple'" :options="fruits" picker-style="segmented" disabled />
+                    </VStack>
+                  </VStack>
+                </template>
+              </NavigationLink>
+            </Section>
 
-                <VStack :spacing="8" alignment="leading">
-                  <Text font="subheadline" foreground-color="secondary">Segmented</Text>
-                  <Picker v-model="selectedSize" :options="sizes" picker-style="segmented" />
-                  <Text font="caption" foreground-color="secondary">Selected: {{ selectedSize }}</Text>
-                </VStack>
+            <Section header="Reactive">
+              <NavigationLink destination-title="onChange & Combine">
+                <Label system-image="⚡">onChange & Combine</Label>
+                <template #destination>
+                  <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
+                    <VStack :spacing="4" alignment="leading" :frame="{ width: '100%' }">
+                      <Text font="caption" foreground-color="secondary" :style="{ wordBreak: 'break-all' }">
+                        publisher(search).map(trim).removeDuplicates().debounce(400).sink(...)
+                      </Text>
+                      <TextField v-model="searchInput" placeholder="Search..." text-field-style="roundedBorder" />
+                      <Text font="subheadline" data-testid="debounced">
+                        debounced: <Text foreground-color="blue" bold>{{ debouncedQuery || '—' }}</Text>
+                      </Text>
+                    </VStack>
+                    <VStack :spacing="4" alignment="leading" :frame="{ width: '100%' }">
+                      <Text font="caption" foreground-color="secondary">
+                        onChange(volume) — Volume 슬라이더를 움직이면 기록됩니다
+                      </Text>
+                      <Slider v-model="volume" :min="0" :max="100" label="Volume" />
+                      <Text font="subheadline" data-testid="volume-log">{{ volumeLog }}</Text>
+                    </VStack>
+                  </VStack>
+                </template>
+              </NavigationLink>
+            </Section>
 
-                <VStack :spacing="8" alignment="leading">
-                  <Text font="subheadline" foreground-color="secondary">Menu (Dropdown)</Text>
-                  <Picker v-model="selectedFruit" :options="fruits" picker-style="menu" />
-                  <Text font="caption" foreground-color="secondary">Selected: {{ selectedFruit }}</Text>
-                </VStack>
-
-                <VStack :spacing="8" alignment="leading">
-                  <Text font="subheadline" foreground-color="secondary">Disabled</Text>
-                  <Picker :model-value="'apple'" :options="fruits" picker-style="segmented" disabled />
-                </VStack>
-              </VStack>
-
-              <Divider />
-
-              <!-- Reactive: onChange + publisher -->
-              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
-                <Text font="title2" foreground-color="primary">onChange & Combine</Text>
-
-                <VStack :spacing="4" alignment="leading" :frame="{ width: '100%' }">
-                  <Text font="caption" foreground-color="secondary">
-                    publisher(search).map(trim).removeDuplicates().debounce(400).sink(...)
-                  </Text>
-                  <TextField v-model="searchInput" placeholder="Search..." text-field-style="roundedBorder" />
-                  <Text font="subheadline" data-testid="debounced">
-                    debounced: <Text foreground-color="blue" bold>{{ debouncedQuery || '—' }}</Text>
-                  </Text>
-                </VStack>
-
-                <VStack :spacing="4" alignment="leading" :frame="{ width: '100%' }">
-                  <Text font="caption" foreground-color="secondary">
-                    onChange(volume) — 위 Volume 슬라이더를 움직여보세요
-                  </Text>
-                  <Text font="subheadline" data-testid="volume-log">{{ volumeLog }}</Text>
-                </VStack>
-              </VStack>
-
-              <Spacer :min-length="20" />
-            </VStack>
-          </ScrollView>
+          </VStack>
         </NavigationStack>
       </template>
 
-      <!-- === LAYOUT TAB === -->
+      <!-- ============ LAYOUT TAB ============ -->
       <template #layout>
         <NavigationStack title="Layout" display-mode="large">
-          <ScrollView>
-            <VStack :spacing="24" :padding="16" alignment="leading">
+          <VStack :spacing="24" :padding="[16, 0]" alignment="leading" :frame="{ width: '100%' }">
 
-              <!-- VStack -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">VStack</Text>
-                <HStack :spacing="16">
-                  <VStack :spacing="4" alignment="leading" :padding="12" background="secondaryBackground" :corner-radius="8">
-                    <Text font="caption" foreground-color="secondary">leading</Text>
-                    <Text foreground-color="blue">Short</Text>
-                    <Text foreground-color="blue">Medium Text</Text>
-                    <Text foreground-color="blue">A Longer Text</Text>
-                  </VStack>
-                  <VStack :spacing="4" alignment="center" :padding="12" background="secondaryBackground" :corner-radius="8">
-                    <Text font="caption" foreground-color="secondary">center</Text>
-                    <Text foreground-color="green">Short</Text>
-                    <Text foreground-color="green">Medium Text</Text>
-                    <Text foreground-color="green">A Longer Text</Text>
-                  </VStack>
-                  <VStack :spacing="4" alignment="trailing" :padding="12" background="secondaryBackground" :corner-radius="8">
-                    <Text font="caption" foreground-color="secondary">trailing</Text>
-                    <Text foreground-color="purple">Short</Text>
-                    <Text foreground-color="purple">Medium Text</Text>
-                    <Text foreground-color="purple">A Longer Text</Text>
-                  </VStack>
-                </HStack>
-              </VStack>
-
-              <Divider />
-
-              <!-- HStack -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">HStack</Text>
-                <VStack :spacing="8" alignment="leading">
-                  <HStack :spacing="8" alignment="top" :padding="12" background="secondaryBackground" :corner-radius="8">
-                    <Text font="caption" foreground-color="secondary">top:</Text>
-                    <Text font="largeTitle" foreground-color="red">A</Text>
-                    <Text font="body" foreground-color="red">B</Text>
-                    <Text font="caption" foreground-color="red">C</Text>
-                  </HStack>
-                  <HStack :spacing="8" alignment="center" :padding="12" background="secondaryBackground" :corner-radius="8">
-                    <Text font="caption" foreground-color="secondary">center:</Text>
-                    <Text font="largeTitle" foreground-color="blue">A</Text>
-                    <Text font="body" foreground-color="blue">B</Text>
-                    <Text font="caption" foreground-color="blue">C</Text>
-                  </HStack>
-                  <HStack :spacing="8" alignment="bottom" :padding="12" background="secondaryBackground" :corner-radius="8">
-                    <Text font="caption" foreground-color="secondary">bottom:</Text>
-                    <Text font="largeTitle" foreground-color="green">A</Text>
-                    <Text font="body" foreground-color="green">B</Text>
-                    <Text font="caption" foreground-color="green">C</Text>
-                  </HStack>
-                </VStack>
-              </VStack>
-
-              <Divider />
-
-              <!-- ZStack -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">ZStack</Text>
-                <HStack :spacing="16">
-                  <ZStack :frame="{ width: '120px', height: '120px' }">
-                    <div :style="{ width: '100px', height: '100px', borderRadius: '16px', background: 'var(--swift-blue)', opacity: 0.3 }" />
-                    <div :style="{ width: '70px', height: '70px', borderRadius: '12px', background: 'var(--swift-blue)', opacity: 0.5 }" />
-                    <div :style="{ width: '40px', height: '40px', borderRadius: '8px', background: 'var(--swift-blue)' }" />
-                  </ZStack>
-
-                  <ZStack :frame="{ width: '100px', height: '100px' }">
-                    <div :style="{ width: '100px', height: '100px', borderRadius: '50%', background: 'var(--swift-green)', opacity: 0.2 }" />
-                    <Text font="largeTitle">🌿</Text>
-                  </ZStack>
-
-                  <ZStack alignment="bottomTrailing" :frame="{ width: '80px', height: '80px' }">
-                    <div :style="{ width: '70px', height: '70px', borderRadius: '50%', background: 'var(--swift-purple)', opacity: 0.3 }" />
-                    <Text font="title3">👤</Text>
-                    <div :style="{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--swift-green)', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
-                      <Text font="caption2" foreground-color="white">✓</Text>
-                    </div>
-                  </ZStack>
-                </HStack>
-              </VStack>
-
-              <Divider />
-
-              <!-- Spacer -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">Spacer</Text>
-                <HStack :padding="12" background="secondaryBackground" :corner-radius="8" :frame="{ width: '100%' }">
-                  <Text foreground-color="blue">Left</Text>
-                  <Spacer />
-                  <Text foreground-color="red">Right</Text>
-                </HStack>
-                <HStack :padding="12" background="secondaryBackground" :corner-radius="8" :frame="{ width: '100%' }">
-                  <Text foreground-color="green">A</Text>
-                  <Spacer />
-                  <Text foreground-color="orange">B</Text>
-                  <Spacer />
-                  <Text foreground-color="purple">C</Text>
-                </HStack>
-              </VStack>
-
-              <Divider />
-
-              <!-- ForEach -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">ForEach</Text>
-                <HStack :spacing="8">
-                  <ForEach :items="['🍎', '🍌', '🍒', '🍇', '🍊']">
-                    <template #default="{ item, index }">
-                      <VStack :spacing="4" :padding="12" background="secondaryBackground" :corner-radius="8">
-                        <Text font="title">{{ item }}</Text>
-                        <Text font="caption2" foreground-color="secondary">#{{ index + 1 }}</Text>
+            <Section header="Stacks">
+              <NavigationLink destination-title="VStack">
+                <Label system-image="⬇️">VStack</Label>
+                <template #destination>
+                  <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <HStack :spacing="16" wrap>
+                      <VStack :spacing="4" alignment="leading" :padding="12" background="secondaryBackground" :corner-radius="8">
+                        <Text font="caption" foreground-color="secondary">leading</Text>
+                        <Text foreground-color="blue">Short</Text>
+                        <Text foreground-color="blue">Medium Text</Text>
+                        <Text foreground-color="blue">A Longer Text</Text>
                       </VStack>
-                    </template>
-                  </ForEach>
-                </HStack>
-              </VStack>
-
-              <Divider />
-
-              <!-- ScrollView -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">ScrollView (horizontal)</Text>
-                <ScrollView axes="horizontal" :shows-indicators="false" :frame="{ height: '100px' }">
-                  <HStack :spacing="12" :padding="[0, 4]">
-                    <div v-for="i in 10" :key="i" :style="{
-                      minWidth: '140px',
-                      height: '80px',
-                      borderRadius: '12px',
-                      background: colors[(i - 1) % colors.length].var,
-                      opacity: 0.8,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }">
-                      <Text font="headline" foreground-color="white">Card {{ i }}</Text>
-                    </div>
-                  </HStack>
-                </ScrollView>
-              </VStack>
-
-              <Divider />
-
-              <!-- LazyVGrid -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">LazyVGrid</Text>
-
-                <Text font="caption" foreground-color="secondary">columns: 3</Text>
-                <LazyVGrid :columns="3" :spacing="8">
-                  <VStack v-for="i in 6" :key="i" :padding="12" :corner-radius="10"
-                    :frame="{ width: '100%' }" background="secondaryBackground">
-                    <Text font="subheadline">{{ i }}</Text>
-                  </VStack>
-                </LazyVGrid>
-
-                <Text font="caption" foreground-color="secondary">
-                  columns: [{ adaptive: { minimum: 100 } }]
-                </Text>
-                <LazyVGrid :columns="[{ adaptive: { minimum: 100 } }]" :spacing="8">
-                  <VStack v-for="i in 5" :key="i" :padding="12" :corner-radius="10"
-                    :frame="{ width: '100%' }" background="secondaryBackground">
-                    <Text font="subheadline">Auto {{ i }}</Text>
-                  </VStack>
-                </LazyVGrid>
-
-                <Text font="caption" foreground-color="secondary">
-                  columns: [{ fixed: 80 }, { flexible: {} }]
-                </Text>
-                <LazyVGrid :columns="[{ fixed: 80 }, { flexible: {} }]" :spacing="8">
-                  <VStack :padding="12" :corner-radius="10" :frame="{ width: '100%' }" background="blue">
-                    <Text font="caption" foreground-color="white">80px</Text>
-                  </VStack>
-                  <VStack :padding="12" :corner-radius="10" :frame="{ width: '100%' }" background="green">
-                    <Text font="caption" foreground-color="white">flexible</Text>
-                  </VStack>
-                </LazyVGrid>
-              </VStack>
-
-              <Divider />
-
-              <!-- LazyHGrid -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">LazyHGrid</Text>
-                <Text font="caption" foreground-color="secondary">rows: 2, inside a horizontal ScrollView</Text>
-                <ScrollView axes="horizontal" :shows-indicators="false" :frame="{ height: '150px' }">
-                  <LazyHGrid :rows="2" :spacing="8">
-                    <VStack v-for="i in 12" :key="i" :padding="[16, 12]" :corner-radius="10"
-                      :frame="{ width: '110px' }"
-                      :style="{ background: colors[(i - 1) % colors.length].var }">
-                      <Text font="caption" foreground-color="white" bold>Item {{ i }}</Text>
-                    </VStack>
-                  </LazyHGrid>
-                </ScrollView>
-              </VStack>
-
-              <Divider />
-
-              <!-- Todo List with ForEach in List -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">List + Interactive</Text>
-                <HStack :spacing="8">
-                  <Text font="subheadline" foreground-color="secondary">
-                    {{ completedCount }}/{{ todos.length }} completed ({{ completionPercent }}%)
-                  </Text>
-                </HStack>
-                <List :items="todos" list-style="insetGrouped" :frame="{ maxWidth: '500px', width: '100%' }">
-                  <template #default="{ item, index }">
-                    <HStack :spacing="12">
-                      <Text :foreground-color="item.done ? 'green' : 'secondary'" font="title3">
-                        {{ item.done ? '✅' : '⬜' }}
-                      </Text>
-                      <Text :style="{ textDecoration: item.done ? 'line-through' : 'none', opacity: item.done ? 0.6 : 1 }">
-                        {{ item.title }}
-                      </Text>
-                      <Spacer />
-                      <Button button-style="plain" @tap="toggleTodo(index)">
-                        {{ item.done ? 'Undo' : 'Done' }}
-                      </Button>
+                      <VStack :spacing="4" alignment="center" :padding="12" background="secondaryBackground" :corner-radius="8">
+                        <Text font="caption" foreground-color="secondary">center</Text>
+                        <Text foreground-color="green">Short</Text>
+                        <Text foreground-color="green">Medium Text</Text>
+                        <Text foreground-color="green">A Longer Text</Text>
+                      </VStack>
+                      <VStack :spacing="4" alignment="trailing" :padding="12" background="secondaryBackground" :corner-radius="8">
+                        <Text font="caption" foreground-color="secondary">trailing</Text>
+                        <Text foreground-color="purple">Short</Text>
+                        <Text foreground-color="purple">Medium Text</Text>
+                        <Text foreground-color="purple">A Longer Text</Text>
+                      </VStack>
                     </HStack>
-                  </template>
-                </List>
-              </VStack>
+                  </VStack>
+                </template>
+              </NavigationLink>
 
-              <Spacer :min-length="20" />
-            </VStack>
-          </ScrollView>
+              <NavigationLink destination-title="HStack">
+                <Label system-image="➡️">HStack</Label>
+                <template #destination>
+                  <VStack :spacing="8" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <HStack :spacing="8" alignment="top" :padding="12" background="secondaryBackground" :corner-radius="8" :frame="{ width: '100%' }">
+                      <Text font="caption" foreground-color="secondary">top:</Text>
+                      <Text font="largeTitle" foreground-color="red">A</Text>
+                      <Text font="body" foreground-color="red">B</Text>
+                      <Text font="caption" foreground-color="red">C</Text>
+                    </HStack>
+                    <HStack :spacing="8" alignment="center" :padding="12" background="secondaryBackground" :corner-radius="8" :frame="{ width: '100%' }">
+                      <Text font="caption" foreground-color="secondary">center:</Text>
+                      <Text font="largeTitle" foreground-color="blue">A</Text>
+                      <Text font="body" foreground-color="blue">B</Text>
+                      <Text font="caption" foreground-color="blue">C</Text>
+                    </HStack>
+                    <HStack :spacing="8" alignment="bottom" :padding="12" background="secondaryBackground" :corner-radius="8" :frame="{ width: '100%' }">
+                      <Text font="caption" foreground-color="secondary">bottom:</Text>
+                      <Text font="largeTitle" foreground-color="green">A</Text>
+                      <Text font="body" foreground-color="green">B</Text>
+                      <Text font="caption" foreground-color="green">C</Text>
+                    </HStack>
+                  </VStack>
+                </template>
+              </NavigationLink>
+
+              <NavigationLink destination-title="ZStack & Spacer">
+                <Label system-image="🔳">ZStack & Spacer</Label>
+                <template #destination>
+                  <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <Text font="subheadline" foreground-color="secondary">ZStack</Text>
+                    <HStack :spacing="16" wrap>
+                      <ZStack :frame="{ width: '120px', height: '120px' }">
+                        <div :style="{ width: '100px', height: '100px', borderRadius: '16px', background: 'var(--swift-blue)', opacity: 0.3 }" />
+                        <div :style="{ width: '70px', height: '70px', borderRadius: '12px', background: 'var(--swift-blue)', opacity: 0.5 }" />
+                        <div :style="{ width: '40px', height: '40px', borderRadius: '8px', background: 'var(--swift-blue)' }" />
+                      </ZStack>
+                      <ZStack :frame="{ width: '100px', height: '100px' }">
+                        <div :style="{ width: '100px', height: '100px', borderRadius: '50%', background: 'var(--swift-green)', opacity: 0.2 }" />
+                        <Text font="largeTitle">🌿</Text>
+                      </ZStack>
+                      <ZStack alignment="bottomTrailing" :frame="{ width: '80px', height: '80px' }">
+                        <div :style="{ width: '70px', height: '70px', borderRadius: '50%', background: 'var(--swift-purple)', opacity: 0.3 }" />
+                        <Text font="title3">👤</Text>
+                        <div :style="{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--swift-green)', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
+                          <Text font="caption2" foreground-color="white">✓</Text>
+                        </div>
+                      </ZStack>
+                    </HStack>
+
+                    <Text font="subheadline" foreground-color="secondary">Spacer</Text>
+                    <HStack :padding="12" background="secondaryBackground" :corner-radius="8" :frame="{ width: '100%' }">
+                      <Text foreground-color="blue">Left</Text>
+                      <Spacer />
+                      <Text foreground-color="red">Right</Text>
+                    </HStack>
+                    <HStack :padding="12" background="secondaryBackground" :corner-radius="8" :frame="{ width: '100%' }">
+                      <Text foreground-color="green">A</Text>
+                      <Spacer />
+                      <Text foreground-color="orange">B</Text>
+                      <Spacer />
+                      <Text foreground-color="purple">C</Text>
+                    </HStack>
+                  </VStack>
+                </template>
+              </NavigationLink>
+            </Section>
+
+            <Section header="Grids">
+              <NavigationLink destination-title="LazyVGrid">
+                <Label system-image="🔲">LazyVGrid</Label>
+                <template #destination>
+                  <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <Text font="caption" foreground-color="secondary">columns: 3</Text>
+                    <LazyVGrid :columns="3" :spacing="8">
+                      <VStack v-for="i in 6" :key="i" :padding="12" :corner-radius="10"
+                        :frame="{ width: '100%' }" background="secondaryBackground">
+                        <Text font="subheadline">{{ i }}</Text>
+                      </VStack>
+                    </LazyVGrid>
+
+                    <Text font="caption" foreground-color="secondary">
+                      columns: [{ adaptive: { minimum: 100 } }]
+                    </Text>
+                    <LazyVGrid :columns="[{ adaptive: { minimum: 100 } }]" :spacing="8">
+                      <VStack v-for="i in 5" :key="i" :padding="12" :corner-radius="10"
+                        :frame="{ width: '100%' }" background="secondaryBackground">
+                        <Text font="subheadline">Auto {{ i }}</Text>
+                      </VStack>
+                    </LazyVGrid>
+
+                    <Text font="caption" foreground-color="secondary">
+                      columns: [{ fixed: 80 }, { flexible: {} }]
+                    </Text>
+                    <LazyVGrid :columns="[{ fixed: 80 }, { flexible: {} }]" :spacing="8">
+                      <VStack :padding="12" :corner-radius="10" :frame="{ width: '100%' }" background="blue">
+                        <Text font="caption" foreground-color="white">80px</Text>
+                      </VStack>
+                      <VStack :padding="12" :corner-radius="10" :frame="{ width: '100%' }" background="green">
+                        <Text font="caption" foreground-color="white">flexible</Text>
+                      </VStack>
+                    </LazyVGrid>
+                  </VStack>
+                </template>
+              </NavigationLink>
+
+              <NavigationLink destination-title="LazyHGrid">
+                <Label system-image="↔️">LazyHGrid</Label>
+                <template #destination>
+                  <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <Text font="caption" foreground-color="secondary">rows: 2, inside a horizontal ScrollView</Text>
+                    <ScrollView axes="horizontal" :shows-indicators="false" :frame="{ height: '150px' }">
+                      <LazyHGrid :rows="2" :spacing="8">
+                        <VStack v-for="i in 12" :key="i" :padding="[16, 12]" :corner-radius="10"
+                          :frame="{ width: '110px' }"
+                          :style="{ background: colors[(i - 1) % colors.length].var }">
+                          <Text font="caption" foreground-color="white" bold>Item {{ i }}</Text>
+                        </VStack>
+                      </LazyHGrid>
+                    </ScrollView>
+                  </VStack>
+                </template>
+              </NavigationLink>
+            </Section>
+
+            <Section header="Scroll & Data">
+              <NavigationLink destination-title="ScrollView">
+                <Label system-image="📜">ScrollView (horizontal)</Label>
+                <template #destination>
+                  <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <ScrollView axes="horizontal" :shows-indicators="false" :frame="{ height: '100px' }">
+                      <HStack :spacing="12" :padding="[0, 4]">
+                        <div v-for="i in 10" :key="i" :style="{
+                          minWidth: '140px',
+                          height: '80px',
+                          borderRadius: '12px',
+                          background: colors[(i - 1) % colors.length].var,
+                          opacity: 0.8,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }">
+                          <Text font="headline" foreground-color="white">Card {{ i }}</Text>
+                        </div>
+                      </HStack>
+                    </ScrollView>
+                  </VStack>
+                </template>
+              </NavigationLink>
+
+              <NavigationLink destination-title="ForEach">
+                <Label system-image="🔁">ForEach</Label>
+                <template #destination>
+                  <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <HStack :spacing="8" wrap>
+                      <ForEach :items="['🍎', '🍌', '🍒', '🍇', '🍊']">
+                        <template #default="{ item, index }">
+                          <VStack :spacing="4" :padding="12" background="secondaryBackground" :corner-radius="8">
+                            <Text font="title">{{ item }}</Text>
+                            <Text font="caption2" foreground-color="secondary">#{{ index + 1 }}</Text>
+                          </VStack>
+                        </template>
+                      </ForEach>
+                    </HStack>
+                  </VStack>
+                </template>
+              </NavigationLink>
+
+              <NavigationLink destination-title="List">
+                <Label system-image="📃">List + Interactive</Label>
+                <template #destination>
+                  <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <Text font="subheadline" foreground-color="secondary">
+                      {{ completedCount }}/{{ todos.length }} completed ({{ completionPercent }}%)
+                    </Text>
+                    <List :items="todos" list-style="insetGrouped" :frame="{ width: '100%' }">
+                      <template #default="{ item, index }">
+                        <HStack :spacing="12">
+                          <Text :foreground-color="item.done ? 'green' : 'secondary'" font="title3">
+                            {{ item.done ? '✅' : '⬜' }}
+                          </Text>
+                          <Text :style="{ textDecoration: item.done ? 'line-through' : 'none', opacity: item.done ? 0.6 : 1 }">
+                            {{ item.title }}
+                          </Text>
+                          <Spacer />
+                          <Button button-style="plain" @tap="toggleTodo(index)">
+                            {{ item.done ? 'Undo' : 'Done' }}
+                          </Button>
+                        </HStack>
+                      </template>
+                    </List>
+                  </VStack>
+                </template>
+              </NavigationLink>
+            </Section>
+
+          </VStack>
         </NavigationStack>
       </template>
 
-      <!-- === STYLES TAB === -->
+      <!-- ============ STYLES TAB ============ -->
       <template #styles>
         <NavigationStack title="Styles" display-mode="large">
-          <ScrollView>
-            <VStack :spacing="24" :padding="16" alignment="leading">
+          <VStack :spacing="24" :padding="[16, 0]" alignment="leading" :frame="{ width: '100%' }">
 
-              <!-- Modifiers -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">Modifiers</Text>
+            <Section header="Styling">
+              <NavigationLink destination-title="Modifiers">
+                <Label system-image="🧩">Modifiers</Label>
+                <template #destination>
+                  <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <HStack :spacing="12" wrap>
+                      <VStack :padding="16" background="blue" :corner-radius="12" foreground-color="white">
+                        <Text font="headline">cornerRadius</Text>
+                        <Text font="caption">12px</Text>
+                      </VStack>
+                      <VStack :padding="16" background="green" :corner-radius="20" foreground-color="white">
+                        <Text font="headline">cornerRadius</Text>
+                        <Text font="caption">20px</Text>
+                      </VStack>
+                    </HStack>
+                    <HStack :spacing="12" wrap>
+                      <VStack :padding="16" background="secondaryBackground" :corner-radius="12"
+                        :shadow="{ radius: 4, y: 2 }">
+                        <Text font="headline">Shadow</Text>
+                        <Text font="caption" foreground-color="secondary">radius: 4</Text>
+                      </VStack>
+                      <VStack :padding="16" background="secondaryBackground" :corner-radius="12"
+                        :shadow="{ radius: 12, y: 4 }">
+                        <Text font="headline">Shadow</Text>
+                        <Text font="caption" foreground-color="secondary">radius: 12</Text>
+                      </VStack>
+                    </HStack>
+                    <HStack :spacing="12" wrap>
+                      <VStack :padding="16" background="purple" :corner-radius="12" foreground-color="white" :opacity="1">
+                        <Text font="headline">100%</Text>
+                      </VStack>
+                      <VStack :padding="16" background="purple" :corner-radius="12" foreground-color="white" :opacity="0.7">
+                        <Text font="headline">70%</Text>
+                      </VStack>
+                      <VStack :padding="16" background="purple" :corner-radius="12" foreground-color="white" :opacity="0.4">
+                        <Text font="headline">40%</Text>
+                      </VStack>
+                    </HStack>
+                    <HStack :spacing="12" wrap>
+                      <VStack :padding="16" :corner-radius="12" :border="{ color: 'var(--swift-blue)', width: 2 }">
+                        <Text font="headline" foreground-color="blue">Border</Text>
+                      </VStack>
+                      <VStack :padding="16" :corner-radius="12" :border="{ color: 'var(--swift-red)', width: 3 }">
+                        <Text font="headline" foreground-color="red">Border</Text>
+                      </VStack>
+                    </HStack>
+                  </VStack>
+                </template>
+              </NavigationLink>
 
-                <HStack :spacing="12">
-                  <VStack :padding="16" background="blue" :corner-radius="12" foreground-color="white">
-                    <Text font="headline">cornerRadius</Text>
-                    <Text font="caption">12px</Text>
+              <NavigationLink destination-title="Clip Shape">
+                <Label system-image="✂️">Clip Shape</Label>
+                <template #destination>
+                  <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <HStack :spacing="16" wrap>
+                      <VStack :padding="20" background="orange" clip-shape="circle" foreground-color="white">
+                        <Text font="headline">Circle</Text>
+                      </VStack>
+                      <VStack :padding="[12,24]" background="teal" clip-shape="capsule" foreground-color="white">
+                        <Text font="headline">Capsule</Text>
+                      </VStack>
+                      <VStack :padding="16" background="indigo" clip-shape="roundedRectangle" foreground-color="white">
+                        <Text font="headline">Rounded</Text>
+                      </VStack>
+                    </HStack>
                   </VStack>
-                  <VStack :padding="16" background="green" :corner-radius="20" foreground-color="white">
-                    <Text font="headline">cornerRadius</Text>
-                    <Text font="caption">20px</Text>
-                  </VStack>
-                </HStack>
+                </template>
+              </NavigationLink>
+            </Section>
 
-                <HStack :spacing="12">
-                  <VStack :padding="16" background="secondaryBackground" :corner-radius="12"
-                    :shadow="{ radius: 4, y: 2 }">
-                    <Text font="headline">Shadow</Text>
-                    <Text font="caption" foreground-color="secondary">radius: 4</Text>
+            <Section header="Colors & Lists">
+              <NavigationLink destination-title="System Colors">
+                <Label system-image="🎨">System Colors</Label>
+                <template #destination>
+                  <VStack :spacing="12" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <LazyVGrid :columns="[{ adaptive: { minimum: 80 } }]" :spacing="8">
+                      <VStack v-for="c in colors" :key="c.name" :spacing="4" :padding="[16, 8]"
+                        :corner-radius="12" :frame="{ width: '100%' }" :style="{ background: c.var }">
+                        <Text font="caption" foreground-color="white" bold>{{ c.name }}</Text>
+                      </VStack>
+                    </LazyVGrid>
                   </VStack>
-                  <VStack :padding="16" background="secondaryBackground" :corner-radius="12"
-                    :shadow="{ radius: 12, y: 4 }">
-                    <Text font="headline">Shadow</Text>
-                    <Text font="caption" foreground-color="secondary">radius: 12</Text>
-                  </VStack>
-                  <VStack :padding="16" background="secondaryBackground" :corner-radius="12"
-                    :shadow="{ radius: 24, y: 8 }">
-                    <Text font="headline">Shadow</Text>
-                    <Text font="caption" foreground-color="secondary">radius: 24</Text>
-                  </VStack>
-                </HStack>
+                </template>
+              </NavigationLink>
 
-                <HStack :spacing="12">
-                  <VStack :padding="16" background="purple" :corner-radius="12"
-                    foreground-color="white" :opacity="1">
-                    <Text font="headline">100%</Text>
+              <NavigationLink destination-title="List Styles">
+                <Label system-image="📑">List Styles</Label>
+                <template #destination>
+                  <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <VStack :spacing="4" alignment="leading" :frame="{ width: '100%' }">
+                      <Text font="caption" foreground-color="secondary">insetGrouped</Text>
+                      <List list-style="insetGrouped" :frame="{ width: '100%' }">
+                        <div class="swift-list-row"><Text>Row 1</Text></div>
+                        <div class="swift-list-row"><Text>Row 2</Text></div>
+                        <div class="swift-list-row"><Text>Row 3</Text></div>
+                      </List>
+                    </VStack>
+                    <VStack :spacing="4" alignment="leading" :frame="{ width: '100%' }">
+                      <Text font="caption" foreground-color="secondary">plain</Text>
+                      <List list-style="plain" :frame="{ width: '100%' }">
+                        <div class="swift-list-row"><Text>Row 1</Text></div>
+                        <div class="swift-list-row"><Text>Row 2</Text></div>
+                        <div class="swift-list-row"><Text>Row 3</Text></div>
+                      </List>
+                    </VStack>
                   </VStack>
-                  <VStack :padding="16" background="purple" :corner-radius="12"
-                    foreground-color="white" :opacity="0.7">
-                    <Text font="headline">70%</Text>
-                  </VStack>
-                  <VStack :padding="16" background="purple" :corner-radius="12"
-                    foreground-color="white" :opacity="0.4">
-                    <Text font="headline">40%</Text>
-                  </VStack>
-                </HStack>
+                </template>
+              </NavigationLink>
+            </Section>
 
-                <HStack :spacing="12">
-                  <VStack :padding="16" :corner-radius="12" :border="{ color: 'var(--swift-blue)', width: 2 }">
-                    <Text font="headline" foreground-color="blue">Border</Text>
-                  </VStack>
-                  <VStack :padding="16" :corner-radius="12" :border="{ color: 'var(--swift-red)', width: 3 }">
-                    <Text font="headline" foreground-color="red">Border</Text>
-                  </VStack>
-                </HStack>
-              </VStack>
-
-              <Divider />
-
-              <!-- Clip Shape -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">Clip Shape</Text>
-                <HStack :spacing="16">
-                  <VStack :padding="20" background="orange" clip-shape="circle" foreground-color="white">
-                    <Text font="headline">Circle</Text>
-                  </VStack>
-                  <VStack :padding="[12,24]" background="teal" clip-shape="capsule" foreground-color="white">
-                    <Text font="headline">Capsule</Text>
-                  </VStack>
-                  <VStack :padding="16" background="indigo" clip-shape="roundedRectangle" foreground-color="white">
-                    <Text font="headline">Rounded</Text>
-                  </VStack>
-                </HStack>
-              </VStack>
-
-              <Divider />
-
-              <!-- Font Weights -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">Font Weights</Text>
-                <VStack :spacing="4" alignment="leading" :padding="[12, 16]" background="secondaryBackground" :corner-radius="12">
-                  <Text font-weight="ultraLight">ultraLight</Text>
-                  <Text font-weight="thin">thin</Text>
-                  <Text font-weight="light">light</Text>
-                  <Text font-weight="regular">regular</Text>
-                  <Text font-weight="medium">medium</Text>
-                  <Text font-weight="semibold">semibold</Text>
-                  <Text font-weight="bold">bold</Text>
-                  <Text font-weight="heavy">heavy</Text>
-                  <Text font-weight="black">black</Text>
-                </VStack>
-              </VStack>
-
-              <Divider />
-
-              <!-- Colors -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">System Colors</Text>
-                <LazyVGrid :columns="[{ adaptive: { minimum: 80 } }]" :spacing="8">
-                  <VStack v-for="c in colors" :key="c.name" :spacing="4" :padding="[16, 8]"
-                    :corner-radius="12" :frame="{ width: '100%' }" :style="{ background: c.var }">
-                    <Text font="caption" foreground-color="white" bold>{{ c.name }}</Text>
-                  </VStack>
-                </LazyVGrid>
-              </VStack>
-
-              <Divider />
-
-              <!-- List Styles -->
-              <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-                <Text font="title2" foreground-color="primary">List Styles</Text>
-
-                <HStack :spacing="16" alignment="top">
-                  <VStack :spacing="4" alignment="leading" :frame="{ maxWidth: '220px' }">
-                    <Text font="caption" foreground-color="secondary">insetGrouped</Text>
-                    <List list-style="insetGrouped">
-                      <div class="swift-list-row"><Text>Row 1</Text></div>
-                      <div class="swift-list-row"><Text>Row 2</Text></div>
-                      <div class="swift-list-row"><Text>Row 3</Text></div>
-                    </List>
-                  </VStack>
-                  <VStack :spacing="4" alignment="leading" :frame="{ maxWidth: '220px' }">
-                    <Text font="caption" foreground-color="secondary">plain</Text>
-                    <List list-style="plain">
-                      <div class="swift-list-row"><Text>Row 1</Text></div>
-                      <div class="swift-list-row"><Text>Row 2</Text></div>
-                      <div class="swift-list-row"><Text>Row 3</Text></div>
-                    </List>
-                  </VStack>
-                </HStack>
-              </VStack>
-
-              <Divider />
-
-              <!-- Dark Mode Toggle -->
-              <VStack :spacing="12" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
-                <Text font="title2" foreground-color="primary">Theme</Text>
-                <HStack :padding="16" background="secondaryBackground" :corner-radius="12">
+            <Section header="Theme" footer="선택은 usePreferredColorScheme로 저장되어 다음 방문에도 유지됩니다.">
+              <div class="swift-list-row">
+                <HStack>
                   <Label system-image="🌙">Dark Mode</Label>
                   <Spacer />
                   <Toggle v-model="darkMode" label="Dark Mode" />
                 </HStack>
-                <Text font="caption" foreground-color="secondary">
-                  Toggle dark mode to see all components adapt to the color scheme.
-                  This preference is saved via usePreferredColorScheme.
-                </Text>
-              </VStack>
+              </div>
+            </Section>
 
-              <Divider />
+            <Text font="footnote" foreground-color="secondary" :frame="{ width: '100%' }"
+              :style="{ textAlign: 'center' }">
+              SwiftVue v{{ version }}
+            </Text>
 
-              <!-- Version -->
-              <VStack :spacing="4" alignment="center" :frame="{ width: '100%' }">
-                <Text font="footnote" foreground-color="secondary">SwiftVue v{{ version }}</Text>
-              </VStack>
-
-              <Spacer :min-length="20" />
-            </VStack>
-          </ScrollView>
+          </VStack>
         </NavigationStack>
       </template>
 
@@ -1188,11 +1077,11 @@ onUnmounted(() => {
         <Text font="title2">SwiftVue Demo</Text>
         <Divider />
         <VStack :spacing="12" alignment="leading" :frame="{ width: '100%' }">
-          <Label system-image="🧩">24 Components</Label>
+          <Label system-image="🧩">28 Components</Label>
           <Label system-image="🎨">iOS Design System Colors</Label>
           <Label system-image="📐">SwiftUI-style Layout</Label>
           <Label system-image="♿">ARIA Accessibility</Label>
-          <Label system-image="🧪">118 Unit Tests</Label>
+          <Label system-image="🧪">Unit + E2E Tests</Label>
           <Label system-image="🔄">CI/CD Pipeline</Label>
         </VStack>
         <Divider />
@@ -1209,7 +1098,7 @@ onUnmounted(() => {
     <!-- Alert -->
     <Alert
       v-model:is-presented="showAlert"
-      title="Navigation"
+      title="Alert"
       message="This demonstrates the Alert component with accessible focus management."
       :actions="[
         { label: 'Cancel', role: 'cancel' },
@@ -1337,5 +1226,4 @@ html, body {
     animation-iteration-count: 1 !important;
   }
 }
-
 </style>

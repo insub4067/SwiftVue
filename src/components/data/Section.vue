@@ -121,6 +121,9 @@ function toggle() {
   border-bottom: 1px solid var(--swift-separator);
 }
 .section-card :slotted(.swift-list-row:last-child) { border-bottom: none; }
+/* NavigationLinks in a Section read as iOS settings rows */
+.section-card :slotted(.nav-link) { border-bottom: 1px solid var(--swift-separator); }
+.section-card :slotted(.nav-link:last-child) { border-bottom: none; }
 
 .section-footer {
   margin: 7px 0 0;
