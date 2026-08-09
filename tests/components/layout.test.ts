@@ -73,6 +73,30 @@ describe('ZStack', () => {
     const wrapper = mount(ZStack)
     expect(wrapper.element.style.position).toBe('relative')
   })
+
+  // Children share one cell, so justify-items is the horizontal axis and
+  // align-items the vertical one. Using justify-content/align-content put
+  // `leading` where `top` belonged.
+  it.each([
+    ['center', 'center', 'center'],
+    ['leading', 'start', 'center'],
+    ['trailing', 'end', 'center'],
+    ['top', 'center', 'start'],
+    ['bottom', 'center', 'end'],
+    ['topLeading', 'start', 'start'],
+    ['topTrailing', 'end', 'start'],
+    ['bottomLeading', 'start', 'end'],
+    ['bottomTrailing', 'end', 'end'],
+  ])('%s places children horizontally %s and vertically %s', (alignment, horizontal, vertical) => {
+    const wrapper = mount(ZStack, { props: { alignment: alignment as never } })
+    expect(wrapper.element.style.justifyItems).toBe(horizontal)
+    expect(wrapper.element.style.alignItems).toBe(vertical)
+  })
+
+  it('does not fall back to place-items, which would pin the horizontal axis', () => {
+    const wrapper = mount(ZStack, { props: { alignment: 'leading' } })
+    expect(wrapper.element.style.placeItems).toBe('')
+  })
 })
 
 describe('Spacer', () => {

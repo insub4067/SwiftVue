@@ -80,7 +80,7 @@ const style = computed(() => ({
       v-if="currentTitle || depth > 0"
       :class="['nav-header', depth > 0 ? 'nav-header--inline nav-header--pushed' : `nav-header--${displayMode}`]"
     >
-      <button v-if="depth > 0" class="nav-back" aria-label="Back" @click="pop()">
+      <button v-if="depth > 0" type="button" class="nav-back" aria-label="Back" @click="pop()">
         <span class="nav-back-chevron" aria-hidden="true">‹</span>
         <span class="nav-back-label">{{ backLabel }}</span>
       </button>

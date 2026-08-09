@@ -8,16 +8,19 @@ interface Props extends ModifierProps {
 
 const props = withDefaults(defineProps<Props>(), { alignment: 'center' })
 
-const posMap: Record<string, { justifyContent: string; alignItems: string }> = {
-  center: { justifyContent: 'center', alignItems: 'center' },
-  leading: { justifyContent: 'center', alignItems: 'flex-start' },
-  trailing: { justifyContent: 'center', alignItems: 'flex-end' },
-  top: { justifyContent: 'flex-start', alignItems: 'center' },
-  bottom: { justifyContent: 'flex-end', alignItems: 'center' },
-  topLeading: { justifyContent: 'flex-start', alignItems: 'flex-start' },
-  topTrailing: { justifyContent: 'flex-start', alignItems: 'flex-end' },
-  bottomLeading: { justifyContent: 'flex-end', alignItems: 'flex-start' },
-  bottomTrailing: { justifyContent: 'flex-end', alignItems: 'flex-end' },
+// Children share one grid cell, so they are placed by justify-items
+// (horizontal) and align-items (vertical). justify-content/align-content
+// would move the track instead — that swapped `leading` with `top`.
+const posMap: Record<string, { justifyItems: string; alignItems: string }> = {
+  center: { justifyItems: 'center', alignItems: 'center' },
+  leading: { justifyItems: 'start', alignItems: 'center' },
+  trailing: { justifyItems: 'end', alignItems: 'center' },
+  top: { justifyItems: 'center', alignItems: 'start' },
+  bottom: { justifyItems: 'center', alignItems: 'end' },
+  topLeading: { justifyItems: 'start', alignItems: 'start' },
+  topTrailing: { justifyItems: 'end', alignItems: 'start' },
+  bottomLeading: { justifyItems: 'start', alignItems: 'end' },
+  bottomTrailing: { justifyItems: 'end', alignItems: 'end' },
 }
 
 const modifierStyle = useModifiers(props)
@@ -25,7 +28,6 @@ const style = computed(() => ({
   ...modifierStyle.value,
   position: 'relative' as const,
   display: 'grid' as const,
-  placeItems: 'center',
   ...posMap[props.alignment],
 }))
 </script>

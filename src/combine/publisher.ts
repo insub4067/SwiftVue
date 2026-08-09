@@ -1,4 +1,4 @@
-import { watch, type WatchSource, type WatchStopHandle } from 'vue'
+import { getCurrentScope, onScopeDispose, watch, type WatchSource, type WatchStopHandle } from 'vue'
 
 /**
  * The slice of Combine that UI code actually uses, over Vue reactivity.
@@ -87,10 +87,20 @@ function make(source: WatchSource<any>, ops: Operator[]): Publisher<any> {
       }
 
       const stop = watch(source, (value) => deliver(value))
-      return (() => {
+
+      let stopped = false
+      const teardown = () => {
+        if (stopped) return // manual stop() and scope dispose can both fire
+        stopped = true
         stop()
         for (const cleanup of cleanups) cleanup()
-      }) as WatchStopHandle
+      }
+
+      // Vue stops the watcher with the scope, but a debounce timer it queued
+      // would still fire into an unmounted component — tear those down too.
+      if (getCurrentScope()) onScopeDispose(teardown)
+
+      return teardown as WatchStopHandle
     },
   }
 }

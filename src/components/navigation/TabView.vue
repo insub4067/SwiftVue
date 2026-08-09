@@ -37,6 +37,7 @@ const style = computed(() => ({
     </div>
     <nav class="tab-bar" role="tablist" aria-label="Tabs">
       <button
+        type="button"
         v-for="tab in tabs"
         :id="`tab-${tab.id}`"
         :key="tab.id"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, useSlots } from 'vue'
+import { computed, type VNodeChild } from 'vue'
 import { useModifiers, type ModifierProps } from '../../utils/modifiers'
 import { useNavigation } from '../../composables/useNavigation'
 
@@ -12,7 +12,15 @@ interface Props extends ModifierProps {
 
 const props = defineProps<Props>()
 const emit = defineEmits<{ tap: [] }>()
-const slots = useSlots()
+
+// Declared rather than read off useSlots(): only defineSlots reaches the
+// emitted .d.ts, so TypeScript consumers can see #destination at all.
+const slots = defineSlots<{
+  /** the row itself */
+  default?: () => VNodeChild
+  /** pushed onto the enclosing NavigationStack when the row is activated */
+  destination?: () => VNodeChild
+}>()
 const navigation = useNavigation()
 const modifierStyle = useModifiers(props)
 

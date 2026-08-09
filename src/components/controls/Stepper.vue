@@ -42,12 +42,14 @@ function increment() {
 <template>
   <div class="stepper" :style="style" role="group" :aria-label="label ?? 'Stepper'">
     <button
+      type="button"
       :disabled="!canDecrement || disabled"
       :aria-label="`Decrease${label ? ' ' + label : ''}`"
       @click="decrement"
     >−</button>
     <span class="value" aria-live="polite">{{ modelValue }}</span>
     <button
+      type="button"
       :disabled="!canIncrement || disabled"
       :aria-label="`Increase${label ? ' ' + label : ''}`"
       @click="increment"

@@ -51,6 +51,7 @@ function onChange(e: Event) {
 <template>
   <div v-if="isSegmented" :style="segmentedStyle">
     <button
+      type="button"
       v-for="opt in options"
       :key="opt.value"
       :class="['segment', { active: modelValue === opt.value }]"
