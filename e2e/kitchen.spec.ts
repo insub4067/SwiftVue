@@ -121,6 +121,20 @@ test('Back returns to the list, and forward goes in again', async ({ page }) => 
   await expect(page.getByRole('heading', { name: 'Buy milk' })).toBeVisible()
 })
 
+test('a tab keeps its screen while you look at the other one', async ({ page }) => {
+  await fresh(page)
+
+  await page.getByText('Renew passport').click()
+  await expect(page.getByRole('heading', { name: 'Renew passport' })).toBeVisible()
+
+  await page.getByRole('tab', { name: /Settings/ }).click()
+  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
+
+  await page.getByRole('tab', { name: /Todos/ }).click()
+  await expect(page.getByRole('heading', { name: 'Renew passport' }),
+    'the pushed screen is where it was left').toBeVisible()
+})
+
 test('onAppear counts a return, not a remount', async ({ page }) => {
   await fresh(page)
 

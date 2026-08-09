@@ -7,6 +7,26 @@ SwiftVue is pre-1.0. While the major version is 0, a **minor** bump may
 change behaviour and a **patch** only fixes it. Anything that would break
 working code is called out under *Breaking* with the change you need to make.
 
+## Unreleased
+
+**Fixed**
+
+- A tab you came back to was rebuilt from scratch. Only the selected tab
+  rendered, so glancing at another one put a pushed screen back at its root
+  and emptied a half-typed field. A tab is built the first time it is opened
+  and kept from then on, the way SwiftUI's `TabView` does it — and a kept
+  tab counts as disappeared, so `onAppear` fires on the way back.
+- Every `NavigationLink` warned about a missing `router-link` in a project
+  with no vue-router. The tag's lookup ran above the `v-if` guarding it.
+- `padding` rejected the three-value CSS shorthand. `[8, 0, 24]` is what a
+  screen with a tab bar under it wants, and only two and four were accepted.
+
+**Added**
+
+- **Kitchen** — a small real app (todos and settings) built out of SwiftVue,
+  at `/kitchen/` on the demo site. It is type-checked, linted and mounted in
+  the unit suite; the three fixes above are all things it found.
+
 ## 0.2.1
 
 Four defects, all in code that only misbehaves under conditions the demo
