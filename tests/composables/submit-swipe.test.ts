@@ -319,6 +319,33 @@ describe('SwipeActions', () => {
     wrapper.unmount()
   })
 
+  // The row only follows the finger as far as its actions plus a little
+  // give — 208px with two of them. Deciding the full swipe from where the
+  // row stopped meant a row wider than about 350px could never reach 60% of
+  // itself, so `allowsFullSwipe` did nothing on a phone. 320px above is
+  // just inside the range where it happens to work, which is why this went
+  // unnoticed until a real browser laid a row out at 390.
+  it('runs the first action on a wide row too', async () => {
+    const wrapper = mountRow()
+    await nextTick()
+    wrapper.element.getBoundingClientRect = () => ({ width: 390, height: 44 }) as DOMRect
+
+    await drag(wrapper, -300) // past 60% of 390, further than the row can go
+    expect(wrapper.emitted('select')?.[0]).toEqual([trailing[0]])
+    wrapper.unmount()
+  })
+
+  it('and still parks open when the finger stops short of it', async () => {
+    const wrapper = mountRow()
+    await nextTick()
+    wrapper.element.getBoundingClientRect = () => ({ width: 390, height: 44 }) as DOMRect
+
+    await drag(wrapper, -180) // open, but under 234
+    expect(wrapper.emitted('select')).toBeUndefined()
+    expect(wrapper.find('.swipe-content').attributes('style')).toContain('translateX(-168px)')
+    wrapper.unmount()
+  })
+
   it('allowsFullSwipe=false parks it open instead', async () => {
     const wrapper = mountRow({ allowsFullSwipe: false })
     await nextTick()

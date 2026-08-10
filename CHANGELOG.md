@@ -11,6 +11,12 @@ working code is called out under *Breaking* with the change you need to make.
 
 **Fixed**
 
+- **`allowsFullSwipe` did nothing on a phone.** A swipe past 60% of a row is
+  supposed to run its first action outright. The 60% was measured against
+  how far the *row* had moved, and a row only follows the finger as far as
+  its actions plus a little give — 208px with two of them. So on any row
+  wider than about 350px the threshold was unreachable and the gesture
+  simply parked the row open. It is measured against the gesture now.
 - **Swiping a row also opened it.** A drag ends with the browser sending a
   `click`, and the content inside the row cannot tell that from a tap — so
   on a list of `NavigationLink`s, swiping a row open pushed the screen it

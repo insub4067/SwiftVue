@@ -37,9 +37,14 @@ the way they do in a real project:
 
 **Finding bugs.** Kitchen is type-checked and linted alongside the library,
 and its screens are mounted in the unit suite — including a test that fails
-on any Vue warning. Building the first version turned up five library
+on any Vue warning. Building the first version turned up six library
 defects that a per-component test had no way to see:
 
+- **`allowsFullSwipe` did nothing on a phone.** The 60%-of-the-row threshold
+  was measured against how far the row had moved, and the row stops at its
+  actions — 208px — so a row wider than about 350px could never reach it.
+  The unit test had stubbed the row at 320px, just inside the range where it
+  works.
 - **Swiping a row also opened it.** A drag ends with a `click`, and the
   `NavigationLink` inside the row took it as a tap — so revealing Delete
   pushed the todo's screen over the button you were reaching for. Only a
