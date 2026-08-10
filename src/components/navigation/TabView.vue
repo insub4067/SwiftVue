@@ -14,8 +14,9 @@ export interface TabViewProps extends ModifierProps {
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import { useModifiers, composeStyle, type ModifierProps } from '../../utils/modifiers'
+import NavPane from './NavPane'
 
 
 const props = defineProps<TabViewProps>()
@@ -26,6 +27,30 @@ const activeTab = computed({
   get: () => props.modelValue ?? props.tabs[0]?.id ?? '',
   set: (v) => emit('update:modelValue', v),
 })
+
+/**
+ * Which tabs have ever been selected. SwiftUI builds a tab the first time
+ * you open it and keeps it from then on, so a tab you come back to is the
+ * one you left — same navigation depth, same scroll position, same half
+ * typed field. Rendering only the selected tab threw all of that away every
+ * time the user looked at something else.
+ *
+ * First selection rather than eagerly, because a tab nobody opens should
+ * cost nothing — and because mounting all of them would run every tab's
+ * `onAppear` at startup.
+ */
+const opened = reactive(new Set<string>())
+watch(activeTab, (id) => { if (id) opened.add(id) }, { immediate: true })
+
+// A tab removed from `tabs` is gone, not merely hidden — keeping its pane
+// alive would leak one per removal and leave it answering to an id the tab
+// bar no longer shows.
+watch(() => props.tabs, (tabs) => {
+  const live = new Set(tabs.map(t => t.id))
+  for (const id of opened) if (!live.has(id)) opened.delete(id)
+}, { deep: true })
+
+const panes = computed(() => props.tabs.filter(tab => opened.has(tab.id)))
 
 // iOS hides an empty badge rather than drawing a dot with nothing in it.
 function badgeOf(tab: TabItem): string | null {
@@ -49,8 +74,25 @@ const style = computed(() => composeStyle(modifierStyle.value, {
 
 <template>
   <div :style="style">
-    <div class="tab-content" role="tabpanel" :aria-labelledby="`tab-${activeTab}`">
-      <slot :name="activeTab" />
+    <div class="tab-content">
+      <!--
+        One panel per tab that has been opened, all but the selected one
+        display:none — which is what takes it out of the accessibility tree
+        as well as out of view, so a screen reader never reaches a tab the
+        user is not on.
+      -->
+      <div
+        v-for="tab in panes"
+        v-show="tab.id === activeTab"
+        :key="tab.id"
+        class="tab-panel"
+        role="tabpanel"
+        :aria-labelledby="`tab-${tab.id}`"
+      >
+        <NavPane :active="tab.id === activeTab">
+          <slot :name="tab.id" />
+        </NavPane>
+      </div>
     </div>
     <nav class="tab-bar" role="tablist" aria-label="Tabs">
       <button
@@ -81,6 +123,14 @@ const style = computed(() => composeStyle(modifierStyle.value, {
 .tab-content {
   flex: 1;
   overflow-y: auto;
+  /* A percentage height inside a panel used to resolve against this box,
+     back when the tab's content was its only child. `min-height: 0` keeps
+     the flex item from growing past the row, and the panel below restores
+     the full height the content still expects. */
+  min-height: 0;
+}
+.tab-panel {
+  height: 100%;
 }
 .tab-bar {
   display: flex;

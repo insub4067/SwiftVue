@@ -32,6 +32,13 @@ export interface SwipeOptions {
 const DEFAULTS = { threshold: 50, tolerance: 45, edgeWidth: 28 }
 
 /**
+ * Past this much movement the press was a drag, and the click the browser
+ * sends afterwards is not a tap the content should act on. Small enough that
+ * an unsteady finger on a real tap still gets through.
+ */
+const DRAG_NOT_A_TAP = 8
+
+/**
  * Pointer-driven swipe detection on one element.
  *
  * Pointer events rather than touch: one code path covers finger, trackpad
@@ -48,6 +55,7 @@ export function useSwipe(target: Ref<HTMLElement | null>, options: SwipeOptions 
 
   let start: { x: number; y: number; t: number } | null = null
   let pointerId: number | null = null
+  let captured = false
   let el: HTMLElement | null = null
 
   function withinEdge(e: PointerEvent, box: DOMRect): boolean {
@@ -64,11 +72,60 @@ export function useSwipe(target: Ref<HTMLElement | null>, options: SwipeOptions 
     if (!withinEdge(e, box)) return
     start = { x: e.clientX, y: e.clientY, t: e.timeStamp }
     pointerId = e.pointerId
+    captured = false
+  }
+
+  function releaseCapture() {
+    if (!captured || pointerId == null) return
+    captured = false
+    if (el?.hasPointerCapture?.(pointerId)) el.releasePointerCapture(pointerId)
   }
 
   function onPointerMove(e: PointerEvent) {
     if (!start || e.pointerId !== pointerId) return
-    opts.onMove?.({ x: e.clientX - start.x, y: e.clientY - start.y })
+    const x = e.clientX - start.x
+    const y = e.clientY - start.y
+
+    // Claimed on the first real movement, never on the way down.
+    //
+    // Once this element holds the pointer the whole drag belongs to it
+    // wherever the pointer goes — which is what stops the browser from
+    // reporting a leave the pointer never made as the row slides underneath
+    // it, and what makes the release come back even when the finger lifts
+    // somewhere else.
+    //
+    // Claiming it on `pointerdown` would do all that too, and would also
+    // retarget the click a *tap* produces onto this element, over the head
+    // of whatever is inside it. A row that links somewhere would stop
+    // opening when tapped. So: a press is left alone until it moves.
+    if (!captured && Math.hypot(x, y) > DRAG_NOT_A_TAP) {
+      captured = true
+      el?.setPointerCapture?.(e.pointerId)
+    }
+
+    opts.onMove?.({ x, y })
+  }
+
+  /**
+   * A drag is followed by a `click`, and the content underneath cannot tell
+   * it apart from a tap — so an iOS row swiped open would also open the
+   * screen it links to. Swallow that one click, in the capture phase, before
+   * anything inside the element sees it.
+   *
+   * The timeout is the escape hatch: if no click follows — the pointer went
+   * up somewhere else, the browser suppressed it — the listener must not sit
+   * there waiting to eat a real tap later on.
+   */
+  function swallowNextClick() {
+    const element = el
+    if (!element) return
+    const swallow = (e: Event) => {
+      e.stopPropagation()
+      e.preventDefault()
+      element.removeEventListener('click', swallow, true)
+    }
+    element.addEventListener('click', swallow, true)
+    setTimeout(() => element.removeEventListener('click', swallow, true), 0)
   }
 
   function finish(e: PointerEvent) {
@@ -76,8 +133,14 @@ export function useSwipe(target: Ref<HTMLElement | null>, options: SwipeOptions 
     const dx = e.clientX - start.x
     const dy = e.clientY - start.y
     const elapsed = Math.max(1, e.timeStamp - start.t)
+    releaseCapture()
     start = null
     pointerId = null
+
+    // Judged on total movement rather than on whether the swipe qualified: a
+    // drag that fell short of the threshold is still a drag, and the row it
+    // dragged should not also be opened.
+    if (Math.hypot(dx, dy) > DRAG_NOT_A_TAP) swallowNextClick()
 
     const horizontal = Math.abs(dx) > Math.abs(dy)
     const along = horizontal ? dx : dy
@@ -109,6 +172,7 @@ export function useSwipe(target: Ref<HTMLElement | null>, options: SwipeOptions 
 
   function onPointerCancel(e: PointerEvent) {
     if (!start || e.pointerId !== pointerId) return
+    releaseCapture()
     start = null
     pointerId = null
     opts.onCancel?.()
@@ -120,7 +184,7 @@ export function useSwipe(target: Ref<HTMLElement | null>, options: SwipeOptions 
       el.removeEventListener('pointermove', onPointerMove)
       el.removeEventListener('pointerup', finish)
       el.removeEventListener('pointercancel', onPointerCancel)
-      el.removeEventListener('pointerleave', onPointerCancel)
+      el.removeEventListener('lostpointercapture', onPointerCancel)
     }
     el = next
     if (!el) return
@@ -128,9 +192,11 @@ export function useSwipe(target: Ref<HTMLElement | null>, options: SwipeOptions 
     el.addEventListener('pointermove', onPointerMove)
     el.addEventListener('pointerup', finish)
     el.addEventListener('pointercancel', onPointerCancel)
-    // A finger that leaves the element never reports its release here, and a
-    // gesture left half-open would strand whatever it was moving.
-    el.addEventListener('pointerleave', onPointerCancel)
+    // Not `pointerleave`: a drag is allowed to wander off the element, and
+    // the browser fires leave during one anyway as the element under the
+    // pointer changes. Losing the capture is the real "this gesture is no
+    // longer yours" — the browser took it, so put back whatever moved.
+    el.addEventListener('lostpointercapture', onPointerCancel)
   }
 
   // post, not the default pre: a template ref is only populated once the DOM

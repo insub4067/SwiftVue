@@ -35,10 +35,21 @@ export default defineConfig({
       use: { ...devices['Desktop Safari'], hasTouch: true },
     },
   ],
-  webServer: {
-    command: 'npm run demo:build && npm run demo:preview',
-    port: 4173,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  // Two apps, two ports. The playground is the component gallery and owns
+  // `baseURL`; Kitchen is the small real app the library is regression
+  // tested against, and its spec addresses it absolutely.
+  webServer: [
+    {
+      command: 'npm run demo:build && npm run demo:preview',
+      port: 4173,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+    {
+      command: 'npm run kitchen:build && npm run kitchen:preview',
+      port: 4174,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+  ],
 })

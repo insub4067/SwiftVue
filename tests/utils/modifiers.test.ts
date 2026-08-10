@@ -16,6 +16,15 @@ describe('buildModifierStyle', () => {
     expect(style.padding).toBe('8px 16px')
   })
 
+  // CSS takes three — top, horizontal, bottom — and the tuple is CSS
+  // shorthand, so leaving it out was a hole rather than a decision. It was
+  // found by type-checking Kitchen, where `[8, 0, 24]` is the natural way
+  // to write a screen that needs room at the bottom for the tab bar.
+  it('handles 3-value padding array', () => {
+    const style = buildModifierStyle({ padding: [8, 0, 24] })
+    expect(style.padding).toBe('8px 0px 24px')
+  })
+
   it('handles 4-value padding array', () => {
     const style = buildModifierStyle({ padding: [1, 2, 3, 4] })
     expect(style.padding).toBe('1px 2px 3px 4px')

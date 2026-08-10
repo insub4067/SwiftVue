@@ -95,18 +95,26 @@ useSwipe(root, {
     dragging.value = false
     settle()
   },
-  onSwipe() {
+  onSwipe({ distance }) {
     dragging.value = false
-    settle()
+    settle(distance)
   },
 })
 
 /**
  * Where the row lands when the finger lifts: fully open, fully closed, or —
  * if it went far enough — straight into the first action.
+ *
+ * `travelledByFinger` is how far the gesture went, which is not how far the
+ * row went: the row stops at its actions plus a little give. With two
+ * actions that ceiling is 208px, and the full-swipe mark is 60% of the row
+ * — so on anything wider than about 350px the row could never reach its own
+ * threshold and `allowsFullSwipe` quietly did nothing. The unit test that
+ * covered it had stubbed the row at 320px, just inside the range where it
+ * happens to work.
  */
-function settle() {
-  const travelled = Math.abs(offset.value)
+function settle(travelledByFinger?: number) {
+  const travelled = travelledByFinger ?? Math.abs(offset.value)
   const width = rowWidth()
   // A row with no measured width — not laid out yet, or display:none — would
   // make every threshold zero and turn the smallest drag into a full swipe,
@@ -206,7 +214,16 @@ defineExpose({ close, offset })
 </template>
 
 <style scoped>
-.swipe-row { touch-action: pan-y; }
+.swipe-row {
+  /* the vertical axis belongs to the scroller, the horizontal one to us */
+  touch-action: pan-y;
+  /* A drag across a row would otherwise select its text — which looks wrong
+     mid-gesture, and on a mouse can hand the pointer to the browser's own
+     drag machinery instead of to the swipe. An iOS list row is not
+     selectable either. */
+  user-select: none;
+  -webkit-user-select: none;
+}
 
 .swipe-slab {
   position: absolute;

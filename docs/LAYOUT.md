@@ -21,6 +21,38 @@ blowout이 발생한다. 실제로 같은 뿌리의 결함이 세 번 발견되�
 
 ## 규칙
 
+### 0. 전체 화면 앱은 높이를 가진 셸 안에 있어야 한다
+
+`TabView`와 `NavigationStack`은 `height: 100%`다. 백분율 높이는 **높이를 가진
+부모**가 있어야 해석되는데, `<body>`는 기본적으로 그렇지 않다. 셸 없이 두면 앱
+전체가 콘텐츠 높이로 접히고 탭바가 목록 위에 올라앉는다 — z-index 버그처럼
+보이지만 원인은 높이다.
+
+라이브러리가 이 셸을 제공한다. opt-in이며, SwiftVue를 큰 페이지의 일부로 쓰는
+경우에는 붙이지 않는다.
+
+```html
+<div class="swift-app swift-app-fullscreen">
+  <TabView …>…</TabView>
+</div>
+```
+
+`position: fixed`로 구현되어 있어 호스트 페이지가 `html`/`body`에 아무것도
+설정하지 않아도 동작한다. 스크롤하는 것은 `ScrollView`뿐이다 — iOS 모델과 같다.
+
+iOS Safari에서 fixed 요소는 **large viewport** 기준으로 배치되므로, 동적
+툴바가 접히기 전까지는 탭바가 툴바 아래에 깔린다. 이것이 문제가 되면
+`visualViewport`에서 읽은 값을 `--swift-app-height`에 넣는다:
+
+```ts
+const fit = () => document.documentElement.style
+  .setProperty('--swift-app-height', `${visualViewport!.height}px`)
+visualViewport?.addEventListener('resize', fit)
+```
+
+키보드가 올라올 때 값이 줄어드는 것까지 다루려면 `playground/App.vue`의
+처리를 참고할 것 — 키보드로 인한 축소는 무시하고 쉬는 높이를 유지한다.
+
 ### 1. 스크롤 축의 크기는 부모에게서 받는다
 
 어떤 축으로 스크롤하는 컨테이너는 그 축의 크기를 **콘텐츠가 아니라 부모**에서

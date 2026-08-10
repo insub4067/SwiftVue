@@ -19,7 +19,13 @@ export interface ShadowModifier {
 }
 
 export interface ModifierProps {
-  padding?: number | [number, number] | [number, number, number, number]
+  /**
+   * One value for every edge, or the CSS shorthand as a tuple: `[v, h]`,
+   * `[top, h, bottom]`, `[top, right, bottom, left]`. The four-value form is
+   * physical, like the CSS it maps to — reach for `paddingHorizontal` or a
+   * logical property where a right-to-left layout should mirror it.
+   */
+  padding?: number | [number, number] | [number, number, number] | [number, number, number, number]
   paddingHorizontal?: number
   paddingVertical?: number
   frame?: FrameModifier
@@ -64,9 +70,9 @@ export function buildModifierStyle(props: ModifierProps): CSSProperties {
     if (typeof props.padding === 'number') {
       style.padding = `${props.padding}px`
     } else if (Array.isArray(props.padding)) {
-      style.padding = props.padding.length === 2
-        ? `${props.padding[0]}px ${props.padding[1]}px`
-        : `${props.padding[0]}px ${props.padding[1]}px ${props.padding[2]}px ${props.padding[3]}px`
+      // Whatever its length, it is CSS shorthand — so every length CSS
+      // accepts works, rather than the two that happened to be written out.
+      style.padding = props.padding.map(v => `${v}px`).join(' ')
     }
   }
   if (props.paddingHorizontal != null) {

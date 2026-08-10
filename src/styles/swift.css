@@ -118,6 +118,37 @@
   line-height: 1.4;
 }
 
+/*
+ * The shell an app that fills the window needs.
+ *
+ * TabView and NavigationStack are `height: 100%`, and a percentage height
+ * resolves against a parent that has one — which `<body>` does not, by
+ * default. Without this the whole app collapses to its content height and
+ * the tab bar lands on top of the list, looking for all the world like a
+ * z-index bug. Every app built on SwiftVue hit this and solved it privately
+ * before it lived here.
+ *
+ * `position: fixed` rather than `height: 100%` up the tree, so it works
+ * without the host page setting anything on `html` or `body`. Nothing
+ * scrolls but a ScrollView, which is the iOS model.
+ *
+ * Opt-in: SwiftVue used inside part of a larger page should not be told how
+ * tall the page is.
+ *
+ * On iOS Safari a fixed element is laid out against the *large* viewport,
+ * so the tab bar sits under the dynamic toolbar until the toolbar
+ * collapses. Set `--swift-app-height` from `visualViewport` if that matters
+ * to you; see docs/LAYOUT.md.
+ */
+.swift-app-fullscreen {
+  position: fixed;
+  inset: 0;
+  height: var(--swift-app-height, auto);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 /* --- Motion ------------------------------------------------------------ */
 
 /* withAnimation() drives these through the View Transitions API */

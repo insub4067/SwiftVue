@@ -6,6 +6,7 @@ import NavigationLink from '../../src/components/navigation/NavigationLink.vue'
 import TabView from '../../src/components/navigation/TabView.vue'
 import Sheet from '../../src/components/navigation/Sheet.vue'
 import { useNavigation } from '../../src/composables/useNavigation'
+import { onAppear, onDisappear } from '../../src/composables/useLifecycle'
 
 describe('NavigationStack', () => {
   it('renders title in large mode', () => {
@@ -218,6 +219,33 @@ describe('NavigationLink with a destination', () => {
     await wrapper.trigger('click')
     expect(wrapper.emitted('tap')).toHaveLength(1)
   })
+
+  // Most projects have no vue-router, and writing `<router-link>` in the
+  // template makes its lookup run at the top of every render regardless of
+  // the `v-if` guarding it. The result was a warning per link per render in
+  // a project that never asked for a router — silent to the tests that only
+  // checked the markup, deafening in a console.
+  it('says nothing about vue-router when no link asked for it', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    mount(NavigationLink, { slots: { default: () => 'Row' } })
+    const said = warn.mock.calls.flat().join('\n')
+    warn.mockRestore()
+    expect(said).toBe('')
+  })
+
+  it('but a link with `to` still renders the router link', () => {
+    const RouterLink = defineComponent({
+      props: { to: { type: String, required: true } },
+      setup: (props, { slots }) => () => h('a', { href: props.to, class: 'stub-router' }, slots.default?.()),
+    })
+    const wrapper = mount(NavigationLink, {
+      props: { to: '/somewhere' },
+      slots: { default: () => 'Row' },
+      global: { components: { RouterLink } },
+    })
+    expect(wrapper.find('.stub-router').exists()).toBe(true)
+    expect(wrapper.find('.stub-router').attributes('href')).toBe('/somewhere')
+  })
 })
 
 describe('TabView', () => {
@@ -255,6 +283,120 @@ describe('TabView', () => {
   it('has tabpanel role on content', () => {
     const wrapper = mount(TabView, { props: { tabs } })
     expect(wrapper.find('[role="tabpanel"]').exists()).toBe(true)
+  })
+})
+
+// SwiftUI builds a tab the first time it is opened and keeps it from then
+// on, so a tab you come back to is the one you left. Rendering only the
+// selected tab threw that away on every switch — a Settings screen three
+// pushes deep was back at its root the moment you glanced at another tab.
+describe('a tab you come back to is the one you left', () => {
+  const tabs = [
+    { id: 'home', label: 'Home' },
+    { id: 'settings', label: 'Settings' },
+  ]
+
+  /** A screen whose state is visible, so reuse can be told from remounting. */
+  const Screen = defineComponent({
+    props: { name: { type: String, required: true } },
+    setup(props) {
+      const typed = ref('')
+      mounts[props.name] = (mounts[props.name] ?? 0) + 1
+      return () => h('input', {
+        class: `field-${props.name}`,
+        value: typed.value,
+        onInput: (e: Event) => (typed.value = (e.target as HTMLInputElement).value),
+      })
+    },
+  })
+  let mounts: Record<string, number> = {}
+
+  function mountTabs() {
+    return mount(TabView, {
+      props: { tabs, modelValue: 'home' },
+      slots: {
+        home: () => h(Screen, { name: 'home' }),
+        settings: () => h(Screen, { name: 'settings' }),
+      },
+    })
+  }
+
+  beforeEach(() => { mounts = {} })
+
+  it('keeps what was typed in a tab across a switch away and back', async () => {
+    const wrapper = mountTabs()
+
+    const field = wrapper.find('.field-home')
+    ;(field.element as HTMLInputElement).value = 'half a sentence'
+    await field.trigger('input')
+
+    await wrapper.setProps({ modelValue: 'settings' })
+    await wrapper.setProps({ modelValue: 'home' })
+
+    expect((wrapper.find('.field-home').element as HTMLInputElement).value)
+      .toBe('half a sentence')
+    expect(mounts.home, 'it was never rebuilt').toBe(1)
+  })
+
+  it('does not build a tab nobody has opened', () => {
+    mountTabs()
+    expect(mounts.home).toBe(1)
+    expect(mounts.settings, 'an unopened tab costs nothing').toBeUndefined()
+  })
+
+  it('builds a tab on its first selection, once', async () => {
+    const wrapper = mountTabs()
+    await wrapper.setProps({ modelValue: 'settings' })
+    expect(mounts.settings).toBe(1)
+
+    await wrapper.setProps({ modelValue: 'home' })
+    await wrapper.setProps({ modelValue: 'settings' })
+    expect(mounts.settings, 'kept, not rebuilt').toBe(1)
+  })
+
+  // A kept pane is still in the DOM, so hiding it has to be the kind of
+  // hiding assistive technology respects — display:none, not opacity.
+  it('an unselected tab is out of the accessibility tree', async () => {
+    const wrapper = mountTabs()
+    await wrapper.setProps({ modelValue: 'settings' })
+
+    const panels = wrapper.findAll('[role="tabpanel"]')
+    expect(panels).toHaveLength(2)
+    const hidden = panels.find(p => p.attributes('aria-labelledby') === 'tab-home')!
+    expect((hidden.element as HTMLElement).style.display).toBe('none')
+  })
+
+  it('a tab removed from the bar takes its pane with it', async () => {
+    const wrapper = mountTabs()
+    await wrapper.setProps({ modelValue: 'settings' })
+    expect(wrapper.findAll('[role="tabpanel"]')).toHaveLength(2)
+
+    await wrapper.setProps({ tabs: [tabs[1]], modelValue: 'settings' })
+    expect(wrapper.findAll('[role="tabpanel"]'), 'home is gone, not merely hidden').toHaveLength(1)
+  })
+
+  // The point of keeping a pane alive is that it is not on screen, and a
+  // view that is not on screen has disappeared — the same rule a covered
+  // NavigationStack pane follows.
+  it('onAppear and onDisappear follow the selection', async () => {
+    const log: string[] = []
+    const Watched = defineComponent({
+      setup() {
+        onAppear(() => log.push('appear'))
+        onDisappear(() => log.push('disappear'))
+        return () => h('p', 'watched')
+      },
+    })
+    const wrapper = mount(TabView, {
+      props: { tabs, modelValue: 'home' },
+      slots: { home: () => h(Watched), settings: () => h('p', 'other') },
+    })
+
+    expect(log).toEqual(['appear'])
+    await wrapper.setProps({ modelValue: 'settings' })
+    expect(log).toEqual(['appear', 'disappear'])
+    await wrapper.setProps({ modelValue: 'home' })
+    expect(log).toEqual(['appear', 'disappear', 'appear'])
   })
 })
 

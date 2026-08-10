@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watchEffect, type VNodeChild } from 'vue'
+import { computed, resolveComponent, watchEffect, type VNodeChild } from 'vue'
 import { useModifiers, composeStyle, type ModifierProps } from '../../utils/modifiers'
 import { serializeRoute, useNavigation, type NavigationEntry } from '../../composables/useNavigation'
 
@@ -34,6 +34,13 @@ const modifierStyle = useModifiers(props)
 // SwiftUI semantics: a NavigationLink with a destination pushes it onto the
 // enclosing NavigationStack. Without one it is a plain tappable row.
 const pushes = computed(() => !!slots.destination && !!navigation)
+
+// Writing `<router-link>` in the template would hoist its lookup to the top
+// of the render function, so every link in a project without vue-router
+// warns — including the overwhelming majority that never set `to`. Reading
+// it here means the lookup happens only for a link that asked for a router,
+// where a missing router-link is worth warning about.
+const routerLink = computed(() => (props.to ? resolveComponent('router-link') : undefined))
 
 const entry = (): NavigationEntry => ({
   title: props.destinationTitle,

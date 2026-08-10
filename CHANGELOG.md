@@ -7,6 +7,63 @@ SwiftVue is pre-1.0. While the major version is 0, a **minor** bump may
 change behaviour and a **patch** only fixes it. Anything that would break
 working code is called out under *Breaking* with the change you need to make.
 
+## Unreleased
+
+**Fixed**
+
+- **Every swipe was thrown away mid-drag.** The row slides under the
+  pointer, so the browser keeps re-deciding what is beneath it and fires a
+  `pointerleave` from an element the pointer never left. `useSwipe` took
+  that for a cancel, and no swipe on any row ever completed in a real
+  browser — the unit tests could not see it because nothing synthetic sends
+  that leave. The gesture now captures the pointer, which is what pointer
+  capture is for: the whole drag belongs to the element, and the release is
+  reported even when the finger lifts elsewhere. Claimed on the first real
+  movement rather than on the press — a captured pointer also retargets the
+  click a *tap* produces onto the capturing element, which would stop a row
+  that links somewhere from opening when tapped.
+- **`allowsFullSwipe` did nothing on a phone.** A swipe past 60% of a row is
+  supposed to run its first action outright. The 60% was measured against
+  how far the *row* had moved, and a row only follows the finger as far as
+  its actions plus a little give — 208px with two of them. So on any row
+  wider than about 350px the threshold was unreachable and the gesture
+  simply parked the row open. It is measured against the gesture now.
+- **Swiping a row also opened it.** A drag ends with the browser sending a
+  `click`, and the content inside the row cannot tell that from a tap — so
+  on a list of `NavigationLink`s, swiping a row open pushed the screen it
+  linked to at the same time. Which is the one thing swipe-to-reveal must
+  never do: the row you were about to delete opens instead. A drag past 8px
+  now swallows that click, and only that one.
+- A tab you came back to was rebuilt from scratch. Only the selected tab
+  rendered, so glancing at another one put a pushed screen back at its root
+  and emptied a half-typed field. A tab is built the first time it is opened
+  and kept from then on, the way SwiftUI's `TabView` does it — and a kept
+  tab counts as disappeared, so `onAppear` fires on the way back.
+
+  Worth knowing before you upgrade: a tab you have visited is still in the
+  DOM after you leave it, hidden with `display: none`. Anything that
+  searched the whole document for an element — `querySelector`, an
+  unscoped end-to-end selector — can now find one on a tab nobody is
+  looking at. Scope those to the visible panel; `[role="tabpanel"]` marks
+  each one. This broke three of SwiftVue's own browser tests, which is how
+  it came to be written down.
+- Every `NavigationLink` warned about a missing `router-link` in a project
+  with no vue-router. The tag's lookup ran above the `v-if` guarding it.
+- `padding` rejected the three-value CSS shorthand. `[8, 0, 24]` is what a
+  screen with a tab bar under it wants, and only two and four were accepted.
+
+**Added**
+
+- `swift-app-fullscreen` — the shell an app that fills the window needs.
+  `TabView` and `NavigationStack` are `height: 100%` and `<body>` has no
+  height, so without a shell the whole app collapsed to its content height
+  and the tab bar landed on top of the list. Every app built on SwiftVue hit
+  this and solved it privately; now the library ships it, opt-in, and
+  `docs/LAYOUT.md` explains it as rule 0.
+- **Kitchen** — a small real app (todos and settings) built out of SwiftVue,
+  at `/kitchen/` on the demo site. It is type-checked, linted and mounted in
+  the unit suite; everything above is something it found.
+
 ## 0.2.1
 
 Four defects, all in code that only misbehaves under conditions the demo

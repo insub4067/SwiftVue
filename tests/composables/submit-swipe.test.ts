@@ -195,6 +195,78 @@ describe('useSwipe', () => {
     expect(onCancel).toHaveBeenCalledOnce()
   })
 
+  // The exact sequence Chromium sent while dragging a Kitchen row, captured
+  // by instrumenting the browser test after two rounds of guessing:
+  //
+  //   pointerdown → pointermove → pointerleave → pointermove → pointerup
+  //
+  // The row slides under the pointer, so the browser keeps re-deciding what
+  // is beneath it and reports a leave from an element the pointer never
+  // left. Treating that as a cancel threw away every swipe on every row.
+  it('a leave in the middle of a drag does not end it', async () => {
+    const onSwipe = vi.fn()
+    const onCancel = vi.fn()
+    const wrapper = mount(Swipeable({ onSwipe, onCancel }))
+    await nextTick()
+    const el = wrapper.find('.target').element
+    const send = (type: string, x?: number) =>
+      el.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: 50, pointerId: 1 }))
+
+    send('pointerdown', 300)
+    send('pointermove', 260)
+    send('pointerleave')
+    send('pointermove', 90)
+    send('pointerup', 90)
+
+    expect(onSwipe, 'the swipe survived the leave').toHaveBeenCalledOnce()
+    expect(onCancel).not.toHaveBeenCalled()
+  })
+
+  // Capture is what makes ignoring the leave safe: the release comes back
+  // here even when the finger lifts somewhere else. Losing the capture is
+  // the browser genuinely taking the gesture away.
+  it('losing the capture cancels the gesture', async () => {
+    const onCancel = vi.fn()
+    const wrapper = mount(Swipeable({ onCancel }))
+    await nextTick()
+    const el = wrapper.find('.target').element
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 300, clientY: 50, pointerId: 1 }))
+    el.dispatchEvent(new PointerEvent('lostpointercapture', { bubbles: true, pointerId: 1 }))
+    expect(onCancel).toHaveBeenCalledOnce()
+  })
+
+  it('claims the pointer once the press turns into a drag', async () => {
+    const wrapper = mount(Swipeable({}))
+    await nextTick()
+    const el = wrapper.find('.target').element as HTMLElement & { setPointerCapture: unknown }
+    const capture = vi.fn()
+    el.setPointerCapture = capture
+
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 300, clientY: 50, pointerId: 7 }))
+    expect(capture, 'a press on its own is not a drag').not.toHaveBeenCalled()
+
+    el.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 260, clientY: 50, pointerId: 7 }))
+    expect(capture).toHaveBeenCalledWith(7)
+  })
+
+  // Capturing on the way down would also retarget the click a tap produces
+  // onto the capturing element, over the head of anything inside it — so a
+  // row that links somewhere would stop opening when tapped. Four browser
+  // tests failed exactly that way.
+  it('leaves a tap alone entirely', async () => {
+    const wrapper = mount(Swipeable({}))
+    await nextTick()
+    const el = wrapper.find('.target').element as HTMLElement & { setPointerCapture: unknown }
+    const capture = vi.fn()
+    el.setPointerCapture = capture
+
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 300, clientY: 50, pointerId: 7 }))
+    el.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 302, clientY: 51, pointerId: 7 }))
+    el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 302, clientY: 51, pointerId: 7 }))
+
+    expect(capture, 'an unsteady finger is still a tap').not.toHaveBeenCalled()
+  })
+
   it('stops listening once unmounted', async () => {
     const onSwipe = vi.fn()
     const wrapper = mount(Swipeable({ onSwipe }))
@@ -261,6 +333,11 @@ describe('SwipeActions', () => {
   it('tapping a revealed action reports it and closes', async () => {
     const wrapper = mountRow()
     await drag(wrapper, -120)
+    // A drag swallows the click the browser sends straight after it, so
+    // that swiping a row does not also activate what is inside it. Let that
+    // input turn end first: nobody can tap again inside their own pointerup,
+    // and the row is still animating open at this point anyway.
+    await new Promise(resolve => setTimeout(resolve, 0))
     await wrapper.findAll('.swipe-action')[0].trigger('click')
 
     expect(wrapper.emitted('select')?.[0]).toEqual([trailing[0]])
@@ -314,6 +391,33 @@ describe('SwipeActions', () => {
     wrapper.unmount()
   })
 
+  // The row only follows the finger as far as its actions plus a little
+  // give — 208px with two of them. Deciding the full swipe from where the
+  // row stopped meant a row wider than about 350px could never reach 60% of
+  // itself, so `allowsFullSwipe` did nothing on a phone. 320px above is
+  // just inside the range where it happens to work, which is why this went
+  // unnoticed until a real browser laid a row out at 390.
+  it('runs the first action on a wide row too', async () => {
+    const wrapper = mountRow()
+    await nextTick()
+    wrapper.element.getBoundingClientRect = () => ({ width: 390, height: 44 }) as DOMRect
+
+    await drag(wrapper, -300) // past 60% of 390, further than the row can go
+    expect(wrapper.emitted('select')?.[0]).toEqual([trailing[0]])
+    wrapper.unmount()
+  })
+
+  it('and still parks open when the finger stops short of it', async () => {
+    const wrapper = mountRow()
+    await nextTick()
+    wrapper.element.getBoundingClientRect = () => ({ width: 390, height: 44 }) as DOMRect
+
+    await drag(wrapper, -180) // open, but under 234
+    expect(wrapper.emitted('select')).toBeUndefined()
+    expect(wrapper.find('.swipe-content').attributes('style')).toContain('translateX(-168px)')
+    wrapper.unmount()
+  })
+
   it('allowsFullSwipe=false parks it open instead', async () => {
     const wrapper = mountRow({ allowsFullSwipe: false })
     await nextTick()
@@ -330,5 +434,63 @@ describe('SwipeActions', () => {
     await wrapper.findAll('.swipe-fallback-button')[0].trigger('click')
     expect(wrapper.emitted('select')?.[0]).toEqual([trailing[0]])
     wrapper.unmount()
+  })
+
+  // A drag ends with the browser sending a `click`, and the content inside
+  // the row cannot tell it from a tap. On a list of NavigationLinks that
+  // meant swiping a row open also opened the screen behind it — which is the
+  // one thing swipe-to-reveal must never do. Found by driving Kitchen in a
+  // real browser: the pushed screen then covered the Delete button.
+  describe('a drag is not a tap', () => {
+    const mountLink = () => {
+      const opened = { count: 0 }
+      const wrapper = mount(SwipeActions, {
+        props: { trailing },
+        slots: { default: '<button class="row-link" type="button">Open</button>' },
+        attachTo: document.body,
+      })
+      wrapper.find('.row-link').element
+        .addEventListener('click', () => { opened.count += 1 })
+      return { wrapper, opened }
+    }
+
+    /** pointer sequence, then the click the browser would send after it */
+    const dragThenClick = async (wrapper: ReturnType<typeof mount>, dx: number) => {
+      await drag(wrapper, dx)
+      wrapper.find('.row-link').element
+        .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+      await wrapper.vm.$nextTick()
+    }
+
+    it('a swipe does not also activate what it swiped', async () => {
+      const { wrapper, opened } = mountLink()
+      await dragThenClick(wrapper, -120)
+      expect(opened.count, 'the row opened as well as swiping').toBe(0)
+      wrapper.unmount()
+    })
+
+    it('nor does a drag too small to count as a swipe', async () => {
+      const { wrapper, opened } = mountLink()
+      await dragThenClick(wrapper, -20) // under the 24px threshold
+      expect(opened.count).toBe(0)
+      wrapper.unmount()
+    })
+
+    it('but a tap still gets through', async () => {
+      const { wrapper, opened } = mountLink()
+      await dragThenClick(wrapper, -2) // an unsteady finger, not a drag
+      expect(opened.count, 'a tap must still open the row').toBe(1)
+      wrapper.unmount()
+    })
+
+    it('and a later tap is not eaten by an earlier drag', async () => {
+      const { wrapper, opened } = mountLink()
+      await dragThenClick(wrapper, -120)
+      await new Promise(resolve => setTimeout(resolve, 0)) // the escape hatch
+      wrapper.find('.row-link').element
+        .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+      expect(opened.count, 'the swallower outlived its one click').toBe(1)
+      wrapper.unmount()
+    })
   })
 })

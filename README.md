@@ -2,7 +2,12 @@
 
 **SwiftUI-style component library for Vue.js** — iOS 개발자가 익숙한 SwiftUI 문법으로 웹앱을 빠르게 개발할 수 있습니다.
 
-**[Live Demo](https://insub4067.github.io/SwiftVue/)**
+**[Live Demo](https://insub4067.github.io/SwiftVue/)** — every component, one
+page each.
+
+**[Kitchen](https://insub4067.github.io/SwiftVue/kitchen/)** — a small real
+app (todos and settings) built entirely out of SwiftVue. It is what the
+library is regression tested against; see [kitchen/README.md](kitchen/README.md).
 
 ## Quick Start
 
