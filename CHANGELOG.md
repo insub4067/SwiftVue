@@ -9,11 +9,23 @@ working code is called out under *Breaking* with the change you need to make.
 
 ## Unreleased
 
-An automated accessibility audit, and the six defects it found on the first
-run. Five of the six are in the library rather than the demo app, and every
-one of them had passed the full unit suite.
+An automated accessibility audit, the six defects it found, and a
+long-standing `withAnimation` flash.
 
 **Fixed**
+
+- **`withAnimation` flashed the whole screen for a one-element change.** It
+  drives the View Transitions API, which — told nothing about what moved —
+  snapshots the entire page and cross-fades it, and that page-wide fade is a
+  visible flash even when a single card changed. It could not have known
+  better: SwiftUI animates only the views that depend on the value because
+  it has the dependency graph, and the web does not. So the knowledge is now
+  something you can supply — `withAnimation(mutate, animation, { scope: el })`
+  names the changing element, lifts it out of the page snapshot, and lets
+  the rest of the screen hold still. Omitting `scope` keeps the old
+  whole-page behaviour, which is still right for a route or theme change.
+
+**Fixed (accessibility)**
 
 - **Six controls could not be given an accessible name.** `TextField`,
   `SecureField`, `TextEditor` and `Picker` had no `label` prop at all, so a

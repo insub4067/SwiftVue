@@ -32,9 +32,62 @@ type ViewTransitionDocument = Document & {
   startViewTransition?: (update: () => Promise<void>) => { finished: Promise<void> }
 }
 
+export interface WithAnimationOptions {
+  /**
+   * The element, or elements, that actually change.
+   *
+   * Without this, the View Transitions API snapshots the whole page and
+   * cross-fades it, because it has no way to know what moved — and that
+   * page-wide fade is a visible flash even when a single card changed. Name
+   * the element that changes and it is lifted out of the page snapshot and
+   * animated on its own; the rest of the screen is identical before and
+   * after, so it holds still.
+   *
+   * This is the piece SwiftUI gets for free: it knows the dependency graph,
+   * so `withAnimation` there already animates only the views that changed.
+   * On the web that knowledge has to be supplied, and this is where.
+   *
+   * Pass a template ref's `.value`. A nullish entry is skipped, so an
+   * unmounted ref is harmless.
+   */
+  scope?: Element | null | undefined | Array<Element | null | undefined>
+}
+
 function reducedMotion(): boolean {
   return typeof matchMedia !== 'undefined'
     && matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+// A process-wide counter, so two elements named in the same transition never
+// collide — the API rejects a transition with a duplicate `view-transition-name`.
+let vtCounter = 0
+
+interface NamedElement { el: HTMLElement, previous: string }
+
+/**
+ * Give each scoped element a unique `view-transition-name`, remembering
+ * whatever was there so it can be put back. Set before the old snapshot is
+ * taken and kept through the mutation, so the element is the *same* named
+ * box on both sides and morphs rather than cross-fades.
+ */
+function nameScope(scope: WithAnimationOptions['scope']): NamedElement[] {
+  if (!scope) return []
+  const els = Array.isArray(scope) ? scope : [scope]
+  const named: NamedElement[] = []
+  for (const el of els) {
+    if (!(el instanceof HTMLElement)) continue
+    const previous = el.style.getPropertyValue('view-transition-name')
+    el.style.setProperty('view-transition-name', `swift-vt-${vtCounter++}`)
+    named.push({ el, previous })
+  }
+  return named
+}
+
+function releaseScope(named: NamedElement[]) {
+  for (const { el, previous } of named) {
+    if (previous) el.style.setProperty('view-transition-name', previous)
+    else el.style.removeProperty('view-transition-name')
+  }
 }
 
 /**
@@ -44,7 +97,13 @@ function reducedMotion(): boolean {
  * ```ts
  * withAnimation(() => { expanded.value = !expanded.value })
  * withAnimation(() => items.value.sort(), Animations.spring)
+ *
+ * // animate only the card, so the rest of the page does not flash:
+ * withAnimation(() => { expanded.value = !expanded.value }, Animations.spring, { scope: cardEl.value })
  * ```
+ *
+ * Without a `scope` the whole page is snapshotted and cross-faded — see
+ * `WithAnimationOptions.scope` for why that flashes and when to reach for it.
  *
  * Where view transitions are unavailable (SSR, older browsers) or the user
  * prefers reduced motion, the mutation simply applies unanimated. The
@@ -54,6 +113,7 @@ function reducedMotion(): boolean {
 export function withAnimation<T>(
   mutate: () => T,
   animation: SwiftAnimation = Animations.default,
+  options: WithAnimationOptions = {},
 ): Promise<T> {
   const doc = (typeof document === 'undefined' ? null : document) as ViewTransitionDocument | null
 
@@ -66,6 +126,8 @@ export function withAnimation<T>(
   root.style.setProperty('--swift-vt-duration', `${animation.duration ?? 250}ms`)
   root.style.setProperty('--swift-vt-easing', animation.easing ?? 'ease')
 
+  const named = nameScope(options.scope)
+
   let result!: T
   const transition = doc.startViewTransition(async () => {
     result = mutate()
@@ -74,5 +136,10 @@ export function withAnimation<T>(
 
   return transition.finished
     .catch(() => { /* a skipped transition still applied the mutation */ })
-    .then(() => result)
+    .then(() => {
+      // Held until the animation settled: removing the name mid-flight would
+      // yank the element out of the transition it is in the middle of.
+      releaseScope(named)
+      return result
+    })
 }
