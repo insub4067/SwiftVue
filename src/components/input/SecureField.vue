@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, useAttrs } from 'vue'
 import { useModifiers, composeStyle, type ModifierProps } from '../../utils/modifiers'
+import { warnIfUnnamed } from '../../utils/warn'
 import { useFocusBinding, type FocusStateProps } from '../../composables/useFocusState'
 import { useSubmitAction } from '../../composables/useSubmit'
 
@@ -8,6 +9,12 @@ interface Props extends ModifierProps, FocusStateProps {
   modelValue?: string
   placeholder?: string
   disabled?: boolean
+  /**
+   * What the field is called, announced to a screen reader — SwiftUI's
+   * first argument to `TextField(_:text:)`. A placeholder is not a
+   * substitute: it disappears the moment anything is typed.
+   */
+  label?: string
 }
 
 const props = withDefaults(defineProps<Props>(), { modelValue: '' })
@@ -20,6 +27,11 @@ const emit = defineEmits<{
 const inputEl = ref<HTMLInputElement | null>(null)
 const { onFocus, onBlur, focus, blur } = useFocusBinding(props, emit, inputEl)
 defineExpose({ focus, blur })
+
+// A placeholder is a weak name — it vanishes as soon as the field has
+// content — but it is a name, and warning about every one of them
+// would be an opinion rather than a defect report.
+warnIfUnnamed('SecureField', props.label ?? props.placeholder, useAttrs())
 
 const modifierStyle = useModifiers(props)
 const style = computed(() => composeStyle(modifierStyle.value, {
@@ -56,6 +68,7 @@ function onKeydown(e: KeyboardEvent) {
     type="password"
     :value="modelValue"
     :placeholder="placeholder"
+    :aria-label="label"
     :disabled="disabled"
     :style="style"
     @input="onInput"

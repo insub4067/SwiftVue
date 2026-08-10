@@ -56,6 +56,39 @@ describe('ContextMenu', () => {
     expect(wrapper.attributes('aria-expanded')).toBe('false')
   })
 
+  // `aria-expanded` and `aria-haspopup` are invalid on a plain <div> — the
+  // implicit role permits neither, so the announcement they exist to make
+  // was being discarded. Declaring the role is what makes them mean
+  // something, and having declared it, the two keys a button implies have
+  // to work.
+  it('announces itself as something that opens a menu', () => {
+    const wrapper = mountMenu()
+    expect(wrapper.attributes('role')).toBe('button')
+    expect(wrapper.attributes('aria-haspopup')).toBe('true')
+  })
+
+  it.each(['Enter', ' '])('%s opens it, because a button says it will', async (key) => {
+    const wrapper = mountMenu()
+    await wrapper.trigger('keydown', { key })
+    expect(wrapper.find('[role="menu"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  // SwiftUI's `.contextMenu` is routinely attached to something already
+  // tappable, and that thing has its own Enter — which bubbles out through
+  // the target on its way up. Opening the menu on it would make the
+  // wrapped control unusable from the keyboard.
+  it('but not the Enter belonging to a control inside it', async () => {
+    const wrapper = mount(ContextMenu, {
+      props: { actions, label: 'Row actions' },
+      slots: { default: '<button type="button" class="inner">Open</button>' },
+      attachTo: document.body,
+    })
+    await wrapper.find('.inner').trigger('keydown', { key: 'Enter' })
+    expect(wrapper.find('[role="menu"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
   it('a right click opens it where the pointer is', async () => {
     const wrapper = mountMenu()
     await wrapper.trigger('contextmenu', { clientX: 40, clientY: 60 })

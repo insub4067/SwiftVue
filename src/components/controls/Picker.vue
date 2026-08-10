@@ -9,12 +9,20 @@ export interface PickerProps extends ModifierProps {
   options: PickerOption[]
   pickerStyle?: 'automatic' | 'menu' | 'segmented'
   disabled?: boolean
+  /**
+   * What the control is called, announced to a screen reader — SwiftUI's
+   * first argument to `Picker(_:selection:)`. It is not drawn: a Form row
+   * already shows the title beside the control, and rendering it twice
+   * would read it twice.
+   */
+  label?: string
 }
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useAttrs } from 'vue'
 import { useModifiers, composeStyle, type ModifierProps } from '../../utils/modifiers'
+import { warnIfUnnamed } from '../../utils/warn'
 
 
 const props = withDefaults(defineProps<PickerProps>(), {
@@ -24,6 +32,15 @@ const props = withDefaults(defineProps<PickerProps>(), {
 const emit = defineEmits<{ 'update:modelValue': [value: string | number] }>()
 const modifierStyle = useModifiers(props)
 
+warnIfUnnamed('Picker', props.label, useAttrs())
+
+// A segmented control is a set of choices of which exactly one is taken,
+// and that is a radio group. Rendered as plain buttons the chosen segment
+// was styled and nothing more, so the one fact the control exists to
+// convey was the one fact a screen reader could not reach.
+//
+// The template keeps a single root — a comment above it would make the
+// component a fragment, and every modifier would silently stop applying.
 const isSegmented = computed(() => props.pickerStyle === 'segmented')
 
 const selectStyle = computed(() => composeStyle(modifierStyle.value, {
@@ -55,11 +72,13 @@ function onChange(e: Event) {
 </script>
 
 <template>
-  <div v-if="isSegmented" :style="segmentedStyle">
+  <div v-if="isSegmented" role="radiogroup" :aria-label="label" :style="segmentedStyle">
     <button
       type="button"
       v-for="opt in options"
       :key="opt.value"
+      role="radio"
+      :aria-checked="modelValue === opt.value"
       :class="['segment', { active: modelValue === opt.value }]"
       :disabled="disabled"
       @click="emit('update:modelValue', opt.value)"
@@ -67,7 +86,14 @@ function onChange(e: Event) {
       {{ opt.label }}
     </button>
   </div>
-  <select v-else :value="modelValue" :style="selectStyle" :disabled="disabled" @change="onChange">
+  <select
+    v-else
+    :value="modelValue"
+    :aria-label="label"
+    :style="selectStyle"
+    :disabled="disabled"
+    @change="onChange"
+  >
     <option v-for="opt in options" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
   </select>
 </template>

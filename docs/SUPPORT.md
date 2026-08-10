@@ -105,9 +105,11 @@ markup, not that the client agrees with it.
 
 ## Accessibility
 
-SwiftVue does not claim a WCAG conformance level. Claiming one means having
-audited against it, and no audit has been run. What follows is what is
-built, and what has been checked.
+SwiftVue does not claim a WCAG conformance level. An automated audit runs
+against 2.1 A and AA on every commit, but an automated audit is not a
+conformance claim — it checks the part of the standard a machine can check,
+and one rule in it is knowingly not met. What follows is what is built, and
+what has been checked.
 
 ### Verified by test
 
@@ -138,6 +140,18 @@ built, and what has been checked.
   configurations, including that `.hidden()` sets `display: none` and so
   removes a component from the accessibility tree rather than only from
   view.
+- **An automated audit, against WCAG 2.1 A and AA.** axe-core over every
+  component in the library and every screen of Kitchen, in the unit suite
+  (`tests/a11y/axe.test.ts`) and again in a real browser
+  (`e2e/a11y.spec.ts`). Four of the rules it applies are re-broken on
+  purpose in that file, so a gate that stopped catching anything fails
+  rather than going quiet.
+
+  Read it for what it is: axe finds something like a third of what a human
+  audit finds. It sees a missing name, a forbidden ARIA attribute, a role
+  that swallows its children. It cannot tell you whether an announcement
+  makes sense. Six defects were sitting behind it when it was first run,
+  three of them controls that could not be given a name at all.
 
 ### Built, not verified
 
@@ -146,24 +160,48 @@ built, and what has been checked.
   decorative glyphs carry `aria-hidden`. Individual attributes are asserted
   where a bug was found; there is no sweep asserting all of them.
 
+### Contrast: measured, and knowingly short of AA
+
+The theme is Apple's iOS system palette, and a good deal of it does not
+reach AA for normal-sized text. That is Apple's tradeoff, and reproducing
+it is the point of the library — so the numbers are published rather than
+the palette quietly corrected. `tests/utils/contrast.test.ts` pins every
+one of them and fails if any gets worse; axe's `color-contrast` rule is the
+single rule in the standard switched off, for this reason and no other.
+
+| Pair (on the page background) | Light | Dark | AA normal (4.5) |
+| --- | --- | --- | --- |
+| `label` — body text | 21 | 21 | pass |
+| `secondary-label` | 3.44 | 6.36 | light: large text only |
+| `tertiary-label` | 1.74 | 2.27 | decorative only |
+| `primary` (systemBlue) | 4.02 | 5.76 | light: fails |
+| `red` | 3.55 | — | large text only |
+| `green` | 2.22 | — | decorative only |
+| white on `primary` | 4.02 | — | fails |
+
+The last row is the one to plan around: a filled blue button with white
+text — the most common thing anyone will build with this library — does not
+reach AA in the light theme. If you need AA, override `--swift-primary` and
+the label greys in your own stylesheet; nothing in the library depends on
+their exact values.
+
 ### Not covered at all
 
 Be direct about these — they are the things an accessibility audit would
 look at first.
 
-- **No automated audit.** No axe-core, no pa11y, no Lighthouse gate.
 - **No screen reader has been used.** Not VoiceOver, not NVDA, not TalkBack.
   Correct ARIA is not the same as a good announcement, and only one of those
-  has been checked.
-- **No contrast measurement.** The default theme's colour pairs have never
-  been run against a contrast ratio.
+  has been checked. This is now the largest gap by some distance.
 - **No focus-visible audit.** Focus rings are inherited from the browser in
   most components rather than designed.
-- **Touch target sizes** are not measured against the 44×44 guidance.
+- **Touch target sizes** are not measured against the 44×44 guidance. axe's
+  `target-size` rule is WCAG 2.2, outside the tags audited here.
 
 If you need a conformance statement for a procurement process, this
 document is the honest answer: not yet, and here is exactly what is
-missing.
+missing — a screen reader pass, and a contrast decision that is a product
+choice rather than an oversight.
 
 ## Reporting a gap
 

@@ -7,6 +7,59 @@ SwiftVue is pre-1.0. While the major version is 0, a **minor** bump may
 change behaviour and a **patch** only fixes it. Anything that would break
 working code is called out under *Breaking* with the change you need to make.
 
+## Unreleased
+
+An automated accessibility audit, and the six defects it found on the first
+run. Five of the six are in the library rather than the demo app, and every
+one of them had passed the full unit suite.
+
+**Fixed**
+
+- **Six controls could not be given an accessible name.** `TextField`,
+  `SecureField`, `TextEditor` and `Picker` had no `label` prop at all, so a
+  screen reader announced them as their type and nothing else — "edit
+  text", "combo box". Each takes `label` now, which is SwiftUI's first
+  argument (`TextField("Name", text:)`). `DatePicker` already had one; what
+  it lacked was any sign when you forgot it, and a control that ends up
+  with no name from any source now says so in development.
+
+  A placeholder still counts as a name and stays quiet. It is a weak one —
+  it disappears the moment anything is typed — but it is a name, and
+  warning about every one of them would be an opinion rather than a defect
+  report.
+- **A segmented `Picker` never said which segment was chosen.** The
+  selection was a CSS class and nothing more, so the single fact the
+  control exists to convey was the one fact assistive technology could not
+  reach. It is a `radiogroup` of `radio`s now, with `aria-checked`.
+- **`ContextMenu` set ARIA its element was not allowed to carry.**
+  `aria-expanded` and `aria-haspopup` on a plain `<div>` are invalid — the
+  implicit role permits neither — so the announcement they were there to
+  make was discarded. The target is a `button`, and because it now says so,
+  Enter and Space open the menu as well as the ContextMenu key. Only when
+  the target itself has focus: a `Button` inside it has its own Enter, and
+  that keystroke passes through on its way out.
+- **A checkbox inside a `NavigationLink` was unreachable.** A `role="button"`
+  is a leaf to assistive technology and everything inside it collapses into
+  its name, so a control nested there cannot be operated at all. This was
+  Kitchen's todo row; stopping the click from propagating had hidden it
+  from a mouse and left it entirely in place for VoiceOver. The row is
+  restructured so the checkbox sits beside the link rather than within it.
+
+**Added**
+
+- **An accessibility gate, against WCAG 2.1 A and AA.** axe-core over every
+  component and every Kitchen screen in the unit suite, and again in a real
+  browser where the layout-dependent rules work. Four rules are re-broken on
+  purpose in the same file, so a gate that stopped catching anything fails
+  instead of going quiet.
+- **The palette's contrast ratios, measured and pinned.** Apple's iOS
+  colours do not reach AA for normal text in several pairs — `systemBlue` on
+  white is 4.02:1 against a 4.5:1 bar, so a filled blue button with white
+  text fails, exactly as it does in iOS. Reproducing that is the point of
+  the library, so the figures are published in `docs/SUPPORT.md` and pinned
+  by a test that fails if any of them gets worse, and axe's `color-contrast`
+  is the one rule in the standard deliberately switched off.
+
 ## 0.4.0
 
 Two components the iPad needed, and the delete that never deleted.

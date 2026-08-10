@@ -139,6 +139,16 @@ function onKeydown(e: KeyboardEvent) {
   if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
     e.preventDefault()
     openAt(8, 8)
+    return
+  }
+  // The target announces itself as a button, so Enter and Space have to
+  // open the menu — a control that names itself and then ignores the two
+  // keys that name implies is worse than one with no name at all. Only
+  // when the target itself has focus: a Button inside the slot has its own
+  // Enter, and that keystroke bubbles through here on its way out.
+  if ((e.key === 'Enter' || e.key === ' ') && e.target === root.value) {
+    e.preventDefault()
+    openAt(8, 8)
   }
 }
 
@@ -196,6 +206,7 @@ defineExpose({ close })
     ref="root"
     class="context-menu-target"
     :style="style"
+    :role="disabled ? undefined : 'button'"
     :tabindex="disabled ? undefined : 0"
     :aria-haspopup="disabled ? undefined : true"
     :aria-expanded="disabled ? undefined : open"

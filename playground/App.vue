@@ -222,8 +222,8 @@ const samples: Record<string, { code: string; sources: string[] }> = {
   form: {
     code: `<Form @submit="save">
   <Section header="Details">
-    <TextField v-model="name" placeholder="Name" />
-    <DatePicker v-model="due" displayed-components="date" />
+    <TextField v-model="name" label="Name" />
+    <DatePicker v-model="due" label="Due" displayed-components="date" />
   </Section>
   <!-- every other button defaults to type="button" -->
   <Button type="submit" button-style="borderedProminent">Save</Button>
@@ -469,9 +469,10 @@ withAnimation(() => items.value.sort(), Animations.spring)
   { value: 'medium', label: 'M' },
 ]
 
-<Picker v-model="size" :options="sizes" picker-style="segmented" />
-<Picker v-model="fruit" :options="fruits" picker-style="menu" />
-<Picker :model-value="fruit" :options="fruits" disabled />`,
+<!-- label is the accessible name, not a drawn one -->
+<Picker v-model="size" :options="sizes" picker-style="segmented" label="Size" />
+<Picker v-model="fruit" :options="fruits" picker-style="menu" label="Fruit" />
+<Picker :model-value="fruit" :options="fruits" disabled label="Fruit" />`,
     sources: ['src/components/controls/Picker.vue'],
   },
   reactive: {
@@ -1040,7 +1041,7 @@ onUnmounted(() => {
                       <Button button-style="bordered" @tap="showBox = !showBox">
                         {{ showBox ? 'Hide' : 'Show' }}
                       </Button>
-                      <Picker v-model="boxTransition" :options="transitionOptions" picker-style="segmented" />
+                      <Picker v-model="boxTransition" :options="transitionOptions" picker-style="segmented" label="Transition" />
                     </HStack>
                     <div :style="{ minHeight: '76px' }">
                       <TransitionView :transition="boxTransition">
@@ -1372,17 +1373,17 @@ onUnmounted(() => {
                   <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
                     <VStack :spacing="8" alignment="leading" :frame="{ width: '100%' }">
                       <Text font="subheadline" foreground-color="secondary">Segmented</Text>
-                      <Picker v-model="selectedSize" :options="sizes" picker-style="segmented" />
+                      <Picker v-model="selectedSize" :options="sizes" picker-style="segmented" label="Size" />
                       <Text font="caption" foreground-color="secondary">Selected: {{ selectedSize }}</Text>
                     </VStack>
                     <VStack :spacing="8" alignment="leading" :frame="{ width: '100%' }">
                       <Text font="subheadline" foreground-color="secondary">Menu (Dropdown)</Text>
-                      <Picker v-model="selectedFruit" :options="fruits" picker-style="menu" />
+                      <Picker v-model="selectedFruit" :options="fruits" picker-style="menu" label="Fruit" />
                       <Text font="caption" foreground-color="secondary">Selected: {{ selectedFruit }}</Text>
                     </VStack>
                     <VStack :spacing="8" alignment="leading" :frame="{ width: '100%' }">
                       <Text font="subheadline" foreground-color="secondary">Disabled</Text>
-                      <Picker :model-value="'apple'" :options="fruits" picker-style="segmented" disabled />
+                      <Picker :model-value="'apple'" :options="fruits" picker-style="segmented" disabled label="Fruit" />
                     </VStack>
                     <CodeSample v-bind="samples.picker" />
                   </VStack>

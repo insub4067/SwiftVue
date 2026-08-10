@@ -64,6 +64,7 @@ function set<K extends 'priority' | 'due' | 'notes' | 'flagged' | 'done'>(key: K
           <Picker
             :model-value="todo.priority"
             :options="PRIORITIES"
+            label="Priority"
             @update:model-value="set('priority', $event as Priority)"
           />
         </FormRow>
@@ -71,6 +72,7 @@ function set<K extends 'priority' | 'due' | 'notes' | 'flagged' | 'done'>(key: K
           <DatePicker
             :model-value="todo.due"
             displayed-components="date"
+            label="Due"
             @update:model-value="set('due', $event)"
           />
         </FormRow>

@@ -102,19 +102,27 @@ const darkMode = useState(false)
 ### Text & Input
 - `Text` — text display (`font`, `bold`, `italic`, `lineLimit`, `foregroundColor`)
 - `Label` — icon + text (`systemImage`, `iconColor`); `for` makes it a real form `<label>`
-- `TextField` — text input (`v-model`, `placeholder`, `textFieldStyle`, `v-model:focused`)
-- `SecureField` — password input (`v-model`, `placeholder`, `v-model:focused`)
-- `TextEditor` — multi-line text (`v-model`, `placeholder`, `v-model:focused`)
+- `TextField` — text input (`v-model`, `label`, `placeholder`, `textFieldStyle`, `v-model:focused`)
+- `SecureField` — password input (`v-model`, `label`, `placeholder`, `v-model:focused`)
+- `TextEditor` — multi-line text (`v-model`, `label`, `placeholder`, `v-model:focused`)
 
 ### Controls
 - `Button` — button (`@tap`, `buttonStyle`, `role`, `fullWidth`, `type`)
 - `Toggle` — switch (`v-model`, `tint`)
 - `Slider` — range input (`v-model`, `min`, `max`, `step`)
-- `Picker` — select/segmented (`v-model`, `options`, `pickerStyle`)
+- `Picker` — select/segmented (`v-model`, `options`, `pickerStyle`, `label`)
 - `Stepper` — increment/decrement (`v-model`, `min`, `max`, `step`)
-- `DatePicker` — date/time input (`v-model`, `displayedComponents`, `min`, `max`)
+- `DatePicker` — date/time input (`v-model`, `displayedComponents`, `label`, `min`, `max`)
 - `Menu` — dropdown of actions (`label`, `actions`, `@select`)
 - `ContextMenu` — long press / right click / Shift+F10 menu over any content (`actions`, `@select`)
+
+Every control takes a `label`, which is SwiftUI's first argument —
+`Picker("Priority", selection:)` is `<Picker label="Priority" …>`. It is
+not drawn, because a Form row already shows the title beside the control
+and rendering it twice would read it twice; it is what a screen reader
+announces. A control with no name at all warns in development, since an
+unnamed `<select>` looks entirely finished and announces as nothing but
+"combo box".
 
 ### Data
 - `ForEach` — list rendering (`items`, `keyPath`, scoped slot)
