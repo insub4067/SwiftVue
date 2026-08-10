@@ -428,7 +428,13 @@ test('on a phone the sidebar comes over the detail and can be put away', async (
     return menu && pane ? Math.round(menu.x - pane.x) : null
   }, { message: 'the menu comes to rest over the detail', timeout: 3_000 }).toBe(0)
 
-  await scrim.click()
+  // Where the dimming is actually visible, not the middle.
+  //
+  // The scrim spans the whole split view with the sidebar sitting on top of
+  // it, which is the usual arrangement and fine for a person — they tap the
+  // dim part they can see. Playwright aims at an element's centre, and on a
+  // 390px screen that is 195px, underneath a 260px sidebar.
+  await scrim.click({ position: { x: 340, y: 400 } })
   await expect(scrim).toHaveCount(0)
   await expect(toggle).toHaveAttribute('aria-expanded', 'false')
 })
