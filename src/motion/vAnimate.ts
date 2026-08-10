@@ -17,14 +17,18 @@ import { registerAnimatable } from './withAnimation'
  * state and only the views that depend on it move, without naming an element
  * at the call site.
  *
- * It adds no DOM — it names the element it is placed on. Two caveats follow
- * from how the View Transitions API works:
+ * It adds no DOM — it names the element it is placed on. Two things to know,
+ * both from how the View Transitions API works:
  *
  * - Place it on a single-root element or component. On a fragment (multiple
  *   root nodes) Vue has no single element to attach to, and the mark is lost.
- * - Do not nest marks. A named element is captured as a flat image with its
- *   named descendants lifted out of it, so marking a card *and* a row inside
- *   it makes the card animate around a hole. Mark the level you want to move.
+ * - Nesting is allowed, and is how you animate children *within* a moving
+ *   parent: a card marked to morph its size, with each row inside it marked
+ *   to slide to a new place. The parent is captured with the marked children
+ *   lifted out of its image, and each child animates on its own — a FLIP. The
+ *   one thing to avoid is a marked child that does not fill its slot, since
+ *   the hole it leaves in the parent's image then shows; mark elements that
+ *   cover their own box.
  */
 export const vAnimate: Directive<HTMLElement> = {
   // A directive can be bound to the same element only once, so a single
