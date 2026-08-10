@@ -77,23 +77,31 @@ test('Return in the title field saves, the same as the button', async ({ page })
   await expect(page.getByText('Book a table')).toBeVisible()
 })
 
-type Trace = { seen: string[], moved: string }
+type Trace = { seen: string[], during: string[] }
+
+/** How far the row has been dragged, right now, as a plain number. */
+const offsetOf = (row: Locator) => row.locator('.swipe-content').evaluate((el) => {
+  const m = new DOMMatrixReadOnly(getComputedStyle(el).transform)
+  return Math.round(m.m41)
+})
 
 /**
  * A drag towards the leading edge, the way a finger does it — and a record
- * of what the row actually received.
+ * of what the row did while it happened.
  *
- * The record is not decoration. A swipe that does nothing looks identical
- * from the outside to a swipe that never started, and the difference lives
- * in events no assertion can reach afterwards. This has already cost two
- * rounds of guessing; the failure message carries the answer now.
+ * Sampled mid-drag on purpose. Reading the row after `pointerup` says
+ * nothing: by then it has settled back either way, which is what made the
+ * first version of this useless. What matters is whether the row ever
+ * followed the finger at all — that separates "the gesture never started"
+ * from "the gesture ran and settled wrongly", and no assertion afterwards
+ * can tell those apart.
  */
 async function swipeRow(page: Page, row: Locator, distance: number): Promise<Trace> {
   const box = (await row.boundingBox())!
   await row.evaluate((el) => {
     const seen: string[] = []
     ;(window as unknown as { __swipe: string[] }).__swipe = seen
-    for (const type of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'pointerleave', 'dragstart', 'selectstart', 'click']) {
+    for (const type of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'pointerleave', 'lostpointercapture', 'gotpointercapture', 'dragstart', 'selectstart', 'click']) {
       el.addEventListener(type, () => { if (seen[seen.length - 1] !== type) seen.push(type) }, true)
     }
   })
@@ -102,20 +110,22 @@ async function swipeRow(page: Page, row: Locator, distance: number): Promise<Tra
   const from = box.x + box.width - 8
   await page.mouse.move(from, y)
   await page.mouse.down()
-  await page.mouse.move(from - distance, y, { steps: 12 })
+
+  const during: string[] = []
+  const STEPS = 6
+  for (let step = 1; step <= STEPS; step += 1) {
+    await page.mouse.move(from - (distance * step) / STEPS, y)
+    during.push(String(await offsetOf(row).catch(() => 'gone')))
+  }
   await page.mouse.up()
 
-  return page.evaluate(() => {
-    const content = document.querySelector('.swipe-content')
-    return {
-      seen: (window as unknown as { __swipe?: string[] }).__swipe ?? ['nothing recorded'],
-      moved: content ? getComputedStyle(content).transform : 'the row is gone',
-    }
-  })
+  const seen = await page.evaluate(() =>
+    (window as unknown as { __swipe?: string[] }).__swipe ?? ['nothing recorded'])
+  return { seen, during }
 }
 
 const explain = (t: Trace, width: number) =>
-  `row ${Math.round(width)}px wide · events ${t.seen.join(' → ')} · content ${t.moved}`
+  `row ${Math.round(width)}px · events ${t.seen.join(' → ')} · followed the finger to ${t.during.join(', ')}`
 
 test('a swipe parks the row open and the revealed action works', async ({ page }) => {
   await fresh(page)
