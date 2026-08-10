@@ -195,6 +195,57 @@ describe('useSwipe', () => {
     expect(onCancel).toHaveBeenCalledOnce()
   })
 
+  // The exact sequence Chromium sent while dragging a Kitchen row, captured
+  // by instrumenting the browser test after two rounds of guessing:
+  //
+  //   pointerdown → pointermove → pointerleave → pointermove → pointerup
+  //
+  // The row slides under the pointer, so the browser keeps re-deciding what
+  // is beneath it and reports a leave from an element the pointer never
+  // left. Treating that as a cancel threw away every swipe on every row.
+  it('a leave in the middle of a drag does not end it', async () => {
+    const onSwipe = vi.fn()
+    const onCancel = vi.fn()
+    const wrapper = mount(Swipeable({ onSwipe, onCancel }))
+    await nextTick()
+    const el = wrapper.find('.target').element
+    const send = (type: string, x?: number) =>
+      el.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: 50, pointerId: 1 }))
+
+    send('pointerdown', 300)
+    send('pointermove', 260)
+    send('pointerleave')
+    send('pointermove', 90)
+    send('pointerup', 90)
+
+    expect(onSwipe, 'the swipe survived the leave').toHaveBeenCalledOnce()
+    expect(onCancel).not.toHaveBeenCalled()
+  })
+
+  // Capture is what makes ignoring the leave safe: the release comes back
+  // here even when the finger lifts somewhere else. Losing the capture is
+  // the browser genuinely taking the gesture away.
+  it('losing the capture cancels the gesture', async () => {
+    const onCancel = vi.fn()
+    const wrapper = mount(Swipeable({ onCancel }))
+    await nextTick()
+    const el = wrapper.find('.target').element
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 300, clientY: 50, pointerId: 1 }))
+    el.dispatchEvent(new PointerEvent('lostpointercapture', { bubbles: true, pointerId: 1 }))
+    expect(onCancel).toHaveBeenCalledOnce()
+  })
+
+  it('claims the pointer so the drag cannot be lost', async () => {
+    const wrapper = mount(Swipeable({}))
+    await nextTick()
+    const el = wrapper.find('.target').element as HTMLElement & { setPointerCapture: unknown }
+    const capture = vi.fn()
+    el.setPointerCapture = capture
+
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 300, clientY: 50, pointerId: 7 }))
+    expect(capture).toHaveBeenCalledWith(7)
+  })
+
   it('stops listening once unmounted', async () => {
     const onSwipe = vi.fn()
     const wrapper = mount(Swipeable({ onSwipe }))

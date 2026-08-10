@@ -11,6 +11,14 @@ working code is called out under *Breaking* with the change you need to make.
 
 **Fixed**
 
+- **Every swipe was thrown away mid-drag.** The row slides under the
+  pointer, so the browser keeps re-deciding what is beneath it and fires a
+  `pointerleave` from an element the pointer never left. `useSwipe` took
+  that for a cancel, and no swipe on any row ever completed in a real
+  browser — the unit tests could not see it because nothing synthetic sends
+  that leave. The gesture now captures the pointer, which is what pointer
+  capture is for: the whole drag belongs to the element, and the release is
+  reported even when the finger lifts elsewhere.
 - **`allowsFullSwipe` did nothing on a phone.** A swipe past 60% of a row is
   supposed to run its first action outright. The 60% was measured against
   how far the *row* had moved, and a row only follows the finger as far as

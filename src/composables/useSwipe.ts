@@ -71,6 +71,18 @@ export function useSwipe(target: Ref<HTMLElement | null>, options: SwipeOptions 
     if (!withinEdge(e, box)) return
     start = { x: e.clientX, y: e.clientY, t: e.timeStamp }
     pointerId = e.pointerId
+    // The rest of this gesture belongs to this element, wherever the pointer
+    // goes. Without capture the browser keeps re-deciding what is under the
+    // pointer as the row slides, and reports the pointer as having left an
+    // element it never actually left — which killed the swipe mid-drag. It
+    // also means the release is always reported here, even when the finger
+    // lifts somewhere else entirely.
+    el?.setPointerCapture?.(e.pointerId)
+  }
+
+  function releaseCapture() {
+    if (pointerId == null) return
+    if (el?.hasPointerCapture?.(pointerId)) el.releasePointerCapture(pointerId)
   }
 
   function onPointerMove(e: PointerEvent) {
@@ -105,6 +117,7 @@ export function useSwipe(target: Ref<HTMLElement | null>, options: SwipeOptions 
     const dx = e.clientX - start.x
     const dy = e.clientY - start.y
     const elapsed = Math.max(1, e.timeStamp - start.t)
+    releaseCapture()
     start = null
     pointerId = null
 
@@ -143,6 +156,7 @@ export function useSwipe(target: Ref<HTMLElement | null>, options: SwipeOptions 
 
   function onPointerCancel(e: PointerEvent) {
     if (!start || e.pointerId !== pointerId) return
+    releaseCapture()
     start = null
     pointerId = null
     opts.onCancel?.()
@@ -154,7 +168,7 @@ export function useSwipe(target: Ref<HTMLElement | null>, options: SwipeOptions 
       el.removeEventListener('pointermove', onPointerMove)
       el.removeEventListener('pointerup', finish)
       el.removeEventListener('pointercancel', onPointerCancel)
-      el.removeEventListener('pointerleave', onPointerCancel)
+      el.removeEventListener('lostpointercapture', onPointerCancel)
     }
     el = next
     if (!el) return
@@ -162,9 +176,11 @@ export function useSwipe(target: Ref<HTMLElement | null>, options: SwipeOptions 
     el.addEventListener('pointermove', onPointerMove)
     el.addEventListener('pointerup', finish)
     el.addEventListener('pointercancel', onPointerCancel)
-    // A finger that leaves the element never reports its release here, and a
-    // gesture left half-open would strand whatever it was moving.
-    el.addEventListener('pointerleave', onPointerCancel)
+    // Not `pointerleave`: a drag is allowed to wander off the element, and
+    // the browser fires leave during one anyway as the element under the
+    // pointer changes. Losing the capture is the real "this gesture is no
+    // longer yours" — the browser took it, so put back whatever moved.
+    el.addEventListener('lostpointercapture', onPointerCancel)
   }
 
   // post, not the default pre: a template ref is only populated once the DOM

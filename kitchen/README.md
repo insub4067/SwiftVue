@@ -37,9 +37,12 @@ the way they do in a real project:
 
 **Finding bugs.** Kitchen is type-checked and linted alongside the library,
 and its screens are mounted in the unit suite — including a test that fails
-on any Vue warning. Building the first version turned up six library
+on any Vue warning. Building the first version turned up seven library
 defects that a per-component test had no way to see:
 
+- **Every swipe was thrown away mid-drag**, by a `pointerleave` the browser
+  fires as the row slides under the pointer. Nothing synthetic sends that
+  event, so every unit test passed.
 - **`allowsFullSwipe` did nothing on a phone.** The 60%-of-the-row threshold
   was measured against how far the row had moved, and the row stops at its
   actions — 208px — so a row wider than about 350px could never reach it.
@@ -50,7 +53,6 @@ defects that a per-component test had no way to see:
   pushed the todo's screen over the button you were reaching for. Only a
   swipe on a row that links somewhere shows this, and only in a browser
   that sends the click.
-
 - `padding` rejected the three-value CSS shorthand, so `[8, 0, 24]` — a
   screen leaving room for the tab bar — would not type-check.
 - Every `NavigationLink` warned about a missing `router-link` in a project
@@ -67,9 +69,12 @@ The app shell is the argument for Kitchen in one item. Nothing was broken in
 any component; the library simply could not be assembled into an app
 without a piece it did not provide, and only building an app could show it.
 
-The swipe is the argument for the browser half. Every unit test of
-`SwipeActions` passed throughout, because happy-dom never sends the `click`
-that follows a drag. It took a real pointer on a real row.
+The swipe is the argument for the browser half. All forty unit tests of
+`SwipeActions` and `useSwipe` passed throughout, and the gesture had never
+once worked in a browser. Nothing synthetic sends the `pointerleave` that
+killed it, or the `click` that follows a drag. It took a real pointer on a
+real row — and, in the end, an instrumented test that recorded what the row
+actually received, because two rounds of inference had guessed wrong.
 
 **Checking the things only a browser knows.** `e2e/kitchen.spec.ts` drives
 it in Chromium and WebKit: no horizontal overflow at 320–430px, a real
