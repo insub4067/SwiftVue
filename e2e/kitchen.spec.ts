@@ -201,6 +201,64 @@ test('a swipe most of the way runs the first action outright', async ({ page }) 
   await expect(page.getByRole('status')).toContainText('Deleted "Buy milk"')
 })
 
+// The other gesture the library ships, and the only one with no real-input
+// coverage at all until now. It is a headline iOS interaction — the README
+// promises the stack "pops on an edge swipe" — and every test behind that
+// promise was synthetic.
+//
+// It is implemented separately from `useSwipe`: pointerdown near the edge,
+// pointerup far from it, with no moves in between. That is why it escaped
+// the leave-cancel bug that made every SwipeActions drag a no-op, and also
+// why nothing would have told us if it had not.
+test('an edge swipe pops the screen, and a short one does not', async ({ page }) => {
+  await fresh(page)
+
+  await page.getByText('Buy milk').click()
+  await expect(page.getByRole('heading', { name: 'Buy milk' })).toBeVisible()
+
+  const pane = page.locator('.nav-pane').last()
+  const box = (await pane.boundingBox())!
+  const y = box.y + box.height / 2
+
+  // Starting inside the 28px edge but travelling only 40px: under the 70px
+  // the gesture asks for, so the screen must stay.
+  await page.mouse.move(box.x + 10, y)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 50, y, { steps: 8 })
+  await page.mouse.up()
+  await expect(page.getByRole('heading', { name: 'Buy milk' }),
+    'a short drag is not a back gesture').toBeVisible()
+
+  await page.mouse.move(box.x + 10, y)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 200, y, { steps: 12 })
+  await page.mouse.up()
+
+  await expect(page.getByRole('button', { name: /New/ }),
+    'the stack popped back to the list').toBeVisible()
+})
+
+test('a drag that starts away from the edge is not a back gesture', async ({ page }) => {
+  await fresh(page)
+
+  await page.getByText('Buy milk').click()
+  const heading = page.getByRole('heading', { name: 'Buy milk' })
+  await expect(heading).toBeVisible()
+
+  const pane = page.locator('.nav-pane').last()
+  const box = (await pane.boundingBox())!
+  const y = box.y + box.height / 2
+
+  // Far enough to qualify, but begun in the middle of the screen — which is
+  // a scroll or a text selection, not a back.
+  await page.mouse.move(box.x + box.width / 2, y)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2 + 200, y, { steps: 12 })
+  await page.mouse.up()
+
+  await expect(heading).toBeVisible()
+})
+
 test('a deep link reopens the todo it names', async ({ page }) => {
   await fresh(page)
 
