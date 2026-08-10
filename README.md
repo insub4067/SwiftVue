@@ -538,9 +538,11 @@ Two things worth knowing:
 
 ## Motion
 
-`withAnimation` mirrors SwiftUI: run a state change, and every visual
-difference it causes animates (via the View Transitions API; where
-unsupported, the change simply applies unanimated):
+`withAnimation` mirrors SwiftUI: run a state change, and the layout change it
+causes animates. It is a FLIP — each animated element is measured before and
+after and slid from where it was to where it landed, on the live element with
+the Web Animations API. No page snapshot, so nothing flashes; where there is
+no DOM (SSR) or the user prefers reduced motion, the change simply applies.
 
 ```ts
 import { withAnimation, Animations } from 'swiftvue'
@@ -550,28 +552,26 @@ withAnimation(() => items.value.sort(), Animations.spring)
 // presets: default · linear · easeIn/Out/InOut · spring · smooth · snappy · bouncy
 ```
 
-One difference from SwiftUI worth knowing. SwiftUI knows which views depend
-on the value you changed, so it animates only those. The View Transitions
-API does not — with nothing told otherwise it snapshots the **whole page**
-and cross-fades it, and that page-wide fade reads as a flash even when a
-single card changed.
-
-Close the gap the way SwiftUI does implicitly: mark the animatable regions
-with `v-animate`, once, and a plain `withAnimation` animates only the marked
-ones the change touched. The rest of the screen holds still.
+One difference from SwiftUI worth knowing. SwiftUI knows which views a value
+drives, so it moves only those; on the web the moved elements have to be
+named. Mark the animatable regions with `v-animate`, once, and a plain
+`withAnimation` slides the marked ones the change moved. Everything else — an
+element that didn't move, an unmarked one — holds still.
 
 ```vue
 <template>
-  <button @click="withAnimation(() => { expanded = !expanded }, Animations.spring)">Toggle</button>
+  <button @click="withAnimation(() => items.sort(), Animations.spring)">Shuffle</button>
 
-  <!-- v-animate adds no DOM; it names the element it sits on -->
-  <Card v-animate :expanded="expanded" />
+  <!-- v-animate adds no DOM; it marks the element it sits on. Mark each row,
+       and a reorder slides them; nesting a mark inside a list is fine. -->
+  <Row v-for="item in items" :key="item.id" v-animate :item="item" />
 </template>
 ```
 
-`v-animate` goes on a single-root element or component, and marks should not
-nest (a named element is captured with its named descendants lifted out, so
-a card marked around a marked row animates around a hole).
+> An earlier version used the View Transitions API, which snapshots the page
+> and cross-fades it. On real iOS Safari that washed the whole screen toward
+> its background mid-transition — even an unchanged page goes translucent at
+> the crossfade's midpoint. FLIP has no snapshot, so that cannot happen.
 
 If you would rather not mark anything, name the element at the call site
 instead — `scope` takes one element or an array of them, and a nullish entry
@@ -588,9 +588,9 @@ const card = ref(null)
 </template>
 ```
 
-With neither a marker nor a scope you get the whole-page transition, which is
-the right choice when the change really is the whole page — a route swap, a
-theme flip. `{ scope: null }` forces it even when markers exist.
+With neither a marker nor a scope, nothing is measured and the change just
+applies — a page that marked nothing asked for no animation. `{ scope: null }`
+forces that even when markers exist.
 
 `TransitionView` is `.transition(_:)` for a conditional view:
 

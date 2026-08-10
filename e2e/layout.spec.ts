@@ -248,12 +248,47 @@ test('withAnimation applies the state change', async ({ page }) => {
   await page.goto('/')
   await push(page, /Animation/)
 
-  const extra = page.getByText('View Transitions API', { exact: false })
+  const extra = page.getByText('This extra content appears when the state changes', { exact: false })
   await expect(extra).toBeHidden()
   await page.getByRole('button', { name: 'Expand', exact: true }).click()
   await expect(extra).toBeVisible()
   await page.getByRole('button', { name: 'Collapse', exact: true }).click()
   await expect(extra).toBeHidden()
+})
+
+// The regression the real device caught. withAnimation used the View
+// Transitions API, which snapshots the page and cross-fades it — and on iOS
+// Safari an unchanged page still went translucent at the crossfade's midpoint,
+// so the whole screen washed toward its background. The fix moves the live
+// element with the Web Animations API instead, which has no snapshot to bleed.
+// So the proof is structural: startViewTransition is never called, and the
+// move runs as a real animation on the element.
+test('withAnimation moves the live element, never snapshots the page', async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __vtCalls: number }
+    w.__vtCalls = 0
+    const doc = document as Document & { startViewTransition?: (cb: () => unknown) => unknown }
+    if (doc.startViewTransition) {
+      const original = doc.startViewTransition.bind(doc)
+      doc.startViewTransition = (cb: () => unknown) => { w.__vtCalls++; return original(cb) }
+    }
+  })
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+  await push(page, /Animation/)
+
+  // A shuffle reorders the swatches, so they move — the case that flashed.
+  await page.getByRole('button', { name: 'Shuffle (spring)' }).click()
+
+  // Mid-move, the Web Animations API is driving real animations.
+  await expect.poll(
+    () => page.evaluate(() => document.getAnimations().length),
+    { message: 'the FLIP runs as Web Animations', timeout: 2000 },
+  ).toBeGreaterThan(0)
+
+  // And the page was never snapshotted — that snapshot was the flash.
+  const vtCalls = await page.evaluate(() => (window as unknown as { __vtCalls: number }).__vtCalls)
+  expect(vtCalls, 'View Transitions API must not be used').toBe(0)
 })
 
 test('collapsible Section folds and reopens with state intact', async ({ page }) => {

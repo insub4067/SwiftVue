@@ -1,15 +1,34 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { withAnimation, Animations, registerAnimatable } from '../../src/motion/withAnimation'
 
-type VTDocument = Document & { startViewTransition?: (cb: () => Promise<void>) => { finished: Promise<void> } }
+// happy-dom does no layout, so getBoundingClientRect is all zeros and
+// Element.animate may be absent. Both are stubbed per element: the rects say
+// where it was and where it landed, and the animate stub records the call and
+// resolves. That lets the FLIP be tested by what it measures and what it
+// animates, which is the mechanism; the pixels are a browser's job.
+interface AnimateCall { keyframes: unknown, options: unknown }
 
-const doc = document as VTDocument
+function movingElement(before: { left: number, top: number }, after: { left: number, top: number }) {
+  const el = document.createElement('div')
+  document.body.append(el) // so isConnected is true
+  const rects = [before, after]
+  let i = 0
+  el.getBoundingClientRect = (() => (rects[Math.min(i++, 1)]) as DOMRect)
+  const calls: AnimateCall[] = []
+  el.animate = ((keyframes: unknown, options: unknown) => {
+    calls.push({ keyframes, options })
+    const anim = { onfinish: null as null | (() => void), oncancel: null as null | (() => void) }
+    queueMicrotask(() => anim.onfinish?.())
+    return anim as unknown as Animation
+  }) as typeof el.animate
+  ;(el as unknown as { _calls: AnimateCall[] })._calls = calls
+  return el
+}
 
-afterEach(() => {
-  delete doc.startViewTransition
-  document.documentElement.style.removeProperty('--swift-vt-duration')
-  document.documentElement.style.removeProperty('--swift-vt-easing')
-})
+const callsOf = (el: HTMLElement) => (el as unknown as { _calls: AnimateCall[] })._calls
+const still = (at: { left: number, top: number }) => movingElement(at, at)
+
+afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals() })
 
 describe('Animations', () => {
   it('ships the SwiftUI-named presets', () => {
@@ -20,266 +39,111 @@ describe('Animations', () => {
   })
 })
 
-describe('withAnimation', () => {
-  it('applies the mutation and resolves its value without view-transition support', async () => {
-    // happy-dom has no startViewTransition — this IS the fallback path
-    expect(doc.startViewTransition).toBeUndefined()
+describe('withAnimation applies the change', () => {
+  it('runs the mutation and resolves its value with nothing to move', async () => {
     let flag = false
     const result = await withAnimation(() => { flag = true; return 42 })
     expect(flag).toBe(true)
     expect(result).toBe(42)
   })
 
-  it('drives the View Transitions API when available', async () => {
-    const calls: string[] = []
-    doc.startViewTransition = (update) => {
-      calls.push('start')
-      const finished = update().then(() => { calls.push('updated') })
-      return { finished }
-    }
-
-    const result = await withAnimation(() => { calls.push('mutate'); return 'ok' }, Animations.spring)
-
-    expect(calls).toEqual(['start', 'mutate', 'updated'])
+  it('resolves the value even while an element animates', async () => {
+    const el = movingElement({ left: 0, top: 0 }, { left: 40, top: 0 })
+    const result = await withAnimation(() => 'ok', Animations.spring, { scope: el })
     expect(result).toBe('ok')
-    const style = document.documentElement.style
-    expect(style.getPropertyValue('--swift-vt-duration')).toBe('500ms')
-    expect(style.getPropertyValue('--swift-vt-easing')).toContain('cubic-bezier')
-  })
-
-  it('still resolves the value when the transition is skipped', async () => {
-    doc.startViewTransition = (update) => {
-      void update()
-      return { finished: Promise.reject(new Error('skipped')) }
-    }
-    const result = await withAnimation(() => 7)
-    expect(result).toBe(7)
   })
 })
 
-// Without a scope the API snapshots the whole page and cross-fades it, which
-// flashes even when a single card changed. A scope names the changing element
-// so it is lifted out of the page snapshot and the rest of the screen holds
-// still. These tests pin the naming: present during the transition, unique,
-// and cleaned up after — a leaked `view-transition-name` would freeze that
-// element out of every later transition.
-describe('withAnimation({ scope })', () => {
-  // The name has to exist when the OLD snapshot is taken — before
-  // startViewTransition — and still be there through the mutation, or the
-  // element is a different box on each side and cross-fades instead of
-  // morphing. The mock records what the element carried at each moment.
-  function recordingTransition(watch: () => string) {
-    const seen: Record<string, string> = {}
-    doc.startViewTransition = (update) => {
-      seen.atStart = watch()
-      const finished = update().then(() => { seen.afterMutate = watch() })
-      return { finished }
-    }
-    return seen
-  }
-
-  it('names the scoped element for the duration, then takes the name back', async () => {
-    const el = document.createElement('div')
-    const seen = recordingTransition(() => el.style.getPropertyValue('view-transition-name'))
-
+describe('the FLIP', () => {
+  it('animates an element from where it was to where it landed', async () => {
+    // moved 30px left and 12px down
+    const el = movingElement({ left: 100, top: 200 }, { left: 70, top: 212 })
     await withAnimation(() => {}, Animations.default, { scope: el })
 
-    expect(seen.atStart, 'named before the old snapshot').toBeTruthy()
-    expect(seen.afterMutate, 'still named while the new snapshot is taken').toBe(seen.atStart)
-    expect(el.style.getPropertyValue('view-transition-name'),
-      'and released once the animation settled').toBe('')
+    expect(callsOf(el)).toHaveLength(1)
+    const [{ keyframes, options }] = callsOf(el)
+    // inverted to the old position first (dx = 100-70 = 30, dy = 200-212 = -12)
+    expect((keyframes as Array<{ transform: string }>)[0].transform).toBe('translate(30px, -12px)')
+    expect((keyframes as Array<{ transform: string }>)[1].transform).toBe('translate(0px, 0px)')
+    expect((options as { duration: number }).duration).toBe(Animations.default.duration)
+    expect((options as { easing: string }).easing).toBe(Animations.default.easing)
   })
 
-  it('gives two elements distinct names, since a duplicate rejects the transition', async () => {
-    const a = document.createElement('div')
-    const b = document.createElement('div')
-    let names: string[] = []
-    doc.startViewTransition = (update) => {
-      names = [a, b].map(el => el.style.getPropertyValue('view-transition-name'))
-      return { finished: update() }
-    }
-
-    await withAnimation(() => {}, Animations.default, { scope: [a, b] })
-
-    expect(names[0]).toBeTruthy()
-    expect(names[1]).toBeTruthy()
-    expect(names[0], 'two scoped elements must not share a name').not.toBe(names[1])
-  })
-
-  it('restores a name the element already had rather than deleting it', async () => {
-    const el = document.createElement('div')
-    el.style.setProperty('view-transition-name', 'hero')
-    doc.startViewTransition = (update) => ({ finished: update() })
-
+  it('leaves an element that did not move alone', async () => {
+    const el = still({ left: 100, top: 200 })
     await withAnimation(() => {}, Animations.default, { scope: el })
+    expect(callsOf(el), 'a zero move is not animated').toHaveLength(0)
+  })
 
-    expect(el.style.getPropertyValue('view-transition-name'),
-      'a caller who named it keeps their name').toBe('hero')
+  it('moves each element in an array independently', async () => {
+    const a = movingElement({ left: 0, top: 0 }, { left: 50, top: 0 })
+    const b = still({ left: 0, top: 100 })
+    const c = movingElement({ left: 0, top: 200 }, { left: 0, top: 260 })
+    await withAnimation(() => {}, Animations.default, { scope: [a, b, c] })
+    expect(callsOf(a)).toHaveLength(1)
+    expect(callsOf(b), 'unmoved').toHaveLength(0)
+    expect(callsOf(c)).toHaveLength(1)
   })
 
   it('skips a nullish entry, so an unmounted ref is harmless', async () => {
-    const el = document.createElement('div')
-    let count = -1
-    doc.startViewTransition = (update) => {
-      // one named element among the nulls
-      count = [null, el, undefined].filter(
-        (e): e is HTMLElement => e instanceof HTMLElement && !!e.style.getPropertyValue('view-transition-name'),
-      ).length
-      return { finished: update() }
-    }
-
-    await expect(
-      withAnimation(() => 'ok', Animations.default, { scope: [null, el, undefined] }),
-    ).resolves.toBe('ok')
-    expect(count).toBe(1)
+    const el = movingElement({ left: 0, top: 0 }, { left: 20, top: 0 })
+    const result = await withAnimation(() => 'ok', Animations.default, { scope: [null, el, undefined] })
+    expect(result).toBe('ok')
+    expect(callsOf(el)).toHaveLength(1)
   })
 
-  // The failure mode reference counting exists to prevent. Two calls name the
-  // same element and overlap; the first is superseded and settles first. A
-  // naive save/restore leaves a swift-vt-* name stranded on the element, which
-  // never clears. Ownership is counted, so the name is put back exactly once,
-  // by whichever call is last out.
-  it('two overlapping animations on one element leave no name behind', async () => {
-    const el = document.createElement('div')
-    const finishers: Array<() => void> = []
-    doc.startViewTransition = (update) => {
-      void update()
-      return { finished: new Promise<void>((res) => { finishers.push(res) }) }
-    }
-
-    const first = withAnimation(() => {}, Animations.default, { scope: el })
-    const second = withAnimation(() => {}, Animations.default, { scope: el })
-    expect(el.style.getPropertyValue('view-transition-name'), 'named while animating').toBeTruthy()
-
-    finishers[0]()          // the superseded call settles first
-    await first
-    expect(el.style.getPropertyValue('view-transition-name'),
-      'still named — the second call is running').toBeTruthy()
-
-    finishers[1]()          // the last one out
-    await second
-    expect(el.style.getPropertyValue('view-transition-name'),
-      'and now nothing is stranded').toBe('')
-  })
-
-  it('restores the original once, not per overlapping call', async () => {
-    const el = document.createElement('div')
-    el.style.setProperty('view-transition-name', 'hero')
-    const finishers: Array<() => void> = []
-    doc.startViewTransition = (update) => {
-      void update()
-      return { finished: new Promise<void>((res) => { finishers.push(res) }) }
-    }
-
-    const first = withAnimation(() => {}, Animations.default, { scope: el })
-    const second = withAnimation(() => {}, Animations.default, { scope: el })
-    finishers[0](); await first
-    finishers[1](); await second
-
-    expect(el.style.getPropertyValue('view-transition-name'),
-      'the pre-existing name comes back, not a swift-vt-* one').toBe('hero')
-  })
-
-  it('cleans up even when startViewTransition throws synchronously', async () => {
-    const el = document.createElement('div')
-    doc.startViewTransition = () => { throw new Error('boom') }
-
-    const result = await withAnimation(() => 5, Animations.default, { scope: el })
-
-    expect(result, 'the mutation still applied').toBe(5)
-    expect(el.style.getPropertyValue('view-transition-name'),
-      'and the name it set was released, not leaked').toBe('')
-  })
-
-  it('names nothing when no scope is given and nothing is marked', async () => {
-    const el = document.createElement('div')
-    document.body.append(el)
-    doc.startViewTransition = (update) => ({ finished: update() })
-
-    await withAnimation(() => {})
-
-    expect(el.style.getPropertyValue('view-transition-name')).toBe('')
-    el.remove()
+  it('skips an element that left the DOM during the mutation', async () => {
+    const el = movingElement({ left: 0, top: 0 }, { left: 20, top: 0 })
+    await withAnimation(() => { el.remove() }, Animations.default, { scope: el })
+    expect(callsOf(el), 'gone, so nothing to move').toHaveLength(0)
   })
 })
 
-// The `v-animate` directive is the set-it-once half: mark the animatable
-// regions, then a scopeless withAnimation animates only the marked ones the
-// mutation changed — SwiftUI's implicit behaviour, made explicit at the mark
-// rather than at every call.
 describe('withAnimation falling back to v-animate markers', () => {
-  function markedTransition(watch: () => string) {
-    let atStart = ''
-    doc.startViewTransition = (update) => {
-      atStart = watch()
-      return { finished: update() }
-    }
-    return () => atStart
-  }
-
-  it('names every registered element before the snapshot', async () => {
-    const a = document.createElement('div')
-    const b = document.createElement('div')
+  it('measures every registered element when no scope is given', async () => {
+    const a = movingElement({ left: 0, top: 0 }, { left: 30, top: 0 })
+    const b = movingElement({ left: 0, top: 50 }, { left: 0, top: 90 })
     const offA = registerAnimatable(a)
     const offB = registerAnimatable(b)
-    const named = markedTransition(() =>
-      [a, b].map(el => el.style.getPropertyValue('view-transition-name')).join(','))
 
     await withAnimation(() => {})
 
-    const [nameA, nameB] = named().split(',')
-    expect(nameA, 'a marked element is named without a scope arg').toBeTruthy()
-    expect(nameB).toBeTruthy()
-    expect(nameA).not.toBe(nameB)
-    expect(a.style.getPropertyValue('view-transition-name'), 'released after').toBe('')
+    expect(callsOf(a)).toHaveLength(1)
+    expect(callsOf(b)).toHaveLength(1)
     offA(); offB()
   })
 
-  it('stops naming an element once its directive is unregistered', async () => {
-    const el = document.createElement('div')
-    const off = registerAnimatable(el)
-    off()
-
-    const named = markedTransition(() => el.style.getPropertyValue('view-transition-name'))
+  it('stops measuring an element once its directive is unregistered', async () => {
+    const el = movingElement({ left: 0, top: 0 }, { left: 30, top: 0 })
+    registerAnimatable(el)()  // register then immediately remove
     await withAnimation(() => {})
-
-    expect(named(), 'an unmounted marker leaves nothing behind').toBe('')
+    expect(callsOf(el)).toHaveLength(0)
   })
 
-  it('an explicit scope still wins over the markers', async () => {
-    const marked = document.createElement('div')
-    const chosen = document.createElement('div')
+  it('an explicit scope wins over the markers', async () => {
+    const marked = movingElement({ left: 0, top: 0 }, { left: 30, top: 0 })
+    const chosen = movingElement({ left: 0, top: 0 }, { left: 30, top: 0 })
     const off = registerAnimatable(marked)
-    const seen = { marked: '', chosen: '' }
-    doc.startViewTransition = (update) => {
-      seen.marked = marked.style.getPropertyValue('view-transition-name')
-      seen.chosen = chosen.style.getPropertyValue('view-transition-name')
-      return { finished: update() }
-    }
 
     await withAnimation(() => {}, Animations.default, { scope: chosen })
 
-    expect(seen.chosen, 'the scoped element is named').toBeTruthy()
-    expect(seen.marked, 'the marker is left out when a scope is explicit').toBe('')
+    expect(callsOf(chosen)).toHaveLength(1)
+    expect(callsOf(marked), 'left out when a scope is explicit').toHaveLength(0)
     off()
   })
 
-  it('scope: null forces the whole page even with markers present', async () => {
-    const marked = document.createElement('div')
+  it('scope: null animates nothing, even with markers present', async () => {
+    const marked = movingElement({ left: 0, top: 0 }, { left: 30, top: 0 })
     const off = registerAnimatable(marked)
-    const named = markedTransition(() => marked.style.getPropertyValue('view-transition-name'))
-
     await withAnimation(() => {}, Animations.default, { scope: null })
-
-    expect(named(), 'null is an explicit opt-out, not an omission').toBe('')
+    expect(callsOf(marked)).toHaveLength(0)
     off()
   })
 })
 
-// Setting prefers-reduced-motion is an accessibility setting, not a
-// preference about polish: for some people the animation is what makes the
-// page unusable. So the reduced path is not "less animation" — it is none,
-// and the state change still has to land.
+// prefers-reduced-motion is an accessibility setting, not a taste: for some
+// people the movement is what makes the page unusable. The reduced path is
+// not less animation — it is none, and the state change still has to land.
 describe('someone who has asked for less motion', () => {
   const prefer = (reduce: boolean) =>
     vi.stubGlobal('matchMedia', (query: string) => ({
@@ -289,31 +153,20 @@ describe('someone who has asked for less motion', () => {
       removeEventListener() {},
     }))
 
-  afterEach(() => vi.unstubAllGlobals())
-
-  it('gets the state change without the animation', async () => {
-    const calls: string[] = []
-    doc.startViewTransition = (update) => {
-      calls.push('start')
-      return { finished: update() }
-    }
+  it('gets the state change with no movement', async () => {
     prefer(true)
-
-    const result = await withAnimation(() => { calls.push('mutate'); return 'done' })
-
-    expect(calls, 'the view transition was never started').toEqual(['mutate'])
-    expect(result, 'and the mutation still applied').toBe('done')
+    const el = movingElement({ left: 0, top: 0 }, { left: 40, top: 0 })
+    let changed = false
+    const result = await withAnimation(() => { changed = true; return 'done' }, Animations.default, { scope: el })
+    expect(changed, 'the mutation still applied').toBe(true)
+    expect(result).toBe('done')
+    expect(callsOf(el), 'but nothing was animated').toHaveLength(0)
   })
 
-  it('and the animation is left alone for everyone else', async () => {
-    const calls: string[] = []
-    doc.startViewTransition = (update) => {
-      calls.push('start')
-      return { finished: update() }
-    }
+  it('and everyone else still gets the movement', async () => {
     prefer(false)
-
-    await withAnimation(() => calls.push('mutate'))
-    expect(calls).toEqual(['start', 'mutate'])
+    const el = movingElement({ left: 0, top: 0 }, { left: 40, top: 0 })
+    await withAnimation(() => {}, Animations.default, { scope: el })
+    expect(callsOf(el)).toHaveLength(1)
   })
 })
