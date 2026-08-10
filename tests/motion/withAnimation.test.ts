@@ -134,6 +134,63 @@ describe('withAnimation({ scope })', () => {
     expect(count).toBe(1)
   })
 
+  // The failure mode reference counting exists to prevent. Two calls name the
+  // same element and overlap; the first is superseded and settles first. A
+  // naive save/restore leaves a swift-vt-* name stranded on the element, which
+  // never clears. Ownership is counted, so the name is put back exactly once,
+  // by whichever call is last out.
+  it('two overlapping animations on one element leave no name behind', async () => {
+    const el = document.createElement('div')
+    const finishers: Array<() => void> = []
+    doc.startViewTransition = (update) => {
+      void update()
+      return { finished: new Promise<void>((res) => { finishers.push(res) }) }
+    }
+
+    const first = withAnimation(() => {}, Animations.default, { scope: el })
+    const second = withAnimation(() => {}, Animations.default, { scope: el })
+    expect(el.style.getPropertyValue('view-transition-name'), 'named while animating').toBeTruthy()
+
+    finishers[0]()          // the superseded call settles first
+    await first
+    expect(el.style.getPropertyValue('view-transition-name'),
+      'still named — the second call is running').toBeTruthy()
+
+    finishers[1]()          // the last one out
+    await second
+    expect(el.style.getPropertyValue('view-transition-name'),
+      'and now nothing is stranded').toBe('')
+  })
+
+  it('restores the original once, not per overlapping call', async () => {
+    const el = document.createElement('div')
+    el.style.setProperty('view-transition-name', 'hero')
+    const finishers: Array<() => void> = []
+    doc.startViewTransition = (update) => {
+      void update()
+      return { finished: new Promise<void>((res) => { finishers.push(res) }) }
+    }
+
+    const first = withAnimation(() => {}, Animations.default, { scope: el })
+    const second = withAnimation(() => {}, Animations.default, { scope: el })
+    finishers[0](); await first
+    finishers[1](); await second
+
+    expect(el.style.getPropertyValue('view-transition-name'),
+      'the pre-existing name comes back, not a swift-vt-* one').toBe('hero')
+  })
+
+  it('cleans up even when startViewTransition throws synchronously', async () => {
+    const el = document.createElement('div')
+    doc.startViewTransition = () => { throw new Error('boom') }
+
+    const result = await withAnimation(() => 5, Animations.default, { scope: el })
+
+    expect(result, 'the mutation still applied').toBe(5)
+    expect(el.style.getPropertyValue('view-transition-name'),
+      'and the name it set was released, not leaked').toBe('')
+  })
+
   it('names nothing when no scope is given and nothing is marked', async () => {
     const el = document.createElement('div')
     document.body.append(el)

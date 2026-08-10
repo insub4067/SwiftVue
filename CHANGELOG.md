@@ -35,7 +35,10 @@ long-standing `withAnimation` flash.
   something you supply — `v-animate` on the regions that animate (above), or
   `withAnimation(mutate, animation, { scope: el })` to name the element at
   the call site. With neither, the whole-page transition is unchanged, which
-  is still right for a route or theme change.
+  is still right for a route or theme change. Overlapping calls on the same
+  element are reference-counted, so a rapid second animation cannot leave a
+  transition name stranded on it; a synchronous failure to start the
+  transition still applies the mutation and clears the name it set.
 
 **Fixed (accessibility)**
 
@@ -55,13 +58,16 @@ long-standing `withAnimation` flash.
   selection was a CSS class and nothing more, so the single fact the
   control exists to convey was the one fact assistive technology could not
   reach. It is a `radiogroup` of `radio`s now, with `aria-checked`.
-- **`ContextMenu` set ARIA its element was not allowed to carry.**
-  `aria-expanded` and `aria-haspopup` on a plain `<div>` are invalid — the
-  implicit role permits neither — so the announcement they were there to
-  make was discarded. The target is a `button`, and because it now says so,
-  Enter and Space open the menu as well as the ContextMenu key. Only when
-  the target itself has focus: a `Button` inside it has its own Enter, and
-  that keystroke passes through on its way out.
+- **`ContextMenu` set an ARIA attribute its element was not allowed to
+  carry.** `aria-expanded` on a plain `<div>` is invalid — the generic role
+  does not permit it — so it was discarded. It is gone; `aria-haspopup`,
+  which *is* valid there, stays and says the element opens a menu. No role
+  is claimed on the wrapper on purpose: ContextMenu wraps arbitrary content,
+  often a `Button` or `NavigationLink`, and a widget role over an
+  interactive element flattens the inner control out of reach — the same
+  trap the todo row below hit. Opening stays on the pointer (right-click,
+  long press) and the standard keys (ContextMenu, Shift+F10), none of which
+  need a role.
 - **A checkbox inside a `NavigationLink` was unreachable.** A `role="button"`
   is a leaf to assistive technology and everything inside it collapses into
   its name, so a control nested there cannot be operated at all. This was

@@ -157,6 +157,30 @@ describe('every component passes an automated audit', () => {
   })
 })
 
+// ContextMenu wraps whatever you give it, and what people give it is usually
+// already interactive — a Button, a row that pushes a screen. The audit above
+// wraps plain text, which cannot catch a wrapper that makes its own slot
+// unreachable, so this is that case explicitly: the very thing the todo row
+// was restructured to avoid, checked at the one component whose whole job is
+// to wrap arbitrary content.
+describe('ContextMenu does not swallow the interactive content it wraps', () => {
+  it('with a Button inside', async () => {
+    const withButton = { setup: () => () => h(ContextMenu, { label: 'Actions', actions: [{ label: 'Copy' }] }, {
+      default: () => h(SVButton, null, { default: () => 'Open' }),
+    }) } as Component
+    const found = await audit(withButton)
+    expect(found.join('\n'), 'a role over the wrapper would flatten the button out').not.toContain('nested-interactive')
+    expect(found).toEqual([])
+  })
+
+  it('with a NavigationLink inside', async () => {
+    const withLink = { setup: () => () => h(ContextMenu, { label: 'Actions', actions: [{ label: 'Copy' }] }, {
+      default: () => h(NavigationLink, null, { default: () => 'Detail' }),
+    }) } as Component
+    expect(await audit(withLink)).toEqual([])
+  })
+})
+
 describe('and so does the app built out of them', () => {
   beforeEach(() => {
     history.replaceState(null, '', '/')

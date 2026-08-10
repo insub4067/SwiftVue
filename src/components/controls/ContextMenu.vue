@@ -29,6 +29,14 @@ const menuId = `swift-context-menu-${useId()}`
 // Where the menu opens: the pointer, as a native context menu does.
 const at = ref({ x: 0, y: 0 })
 
+// The target carries no role, on purpose. ContextMenu wraps arbitrary
+// content — often a Button or a NavigationLink — and a widget role over an
+// interactive element flattens the inner control out of reach, the very
+// defect the todo row was restructured to avoid. It says "I open a menu"
+// with `aria-haspopup`, valid on a generic element; `aria-expanded`, which
+// an earlier version set here, needs a role to be legal and is left off.
+// Opening is by pointer (right-click, long press) or keyboard (the
+// ContextMenu key, Shift+F10) — none of which need a role on the wrapper.
 const modifierStyle = useModifiers(props)
 const style = computed(() => composeStyle(
   modifierStyle.value,
@@ -139,16 +147,6 @@ function onKeydown(e: KeyboardEvent) {
   if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) {
     e.preventDefault()
     openAt(8, 8)
-    return
-  }
-  // The target announces itself as a button, so Enter and Space have to
-  // open the menu — a control that names itself and then ignores the two
-  // keys that name implies is worse than one with no name at all. Only
-  // when the target itself has focus: a Button inside the slot has its own
-  // Enter, and that keystroke bubbles through here on its way out.
-  if ((e.key === 'Enter' || e.key === ' ') && e.target === root.value) {
-    e.preventDefault()
-    openAt(8, 8)
   }
 }
 
@@ -206,10 +204,8 @@ defineExpose({ close })
     ref="root"
     class="context-menu-target"
     :style="style"
-    :role="disabled ? undefined : 'button'"
     :tabindex="disabled ? undefined : 0"
-    :aria-haspopup="disabled ? undefined : true"
-    :aria-expanded="disabled ? undefined : open"
+    :aria-haspopup="disabled ? undefined : 'menu'"
     :aria-controls="open ? menuId : undefined"
     @contextmenu="onContextMenu"
     @pointerdown="onPointerDown"

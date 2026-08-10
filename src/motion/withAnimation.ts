@@ -82,31 +82,53 @@ export function registerAnimatable(el: HTMLElement): () => void {
 // collide — the API rejects a transition with a duplicate `view-transition-name`.
 let vtCounter = 0
 
-interface NamedElement { el: HTMLElement, previous: string }
+// How many withAnimation calls are currently naming each element, and the
+// name it carried before the first of them touched it. Reference counting is
+// what makes overlapping calls safe: naively saving and restoring the
+// previous name lets a superseded call that finishes first restore an empty
+// string while a later call's own restore then writes a stale swift-vt-* name
+// back — which never clears, and every later transition on that element
+// restores the wrong value in turn. Instead the original is captured once, on
+// the first acquire, and put back once, when the last release brings the
+// count to zero. A call that finishes while others are still running leaves
+// the name alone.
+interface Ownership { original: string, active: number }
+const owners = new WeakMap<HTMLElement, Ownership>()
 
 /**
- * Give each scoped element a unique `view-transition-name`, remembering
- * whatever was there so it can be put back. Set before the old snapshot is
- * taken and kept through the mutation, so the element is the *same* named
- * box on both sides and morphs rather than cross-fades.
+ * Give each scoped element a fresh unique `view-transition-name`. Set before
+ * the old snapshot is taken and kept through the mutation, so the element is
+ * the same named box on both sides and morphs rather than cross-fades.
  */
-function nameScope(scope: WithAnimationOptions['scope']): NamedElement[] {
+function acquireScope(scope: WithAnimationOptions['scope']): HTMLElement[] {
   if (!scope) return []
   const els = Array.isArray(scope) ? scope : [scope]
-  const named: NamedElement[] = []
+  const acquired: HTMLElement[] = []
   for (const el of els) {
     if (!(el instanceof HTMLElement)) continue
-    const previous = el.style.getPropertyValue('view-transition-name')
+    let state = owners.get(el)
+    if (!state) {
+      state = { original: el.style.getPropertyValue('view-transition-name'), active: 0 }
+      owners.set(el, state)
+    }
+    state.active += 1
     el.style.setProperty('view-transition-name', `swift-vt-${vtCounter++}`)
-    named.push({ el, previous })
+    acquired.push(el)
   }
-  return named
+  return acquired
 }
 
-function releaseScope(named: NamedElement[]) {
-  for (const { el, previous } of named) {
-    if (previous) el.style.setProperty('view-transition-name', previous)
+function releaseScope(acquired: HTMLElement[]) {
+  for (const el of acquired) {
+    const state = owners.get(el)
+    if (!state) continue
+    state.active -= 1
+    // Still animating under another call — that call owns the current name
+    // and will restore the original when it is the one to reach zero.
+    if (state.active > 0) continue
+    if (state.original) el.style.setProperty('view-transition-name', state.original)
     else el.style.removeProperty('view-transition-name')
+    owners.delete(el)
   }
 }
 
@@ -151,20 +173,30 @@ export function withAnimation<T>(
   // the marked regions the mutation actually changed. Empty registry and no
   // scope falls through to the whole-page transition, unchanged.
   const targets = 'scope' in options ? options.scope : [...animatable]
-  const named = nameScope(targets)
+  const acquired = acquireScope(targets)
 
   let result!: T
-  const transition = doc.startViewTransition(async () => {
-    result = mutate()
-    await nextTick() // the DOM must update inside the snapshot window
-  })
+  let transition: { finished: Promise<void> }
+  try {
+    transition = doc.startViewTransition(async () => {
+      result = mutate()
+      await nextTick() // the DOM must update inside the snapshot window
+    })
+  } catch {
+    // startViewTransition threw before running the callback — the names are
+    // set but no transition owns them, so release now rather than leak, and
+    // apply the mutation unanimated so it is never silently dropped.
+    releaseScope(acquired)
+    const fallback = mutate()
+    return nextTick().then(() => fallback)
+  }
 
   return transition.finished
     .catch(() => { /* a skipped transition still applied the mutation */ })
     .then(() => {
       // Held until the animation settled: removing the name mid-flight would
       // yank the element out of the transition it is in the middle of.
-      releaseScope(named)
+      releaseScope(acquired)
       return result
     })
 }

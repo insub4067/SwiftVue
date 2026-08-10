@@ -49,9 +49,18 @@ describe('and a named one does not', () => {
     ['a placeholder, which is weak but is a name', { placeholder: 'Name' }],
     ['aria-label passed through', { 'aria-label': 'Name' }],
     ['aria-labelledby pointing at the text beside it', { 'aria-labelledby': 'row-title' }],
-    ['an id, for a real <label for> wrapping it', { id: 'name-field' }],
   ])('%s', (_why, props) => {
     expect(warningsFrom(SVTextField, props)).toEqual([])
+  })
+
+  // An id is not a name. `<input id="email">` with no `<label for="email">`
+  // anywhere is exactly the silent failure this check exists to catch, and
+  // whether a matching label exists cannot be known from the id alone. So the
+  // id does not buy silence — a `<label for>` user points aria-labelledby at
+  // the same label, or passes label.
+  it('but an id alone does not, because an id names nothing', () => {
+    const [warning] = warningsFrom(SVTextField, { id: 'email' })
+    expect(warning).toContain('has no accessible name')
   })
 })
 

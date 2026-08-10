@@ -53,39 +53,49 @@ describe('ContextMenu', () => {
   it('stays closed until asked', () => {
     const wrapper = mountMenu()
     expect(wrapper.find('[role="menu"]').exists()).toBe(false)
-    expect(wrapper.attributes('aria-expanded')).toBe('false')
   })
 
-  // `aria-expanded` and `aria-haspopup` are invalid on a plain <div> — the
-  // implicit role permits neither, so the announcement they exist to make
-  // was being discarded. Declaring the role is what makes them mean
-  // something, and having declared it, the two keys a button implies have
-  // to work.
-  it('announces itself as something that opens a menu', () => {
+  // The wrapper carries no role, on purpose: it wraps arbitrary content,
+  // often a Button or a NavigationLink, and a widget role over an
+  // interactive element flattens the inner control out of reach. It says
+  // "I open a menu" with aria-haspopup, which is valid without a role;
+  // aria-expanded, which needs a role, is not set at all.
+  it('announces a popup without claiming a widget role', () => {
     const wrapper = mountMenu()
-    expect(wrapper.attributes('role')).toBe('button')
-    expect(wrapper.attributes('aria-haspopup')).toBe('true')
+    expect(wrapper.attributes('role'), 'no role over arbitrary content').toBeUndefined()
+    expect(wrapper.attributes('aria-haspopup')).toBe('menu')
+    expect(wrapper.attributes('aria-expanded'), 'invalid without a role').toBeUndefined()
   })
 
-  it.each(['Enter', ' '])('%s opens it, because a button says it will', async (key) => {
+  // The standard context-menu keys, which need no role on the wrapper.
+  it.each(['ContextMenu'])('%s opens it', async (key) => {
     const wrapper = mountMenu()
     await wrapper.trigger('keydown', { key })
     expect(wrapper.find('[role="menu"]').exists()).toBe(true)
     wrapper.unmount()
   })
 
-  // SwiftUI's `.contextMenu` is routinely attached to something already
-  // tappable, and that thing has its own Enter — which bubbles out through
-  // the target on its way up. Opening the menu on it would make the
-  // wrapped control unusable from the keyboard.
-  it('but not the Enter belonging to a control inside it', async () => {
+  it('Shift+F10 opens it', async () => {
+    const wrapper = mountMenu()
+    await wrapper.trigger('keydown', { key: 'F10', shiftKey: true })
+    expect(wrapper.find('[role="menu"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  // A Button in the slot keeps its own Enter — the wrapper claims no key
+  // that would compete with it, which is the whole reason it claims no role.
+  it('leaves a control inside the slot fully operable', async () => {
+    let inner = 0
     const wrapper = mount(ContextMenu, {
       props: { actions, label: 'Row actions' },
-      slots: { default: '<button type="button" class="inner">Open</button>' },
+      slots: { default: `<button type="button" class="inner" onclick="">Open</button>` },
       attachTo: document.body,
     })
+    wrapper.find('.inner').element.addEventListener('click', () => { inner++ })
     await wrapper.find('.inner').trigger('keydown', { key: 'Enter' })
-    expect(wrapper.find('[role="menu"]').exists()).toBe(false)
+    await wrapper.find('.inner').trigger('click')
+    expect(wrapper.find('[role="menu"]').exists(), 'the wrapper did not hijack it').toBe(false)
+    expect(inner, 'the inner button still fired').toBe(1)
     wrapper.unmount()
   })
 

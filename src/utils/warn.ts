@@ -20,12 +20,18 @@ export function warnDev(message: string) {
  * saying so out loud at the point of use.
  *
  * `label` is SwiftVue's own prop; `aria-label` and `aria-labelledby` are
- * the escape hatches for a consumer who names the control some other way
- * — including from a real `<label>` that wraps it, which is why an `id`
- * is enough to stay quiet.
+ * the escape hatches for a consumer who names the control some other way.
+ *
+ * An `id` is deliberately *not* one of them. An id alone names nothing — a
+ * `<label for>` has to exist and point at it — and whether one does cannot be
+ * known here, before the element is in the DOM. Trusting the id would turn
+ * this into a check that stays silent for the exact case it exists to catch:
+ * a bare `<input id="email">` with no label anywhere. If you name the control
+ * with a `<label for>`, point `aria-labelledby` at the same label too, or
+ * pass `label`, so the intent is legible to the check as well as the browser.
  */
 export function warnIfUnnamed(component: string, label: string | undefined, attrs: Record<string, unknown>) {
-  if (label || attrs['aria-label'] || attrs['aria-labelledby'] || attrs.id) return
+  if (label || attrs['aria-label'] || attrs['aria-labelledby']) return
   warnDev(
     `<${component}> has no accessible name. Pass \`label\`, or an \`aria-labelledby\` `
     + 'pointing at the text next to it. A screen reader announces an unnamed control as only its type.',
