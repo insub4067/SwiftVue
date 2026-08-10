@@ -63,6 +63,26 @@ that the engine agrees with Chromium, not that an iPhone will.
 Real-device testing is done by hand before a release and is not a gate. A
 mobile-emulation project is the obvious next step and has not been written.
 
+### Gestures, and what a synthetic event cannot show you
+
+Worth its own heading, because this is where the library's worst bug hid.
+`SwipeActions` had forty passing unit tests and the gesture had **never
+completed in a browser** — a real drag makes the browser fire a
+`pointerleave` from an element the pointer never left, and nothing you
+dispatch by hand ever includes it. The same blind spot hid the `click` a
+drag produces afterwards.
+
+So gestures are ranked by what actually drives them:
+
+| Gesture | Driven by |
+| --- | --- |
+| Swipe actions on a row | **A real pointer**, in both engines |
+| Edge-swipe back | **A real pointer**, in both engines |
+| Pull to refresh | **Synthetic touch events.** Playwright can tap but cannot drag a touch, so this one cannot be driven for real — treat its passing test as weaker evidence than the two above |
+
+Pull to refresh is touch-only by design, as it is on iOS: there is no
+mouse or trackpad path into it.
+
 ### The floor, for older browsers
 
 Nothing enforces this, so treat it as the boundary of "expected" rather
