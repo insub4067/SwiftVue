@@ -3,7 +3,7 @@
 // fits on a phone, and that a deep link survives a reload.
 //
 // It runs on port 4174; the playground demo owns 4173.
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Locator, type Page } from '@playwright/test'
 
 const KITCHEN = 'http://localhost:4174'
 const WIDTHS = [320, 360, 390, 430]
@@ -77,15 +77,45 @@ test('Return in the title field saves, the same as the button', async ({ page })
   await expect(page.getByText('Book a table')).toBeVisible()
 })
 
-/** A drag towards the leading edge, the way a finger does it. */
-async function swipeRow(page: Page, box: { x: number, y: number, width: number, height: number }, distance: number) {
+type Trace = { seen: string[], moved: string }
+
+/**
+ * A drag towards the leading edge, the way a finger does it — and a record
+ * of what the row actually received.
+ *
+ * The record is not decoration. A swipe that does nothing looks identical
+ * from the outside to a swipe that never started, and the difference lives
+ * in events no assertion can reach afterwards. This has already cost two
+ * rounds of guessing; the failure message carries the answer now.
+ */
+async function swipeRow(page: Page, row: Locator, distance: number): Promise<Trace> {
+  const box = (await row.boundingBox())!
+  await row.evaluate((el) => {
+    const seen: string[] = []
+    ;(window as unknown as { __swipe: string[] }).__swipe = seen
+    for (const type of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'pointerleave', 'dragstart', 'selectstart', 'click']) {
+      el.addEventListener(type, () => { if (seen[seen.length - 1] !== type) seen.push(type) }, true)
+    }
+  })
+
   const y = box.y + box.height / 2
   const from = box.x + box.width - 8
   await page.mouse.move(from, y)
   await page.mouse.down()
   await page.mouse.move(from - distance, y, { steps: 12 })
   await page.mouse.up()
+
+  return page.evaluate(() => {
+    const content = document.querySelector('.swipe-content')
+    return {
+      seen: (window as unknown as { __swipe?: string[] }).__swipe ?? ['nothing recorded'],
+      moved: content ? getComputedStyle(content).transform : 'the row is gone',
+    }
+  })
 }
+
+const explain = (t: Trace, width: number) =>
+  `row ${Math.round(width)}px wide · events ${t.seen.join(' → ')} · content ${t.moved}`
 
 test('a swipe parks the row open and the revealed action works', async ({ page }) => {
   await fresh(page)
@@ -96,14 +126,14 @@ test('a swipe parks the row open and the revealed action works', async ({ page }
 
   // Far enough to uncover both 84px actions, well short of the 60% of the
   // row that would run the first one outright.
-  await swipeRow(page, box!, 180)
+  const trace = await swipeRow(page, row, 180)
 
   // By class, not by role: the drawn actions are `aria-hidden`, because a
   // screen reader gets the visually hidden fallback buttons instead. Asking
   // for "the Delete button" finds that fallback — which sits off-screen by
   // design, and is what the unit tests already cover.
   const del = row.locator('.swipe-action', { hasText: 'Delete' })
-  await expect(del).toBeVisible()
+  await expect(del, explain(trace, box!.width)).toBeVisible()
   await del.click()
   await expect(page.getByText('Buy milk')).toHaveCount(0)
 })
@@ -117,8 +147,8 @@ test('a swipe most of the way runs the first action outright', async ({ page }) 
 
   // SwiftUI's allowsFullSwipe: past 60% of the row, no tap needed. Measured
   // from the row rather than assumed, so the test does not encode a width.
-  await swipeRow(page, box!, Math.round(box!.width * 0.75))
-  await expect(page.getByText('Buy milk')).toHaveCount(0)
+  const trace = await swipeRow(page, row, Math.round(box!.width * 0.75))
+  await expect(page.getByText('Buy milk'), explain(trace, box!.width)).toHaveCount(0)
 })
 
 test('a deep link reopens the todo it names', async ({ page }) => {

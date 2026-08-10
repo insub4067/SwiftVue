@@ -214,7 +214,16 @@ defineExpose({ close, offset })
 </template>
 
 <style scoped>
-.swipe-row { touch-action: pan-y; }
+.swipe-row {
+  /* the vertical axis belongs to the scroller, the horizontal one to us */
+  touch-action: pan-y;
+  /* A drag across a row would otherwise select its text — which looks wrong
+     mid-gesture, and on a mouse can hand the pointer to the browser's own
+     drag machinery instead of to the swipe. An iOS list row is not
+     selectable either. */
+  user-select: none;
+  -webkit-user-select: none;
+}
 
 .swipe-slab {
   position: absolute;
