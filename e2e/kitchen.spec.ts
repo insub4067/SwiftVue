@@ -342,3 +342,130 @@ test('right to left mirrors the app rather than only the text', async ({ page })
   const flipped = await chevron.evaluate(el => getComputedStyle(el).transform)
   expect(flipped).toContain('matrix(-1')
 })
+
+// NavigationSplitView is the one component whose whole behaviour is a
+// function of how wide the window is, and happy-dom has no width. Its unit
+// tests stub `matchMedia`, which proves the branching and nothing about the
+// layout — whether two columns genuinely sit side by side is a question
+// only a browser can answer, so it is asked here.
+const IPAD = { width: 1024, height: 768 }
+const IPAD_PORTRAIT = { width: 768, height: 1024 }
+
+async function openLibrary(page: Page, size: { width: number, height: number }) {
+  await page.setViewportSize(size)
+  await page.goto(KITCHEN)
+  await page.evaluate(() => localStorage.clear())
+  await page.goto(KITCHEN)
+  await page.getByRole('tab', { name: /Library/ }).click()
+  await expect(page.getByTestId('filter-title')).toBeVisible()
+}
+
+test('on an iPad the sidebar and the detail are side by side', async ({ page }) => {
+  await openLibrary(page, IPAD)
+
+  const sidebar = page.locator('[role="tabpanel"]:visible aside')
+  const detail = page.locator('[role="tabpanel"]:visible .swift-split-detail')
+  const menu = await sidebar.boundingBox()
+  const pane = await detail.boundingBox()
+
+  expect(menu, 'the sidebar is laid out').not.toBeNull()
+  expect(pane).not.toBeNull()
+  expect(menu!.width, 'the column keeps the width it was given').toBeCloseTo(260, 0)
+  expect(pane!.x, 'the detail begins where the sidebar ends')
+    .toBeGreaterThanOrEqual(menu!.x + menu!.width - 1)
+  // Beside, not over: sharing a horizontal band at the same vertical place.
+  expect(pane!.y).toBeCloseTo(menu!.y, 0)
+
+  // Nothing is covering anything, so there is nothing to dim or to toggle.
+  await expect(page.locator('.swift-split-scrim')).toHaveCount(0)
+  await expect(page.locator('[role="tabpanel"]:visible .swift-split-toggle')).toHaveCount(0)
+})
+
+test('choosing a filter changes the detail without leaving the screen', async ({ page }) => {
+  await openLibrary(page, IPAD)
+
+  await expect(page.getByTestId('filter-title')).toHaveText('All')
+  await page.getByRole('button', { name: 'Done', exact: true }).click()
+
+  await expect(page.getByTestId('filter-title')).toHaveText('Done')
+  // The menu is still there; nothing was pushed over anything.
+  await expect(page.getByRole('button', { name: 'All', exact: true })).toBeVisible()
+})
+
+test('at iPad portrait width the sidebar is still a column', async ({ page }) => {
+  // 768 is the breakpoint itself, and `min-width` includes it — the boundary
+  // is exactly where an off-by-one would show.
+  await openLibrary(page, IPAD_PORTRAIT)
+
+  await expect(page.locator('[role="tabpanel"]:visible aside')).toBeVisible()
+  await expect(page.locator('.swift-split-scrim')).toHaveCount(0)
+})
+
+test('on a phone the sidebar comes over the detail and can be put away', async ({ page }) => {
+  await openLibrary(page, { width: 390, height: 780 })
+
+  const sidebar = page.locator('[role="tabpanel"]:visible aside')
+  const toggle = page.locator('[role="tabpanel"]:visible .swift-split-toggle')
+
+  await expect(toggle, 'unreachable otherwise, so the library draws one').toBeVisible()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  const scrim = page.locator('.swift-split-scrim')
+  await expect(scrim).toBeVisible()
+
+  // Over the detail rather than beside it: both start at the same edge.
+  //
+  // Polled, because the sidebar slides in over 350ms and a single sample
+  // catches it partway — the first run of this read -241 and the retry
+  // -202, two frames of the same animation. A layout that is genuinely
+  // wrong never settles, so the gate is as strict either way.
+  const detail = page.locator('[role="tabpanel"]:visible .swift-split-detail')
+  await expect.poll(async () => {
+    const menu = await sidebar.boundingBox()
+    const pane = await detail.boundingBox()
+    return menu && pane ? Math.round(menu.x - pane.x) : null
+  }, { message: 'the menu comes to rest over the detail', timeout: 3_000 }).toBe(0)
+
+  // Where the dimming is actually visible, not the middle.
+  //
+  // The scrim spans the whole split view with the sidebar sitting on top of
+  // it, which is the usual arrangement and fine for a person — they tap the
+  // dim part they can see. Playwright aims at an element's centre, and on a
+  // 390px screen that is 195px, underneath a 260px sidebar.
+  await scrim.click({ position: { x: 340, y: 400 } })
+  await expect(scrim).toHaveCount(0)
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+})
+
+test('choosing a filter on a phone puts the menu away with it', async ({ page }) => {
+  await openLibrary(page, { width: 390, height: 780 })
+
+  await page.locator('[role="tabpanel"]:visible .swift-split-toggle').click()
+  await page.getByRole('button', { name: 'Open', exact: true }).click()
+
+  // Otherwise the answer sits behind the question.
+  await expect(page.locator('.swift-split-scrim')).toHaveCount(0)
+  await expect(page.getByTestId('filter-title')).toHaveText('Open')
+})
+
+test('the menu takes the keyboard while it is over the content, and Escape shuts it', async ({ page }) => {
+  await openLibrary(page, { width: 390, height: 780 })
+
+  await page.locator('[role="tabpanel"]:visible .swift-split-toggle').click()
+  await expect(page.locator('.swift-split-scrim')).toBeVisible()
+
+  const focused = await page.evaluate(() => document.activeElement?.textContent?.trim())
+  expect(focused, 'focus moved into the menu').toBe('All')
+
+  await page.keyboard.press('Escape')
+  await expect(page.locator('.swift-split-scrim')).toHaveCount(0)
+})
+
+for (const width of [320, 390, 768, 1024]) {
+  test(`the library screen fits a ${width}px window`, async ({ page }) => {
+    await openLibrary(page, { width, height: 780 })
+    expect(await overflowOffenders(page)).toEqual([])
+  })
+}

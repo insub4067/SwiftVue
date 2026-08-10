@@ -126,8 +126,10 @@ const darkMode = useState(false)
 ### Navigation
 - `NavigationStack` — push/pop stack with back button and edge-swipe back (`title`, `displayMode`, `browserBack`, `historyKey`)
 - `NavigationLink` — pushes its `#destination` slot; `route`/`param` name it for the URL; or `to` (router) / `@tap`
+- `NavigationSplitView` — iPad sidebar beside a detail, an overlay when narrow (`columnVisibility`, `sidebarWidth`, `compactWidth`)
 - `TabView` — tab bar (`tabs`, `v-model`); a tab's `badge` draws the iOS pill
 - `Sheet` — bottom sheet (`v-model:isPresented`, `detents`)
+- `FullScreenCover` — a cover that replaces the screen, not a taller sheet (`v-model:isPresented`, `label`)
 
 ### Feedback
 - `Alert` — alert dialog (`v-model:isPresented`, `title`, `message`, `actions`)
@@ -340,6 +342,60 @@ nav?.popToRoot()
 
 `NavigationLink` with a `to` prop still renders a `router-link` for
 vue-router projects.
+
+## iPad: a sidebar beside the detail
+
+SwiftUI's `NavigationSplitView`. Wide enough and the sidebar is a column;
+narrower and the same menu becomes an overlay with a scrim, a toggle,
+Escape and a focus trap — the switch iPadOS makes at its own portrait
+width, which is where `compactWidth` sits by default.
+
+```vue
+<NavigationSplitView v-model:column-visibility="visibility" :sidebar-width="260" label="Filters">
+  <template #sidebar>
+    <List list-style="sidebar">…</List>
+  </template>
+  <template #detail>
+    <NavigationStack title="Inbox">…</NavigationStack>
+  </template>
+</NavigationSplitView>
+```
+
+`columnVisibility` is `automatic` unless you say otherwise, which means
+"open when there is room, shut when there is not". It is resolved inside
+the component and never written back to your model: rotating an iPad is not
+the app changing its mind, and a rotation that mutated your state would be
+indistinguishable from one that did.
+
+Two columns rather than SwiftUI's three, so `doubleColumn` and `detailOnly`
+are the only explicit values — `all` would name a column that does not
+exist here.
+
+The library draws the toggle only when the sidebar cannot be reached any
+other way. Set `hides-toggle` when your own toolbar has one.
+
+## Sheet or cover
+
+`Sheet` is `.sheet`: a card over a page you can still see, dismissed by
+reaching past it or dragging it down. `FullScreenCover` is
+`.fullScreenCover`: it replaces the screen.
+
+```vue
+<FullScreenCover v-model:is-presented="composing" label="New message">
+  <VStack :padding="16">
+    <Button @tap="composing = false">Done</Button>
+  </VStack>
+</FullScreenCover>
+```
+
+There is no backdrop to click, because nothing is left showing to dim, and
+no drag to dismiss — on iOS a cover is left deliberately, which is why
+SwiftUI makes you provide the way out. **Give it a visible close button.**
+
+One deliberate difference from iOS: **Escape closes it.** A modal that takes
+the keyboard and offers no way back is a keyboard trap, and that is not
+something the web gets to call a design decision. Escape is the floor, not
+the affordance.
 
 ## Images
 
