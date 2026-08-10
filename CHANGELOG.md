@@ -7,6 +7,25 @@ SwiftVue is pre-1.0. While the major version is 0, a **minor** bump may
 change behaviour and a **patch** only fixes it. Anything that would break
 working code is called out under *Breaking* with the change you need to make.
 
+## Unreleased
+
+**Fixed**
+
+- **A key deleted in another tab came back.** `removeItem` or `clear`
+  elsewhere made this tab's refs fall back to their defaults — and that
+  mutation woke the watcher, which wrote the default straight back. The key
+  returned holding an empty value, so "the key is gone" and "the key is
+  empty" stopped being different things. For a token cleared at logout they
+  are very much different: anything reading *absence* as the signal still
+  found something. A change arriving from storage is no longer written back.
+
+**Added**
+
+- `removeAppStorage(key)` — the delete half of the contract, which was
+  missing. Setting a ref to its default never removed anything; this takes
+  the key out of storage, here and in every other tab, and falls every ref
+  bound to it back to its own default.
+
 ## 0.3.0
 
 Seven defects, found by building an app out of the library rather than by
