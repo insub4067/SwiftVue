@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { withAnimation, Animations } from '../../src/motion/withAnimation'
+import { withAnimation, Animations, registerAnimatable } from '../../src/motion/withAnimation'
 
 type VTDocument = Document & { startViewTransition?: (cb: () => Promise<void>) => { finished: Promise<void> } }
 
@@ -134,7 +134,7 @@ describe('withAnimation({ scope })', () => {
     expect(count).toBe(1)
   })
 
-  it('names nothing when no scope is given', async () => {
+  it('names nothing when no scope is given and nothing is marked', async () => {
     const el = document.createElement('div')
     document.body.append(el)
     doc.startViewTransition = (update) => ({ finished: update() })
@@ -143,6 +143,79 @@ describe('withAnimation({ scope })', () => {
 
     expect(el.style.getPropertyValue('view-transition-name')).toBe('')
     el.remove()
+  })
+})
+
+// The `v-animate` directive is the set-it-once half: mark the animatable
+// regions, then a scopeless withAnimation animates only the marked ones the
+// mutation changed — SwiftUI's implicit behaviour, made explicit at the mark
+// rather than at every call.
+describe('withAnimation falling back to v-animate markers', () => {
+  function markedTransition(watch: () => string) {
+    let atStart = ''
+    doc.startViewTransition = (update) => {
+      atStart = watch()
+      return { finished: update() }
+    }
+    return () => atStart
+  }
+
+  it('names every registered element before the snapshot', async () => {
+    const a = document.createElement('div')
+    const b = document.createElement('div')
+    const offA = registerAnimatable(a)
+    const offB = registerAnimatable(b)
+    const named = markedTransition(() =>
+      [a, b].map(el => el.style.getPropertyValue('view-transition-name')).join(','))
+
+    await withAnimation(() => {})
+
+    const [nameA, nameB] = named().split(',')
+    expect(nameA, 'a marked element is named without a scope arg').toBeTruthy()
+    expect(nameB).toBeTruthy()
+    expect(nameA).not.toBe(nameB)
+    expect(a.style.getPropertyValue('view-transition-name'), 'released after').toBe('')
+    offA(); offB()
+  })
+
+  it('stops naming an element once its directive is unregistered', async () => {
+    const el = document.createElement('div')
+    const off = registerAnimatable(el)
+    off()
+
+    const named = markedTransition(() => el.style.getPropertyValue('view-transition-name'))
+    await withAnimation(() => {})
+
+    expect(named(), 'an unmounted marker leaves nothing behind').toBe('')
+  })
+
+  it('an explicit scope still wins over the markers', async () => {
+    const marked = document.createElement('div')
+    const chosen = document.createElement('div')
+    const off = registerAnimatable(marked)
+    const seen = { marked: '', chosen: '' }
+    doc.startViewTransition = (update) => {
+      seen.marked = marked.style.getPropertyValue('view-transition-name')
+      seen.chosen = chosen.style.getPropertyValue('view-transition-name')
+      return { finished: update() }
+    }
+
+    await withAnimation(() => {}, Animations.default, { scope: chosen })
+
+    expect(seen.chosen, 'the scoped element is named').toBeTruthy()
+    expect(seen.marked, 'the marker is left out when a scope is explicit').toBe('')
+    off()
+  })
+
+  it('scope: null forces the whole page even with markers present', async () => {
+    const marked = document.createElement('div')
+    const off = registerAnimatable(marked)
+    const named = markedTransition(() => marked.style.getPropertyValue('view-transition-name'))
+
+    await withAnimation(() => {}, Animations.default, { scope: null })
+
+    expect(named(), 'null is an explicit opt-out, not an omission').toBe('')
+    off()
   })
 })
 

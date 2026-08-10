@@ -12,6 +12,18 @@ working code is called out under *Breaking* with the change you need to make.
 An automated accessibility audit, the six defects it found, and a
 long-standing `withAnimation` flash.
 
+**Added**
+
+- **`v-animate` — mark a region animatable, the way every SwiftUI view is.**
+  SwiftUI animates only the views that read the value you changed, because it
+  holds the dependency graph. On the web that knowledge has to be supplied,
+  and this is the least intrusive way to supply it: put `v-animate` on the
+  regions that may animate, once, and a plain `withAnimation(() => …)` names
+  every marked element before it snapshots the page — so the ones whose
+  pixels changed move and everything else, marked or not, holds still. No
+  scope argument at the call site, and no DOM added: the directive names the
+  element it sits on. Mark single-root elements, and do not nest marks.
+
 **Fixed**
 
 - **`withAnimation` flashed the whole screen for a one-element change.** It
@@ -20,10 +32,10 @@ long-standing `withAnimation` flash.
   visible flash even when a single card changed. It could not have known
   better: SwiftUI animates only the views that depend on the value because
   it has the dependency graph, and the web does not. So the knowledge is now
-  something you can supply — `withAnimation(mutate, animation, { scope: el })`
-  names the changing element, lifts it out of the page snapshot, and lets
-  the rest of the screen hold still. Omitting `scope` keeps the old
-  whole-page behaviour, which is still right for a route or theme change.
+  something you supply — `v-animate` on the regions that animate (above), or
+  `withAnimation(mutate, animation, { scope: el })` to name the element at
+  the call site. With neither, the whole-page transition is unchanged, which
+  is still right for a route or theme change.
 
 **Fixed (accessibility)**
 

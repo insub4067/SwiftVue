@@ -45,10 +45,13 @@ export interface WithAnimationOptions {
    *
    * This is the piece SwiftUI gets for free: it knows the dependency graph,
    * so `withAnimation` there already animates only the views that changed.
-   * On the web that knowledge has to be supplied, and this is where.
+   * On the web that knowledge has to be supplied — either here, or once per
+   * region with the `v-animate` directive, which this falls back to when
+   * `scope` is omitted entirely.
    *
    * Pass a template ref's `.value`. A nullish entry is skipped, so an
-   * unmounted ref is harmless.
+   * unmounted ref is harmless. Passing `null` explicitly forces the
+   * whole-page transition even when `v-animate` markers exist.
    */
   scope?: Element | null | undefined | Array<Element | null | undefined>
 }
@@ -56,6 +59,23 @@ export interface WithAnimationOptions {
 function reducedMotion(): boolean {
   return typeof matchMedia !== 'undefined'
     && matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+/**
+ * The elements marked `v-animate`. This is SwiftUI's implicit knowledge made
+ * explicit: SwiftUI knows which views depend on a changed value and animates
+ * only those; here you mark the views that may animate, once, and a scopeless
+ * `withAnimation` names every one of them before the snapshot. Only those
+ * whose pixels actually changed move — a named element with an identical
+ * before and after simply sits there — so the call animates exactly the
+ * marked views that the mutation touched, and the rest of the page holds still.
+ */
+const animatable = new Set<HTMLElement>()
+
+/** The `v-animate` directive's hook. Returns its own removal. */
+export function registerAnimatable(el: HTMLElement): () => void {
+  animatable.add(el)
+  return () => { animatable.delete(el) }
 }
 
 // A process-wide counter, so two elements named in the same transition never
@@ -126,7 +146,12 @@ export function withAnimation<T>(
   root.style.setProperty('--swift-vt-duration', `${animation.duration ?? 250}ms`)
   root.style.setProperty('--swift-vt-easing', animation.easing ?? 'ease')
 
-  const named = nameScope(options.scope)
+  // An explicit `scope` — including `null` — wins; omit it and the
+  // `v-animate` markers stand in, so a plain withAnimation() animates only
+  // the marked regions the mutation actually changed. Empty registry and no
+  // scope falls through to the whole-page transition, unchanged.
+  const targets = 'scope' in options ? options.scope : [...animatable]
+  const named = nameScope(targets)
 
   let result!: T
   const transition = doc.startViewTransition(async () => {

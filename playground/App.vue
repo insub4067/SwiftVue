@@ -52,10 +52,6 @@ const shuffled = ref([1, 2, 3, 4, 5, 6])
 function shuffle() {
   shuffled.value = [...shuffled.value].sort(() => Math.random() - 0.5)
 }
-// The one element withAnimation should transition. Passed as `scope`, it is
-// lifted out of the page-wide snapshot, so the card animates and the rest of
-// the screen — header, buttons, code sample — holds still instead of flashing.
-const animatedCard = ref<HTMLElement | null>(null)
 
 const sampleImage = 'data:image/svg+xml;utf8,' + encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200">
@@ -409,13 +405,15 @@ onSubmit(() => search(query.value))
     sources: ['src/components/feedback/ProgressView.vue', 'src/components/feedback/SVAlert.vue'],
   },
   animation: {
-    code: `// every visual difference the mutation causes animates
+    code: `// mark the animatable region once, like SwiftUI does implicitly...
+<Card v-animate :expanded="expanded" />
+
+// ...then a plain withAnimation animates only the marked views
+// the change touched — the rest of the screen stays put:
 withAnimation(() => { expanded.value = !expanded.value })
 withAnimation(() => items.value.sort(), Animations.spring)
 
-// scope it to the element that changes, or the whole page
-// snapshots and cross-fades — a flash even for one small change
-const card = ref(null)  // template ref on the changing element
+// or name the element at the call site, without a directive:
 withAnimation(() => { expanded.value = !expanded.value }, Animations.spring, { scope: card.value })
 
 // presets: default linear easeIn easeOut easeInOut
@@ -1064,34 +1062,35 @@ onUnmounted(() => {
 
                     <Text font="subheadline" foreground-color="secondary">withAnimation — 카드 확장 + 리스트 셔플</Text>
                     <HStack :spacing="8" wrap>
-                      <Button button-style="bordered" @tap="withAnimation(() => { expanded = !expanded }, Animations.default, { scope: animatedCard })">
+                      <Button button-style="bordered" @tap="withAnimation(() => { expanded = !expanded })">
                         {{ expanded ? 'Collapse' : 'Expand' }}
                       </Button>
-                      <Button button-style="bordered" @tap="withAnimation(() => shuffle(), Animations.spring, { scope: animatedCard })">
+                      <Button button-style="bordered" @tap="withAnimation(() => shuffle(), Animations.spring)">
                         Shuffle (spring)
                       </Button>
-                      <Button button-style="bordered" @tap="withAnimation(() => shuffle(), Animations.bouncy, { scope: animatedCard })">
+                      <Button button-style="bordered" @tap="withAnimation(() => shuffle(), Animations.bouncy)">
                         Shuffle (bouncy)
                       </Button>
                     </HStack>
-                    <div ref="animatedCard">
-                      <VStack :spacing="8" alignment="leading" :padding="16" background="secondaryBackground"
-                        :corner-radius="12" :frame="{ width: '100%' }">
-                        <Text font="headline">Animated card</Text>
-                        <Text v-if="expanded" font="subheadline" foreground-color="secondary">
-                          This extra content appears through the View Transitions API —
-                          every visual difference caused by the state change animates,
-                          exactly like SwiftUI's withAnimation. Only this card is named as
-                          the scope, so the rest of the screen stays put.
-                        </Text>
-                        <HStack :spacing="8" wrap>
-                          <VStack v-for="n in shuffled" :key="n" :padding="[10, 14]" :corner-radius="8"
-                            :style="{ background: colors[(n - 1) % colors.length].var }">
-                            <Text font="caption" foreground-color="white" bold>{{ n }}</Text>
-                          </VStack>
-                        </HStack>
-                      </VStack>
-                    </div>
+                    <!-- v-animate marks the card as animatable; the buttons above call
+                         withAnimation with no scope, so only this card moves and the
+                         rest of the screen stays put — the way SwiftUI animates only
+                         the views that read the state. -->
+                    <VStack v-animate :spacing="8" alignment="leading" :padding="16" background="secondaryBackground"
+                      :corner-radius="12" :frame="{ width: '100%' }">
+                      <Text font="headline">Animated card</Text>
+                      <Text v-if="expanded" font="subheadline" foreground-color="secondary">
+                        This extra content appears through the View Transitions API —
+                        every visual difference caused by the state change animates,
+                        exactly like SwiftUI's withAnimation.
+                      </Text>
+                      <HStack :spacing="8" wrap>
+                        <VStack v-for="n in shuffled" :key="n" :padding="[10, 14]" :corner-radius="8"
+                          :style="{ background: colors[(n - 1) % colors.length].var }">
+                          <Text font="caption" foreground-color="white" bold>{{ n }}</Text>
+                        </VStack>
+                      </HStack>
+                    </VStack>
                     <CodeSample v-bind="samples.animation" />
                   </VStack>
                 </template>

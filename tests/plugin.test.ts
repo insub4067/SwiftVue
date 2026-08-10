@@ -41,4 +41,12 @@ describe('SwiftVuePlugin', () => {
     expect(prefixed.component('SVTextField')).toBe(plain.component('TextField'))
     expect(prefixed.component('SVButton')).toBe(plain.component('Button'))
   })
+
+  // The one directive. Unprefixed even when components are prefixed — a
+  // directive name is not a tag and cannot collide the way `<Text>` can.
+  it('registers v-animate, prefix or not', () => {
+    expect(appWith().directive('animate'), 'v-animate is available').toBeTruthy()
+    expect(appWith({ prefix: 'SV' }).directive('animate'),
+      'and stays unprefixed').toBeTruthy()
+  })
 })

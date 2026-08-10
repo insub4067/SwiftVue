@@ -83,6 +83,7 @@ export type { AsyncImageProps, AsyncImagePhase } from './components/media/AsyncI
 export { default as TransitionView } from './components/motion/TransitionView.vue'
 export { withAnimation, Animations } from './motion/withAnimation'
 export type { SwiftAnimation, WithAnimationOptions } from './motion/withAnimation'
+export { vAnimate } from './motion/vAnimate'
 
 // Composables
 export { useState } from './composables/useState'

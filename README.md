@@ -554,8 +554,28 @@ One difference from SwiftUI worth knowing. SwiftUI knows which views depend
 on the value you changed, so it animates only those. The View Transitions
 API does not — with nothing told otherwise it snapshots the **whole page**
 and cross-fades it, and that page-wide fade reads as a flash even when a
-single card changed. Name the element that changes and it animates on its
-own while the rest of the screen holds still:
+single card changed.
+
+Close the gap the way SwiftUI does implicitly: mark the animatable regions
+with `v-animate`, once, and a plain `withAnimation` animates only the marked
+ones the change touched. The rest of the screen holds still.
+
+```vue
+<template>
+  <button @click="withAnimation(() => { expanded = !expanded }, Animations.spring)">Toggle</button>
+
+  <!-- v-animate adds no DOM; it names the element it sits on -->
+  <Card v-animate :expanded="expanded" />
+</template>
+```
+
+`v-animate` goes on a single-root element or component, and marks should not
+nest (a named element is captured with its named descendants lifted out, so
+a card marked around a marked row animates around a hole).
+
+If you would rather not mark anything, name the element at the call site
+instead — `scope` takes one element or an array of them, and a nullish entry
+(an unmounted ref) is skipped:
 
 ```vue
 <script setup>
@@ -563,16 +583,14 @@ const card = ref(null)
 </script>
 
 <template>
-  <!-- pass the element, not the ref object -->
   <button @click="withAnimation(() => { expanded = !expanded }, Animations.spring, { scope: card })">Toggle</button>
   <div ref="card"> … the part that changes … </div>
 </template>
 ```
 
-`scope` takes one element or an array of them; a nullish entry (an unmounted
-ref) is skipped. Omit it and you get the whole-page transition, which is the
-right choice when the change really is the whole page — a route swap, a theme
-flip.
+With neither a marker nor a scope you get the whole-page transition, which is
+the right choice when the change really is the whole page — a route swap, a
+theme flip. `{ scope: null }` forces it even when markers exist.
 
 `TransitionView` is `.transition(_:)` for a conditional view:
 
