@@ -14,13 +14,16 @@ export interface DatePickerProps extends ModifierProps {
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useAttrs } from 'vue'
 import { useModifiers, composeStyle } from '../../utils/modifiers'
+import { warnIfUnnamed } from '../../utils/warn'
 
 const props = withDefaults(defineProps<DatePickerProps>(), {
   modelValue: '',
   displayedComponents: 'date',
 })
+
+warnIfUnnamed('DatePicker', props.label, useAttrs())
 
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 

@@ -65,21 +65,21 @@ onSubmit(save)
 
         <Section header="What">
           <VStack :spacing="12" :padding="[12, 16]">
-            <TextField v-model="title" placeholder="Title" text-field-style="roundedBorder" />
+            <TextField v-model="title" label="Title" placeholder="Title" text-field-style="roundedBorder" />
             <Text
               v-if="attempted && !title.trim()"
               font="footnote"
               foreground-color="red"
               role="alert"
             >A todo needs a title.</Text>
-            <TextEditor v-model="notes" placeholder="Notes" />
+            <TextEditor v-model="notes" label="Notes" placeholder="Notes" />
           </VStack>
         </Section>
 
         <Section header="When" footer="Return saves from any field.">
           <VStack :spacing="12" :padding="[12, 16]">
-            <Picker v-model="priority" :options="PRIORITIES" picker-style="segmented" />
-            <DatePicker v-model="due" displayed-components="date" />
+            <Picker v-model="priority" :options="PRIORITIES" picker-style="segmented" label="Priority" />
+            <DatePicker v-model="due" displayed-components="date" label="Due date" />
           </VStack>
           <FormRow title="Flag it">
             <Toggle v-model="flagged" label="Flag it" />

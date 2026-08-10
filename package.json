@@ -51,11 +51,13 @@
     }
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "^1.62.1",
     "@types/node": "^26.2.0",
     "@vitejs/plugin-vue": "^5.2.0",
     "@vitest/coverage-v8": "^4.1.10",
     "@vue/test-utils": "^2.4.11",
+    "axe-core": "^4.13.0",
     "eslint": "^9.39.5",
     "eslint-plugin-vue": "^10.10.0",
     "happy-dom": "^20.11.2",

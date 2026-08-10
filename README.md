@@ -102,19 +102,27 @@ const darkMode = useState(false)
 ### Text & Input
 - `Text` — text display (`font`, `bold`, `italic`, `lineLimit`, `foregroundColor`)
 - `Label` — icon + text (`systemImage`, `iconColor`); `for` makes it a real form `<label>`
-- `TextField` — text input (`v-model`, `placeholder`, `textFieldStyle`, `v-model:focused`)
-- `SecureField` — password input (`v-model`, `placeholder`, `v-model:focused`)
-- `TextEditor` — multi-line text (`v-model`, `placeholder`, `v-model:focused`)
+- `TextField` — text input (`v-model`, `label`, `placeholder`, `textFieldStyle`, `v-model:focused`)
+- `SecureField` — password input (`v-model`, `label`, `placeholder`, `v-model:focused`)
+- `TextEditor` — multi-line text (`v-model`, `label`, `placeholder`, `v-model:focused`)
 
 ### Controls
 - `Button` — button (`@tap`, `buttonStyle`, `role`, `fullWidth`, `type`)
 - `Toggle` — switch (`v-model`, `tint`)
 - `Slider` — range input (`v-model`, `min`, `max`, `step`)
-- `Picker` — select/segmented (`v-model`, `options`, `pickerStyle`)
+- `Picker` — select/segmented (`v-model`, `options`, `pickerStyle`, `label`)
 - `Stepper` — increment/decrement (`v-model`, `min`, `max`, `step`)
-- `DatePicker` — date/time input (`v-model`, `displayedComponents`, `min`, `max`)
+- `DatePicker` — date/time input (`v-model`, `displayedComponents`, `label`, `min`, `max`)
 - `Menu` — dropdown of actions (`label`, `actions`, `@select`)
 - `ContextMenu` — long press / right click / Shift+F10 menu over any content (`actions`, `@select`)
+
+Every control takes a `label`, which is SwiftUI's first argument —
+`Picker("Priority", selection:)` is `<Picker label="Priority" …>`. It is
+not drawn, because a Form row already shows the title beside the control
+and rendering it twice would read it twice; it is what a screen reader
+announces. A control with no name at all warns in development, since an
+unnamed `<select>` looks entirely finished and announces as nothing but
+"combo box".
 
 ### Data
 - `ForEach` — list rendering (`items`, `keyPath`, scoped slot)
@@ -541,6 +549,48 @@ withAnimation(() => { expanded.value = !expanded.value })
 withAnimation(() => items.value.sort(), Animations.spring)
 // presets: default · linear · easeIn/Out/InOut · spring · smooth · snappy · bouncy
 ```
+
+One difference from SwiftUI worth knowing. SwiftUI knows which views depend
+on the value you changed, so it animates only those. The View Transitions
+API does not — with nothing told otherwise it snapshots the **whole page**
+and cross-fades it, and that page-wide fade reads as a flash even when a
+single card changed.
+
+Close the gap the way SwiftUI does implicitly: mark the animatable regions
+with `v-animate`, once, and a plain `withAnimation` animates only the marked
+ones the change touched. The rest of the screen holds still.
+
+```vue
+<template>
+  <button @click="withAnimation(() => { expanded = !expanded }, Animations.spring)">Toggle</button>
+
+  <!-- v-animate adds no DOM; it names the element it sits on -->
+  <Card v-animate :expanded="expanded" />
+</template>
+```
+
+`v-animate` goes on a single-root element or component, and marks should not
+nest (a named element is captured with its named descendants lifted out, so
+a card marked around a marked row animates around a hole).
+
+If you would rather not mark anything, name the element at the call site
+instead — `scope` takes one element or an array of them, and a nullish entry
+(an unmounted ref) is skipped:
+
+```vue
+<script setup>
+const card = ref(null)
+</script>
+
+<template>
+  <button @click="withAnimation(() => { expanded = !expanded }, Animations.spring, { scope: card })">Toggle</button>
+  <div ref="card"> … the part that changes … </div>
+</template>
+```
+
+With neither a marker nor a scope you get the whole-page transition, which is
+the right choice when the change really is the whole page — a route swap, a
+theme flip. `{ scope: null }` forces it even when markers exist.
 
 `TransitionView` is `.transition(_:)` for a conditional view:
 

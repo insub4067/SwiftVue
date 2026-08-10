@@ -67,6 +67,34 @@ test('adding a todo works end to end, and outlives a reload', async ({ page }) =
   await expect(page.getByText('Call the dentist')).toBeVisible()
 })
 
+// The checkbox used to sit inside the row's NavigationLink and swallow its
+// own click to stop the row opening. It is a sibling of the link now — an
+// accessibility fix, because a focusable control inside a `role="button"`
+// is unreachable — and that moved this guarantee from a stopped event onto
+// the shape of the DOM. Different mechanism, same promise, so the promise
+// is checked here rather than inferred from the restructure.
+test('ticking a todo does not open it', async ({ page }) => {
+  await fresh(page)
+
+  await expect(page.getByText('2 open · 3 total')).toBeVisible()
+  await page.getByRole('checkbox', { name: /Mark Buy milk as done/ }).click()
+
+  // Done, so it has left the open list for the collapsed Completed section
+  // — the count is what says so without expanding anything.
+  await expect(page.getByText('1 open · 3 total'), 'the todo is done').toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Buy milk' }),
+    'and no detail screen was pushed').toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Todos' })).toBeVisible()
+})
+
+test('and the row still opens when the rest of it is tapped', async ({ page }) => {
+  await fresh(page)
+
+  await page.getByText('Buy milk').click()
+
+  await expect(page.getByRole('heading', { name: 'Buy milk' })).toBeVisible()
+})
+
 test('Return in the title field saves, the same as the button', async ({ page }) => {
   await fresh(page)
 

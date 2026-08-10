@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import {
-  NavigationStack, NavigationLink, ScrollView, Section, SwipeActions,
+  NavigationStack, ScrollView, Section, SwipeActions,
   VStack, HStack, Spacer, Text, Button, Alert, useState,
   type SwipeAction,
 } from '@swiftvue'
@@ -75,12 +75,11 @@ function reload() {
             :trailing="ROW_ACTIONS"
             @select="onSwipe(todo, $event)"
           >
-            <NavigationLink :destination-title="todo.title" route="todo" :param="todo.id">
-              <TodoRow :todo="todo" overdue @toggle="toggleDone(todo.id)" />
+            <TodoRow :todo="todo" overdue @toggle="toggleDone(todo.id)">
               <template #destination>
                 <TodoDetailView :id="todo.id" />
               </template>
-            </NavigationLink>
+            </TodoRow>
           </SwipeActions>
         </Section>
 
@@ -90,12 +89,11 @@ function reload() {
             :trailing="ROW_ACTIONS"
             @select="onSwipe(todo, $event)"
           >
-            <NavigationLink :destination-title="todo.title" route="todo" :param="todo.id">
-              <TodoRow :todo="todo" @toggle="toggleDone(todo.id)" />
+            <TodoRow :todo="todo" @toggle="toggleDone(todo.id)">
               <template #destination>
                 <TodoDetailView :id="todo.id" />
               </template>
-            </NavigationLink>
+            </TodoRow>
           </SwipeActions>
         </Section>
 

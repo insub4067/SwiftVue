@@ -1,62 +1,56 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { HStack, VStack, Spacer, Text } from '@swiftvue'
+import { type VNodeChild } from 'vue'
+import { HStack, NavigationLink } from '@swiftvue'
+import TodoRowBody from './TodoRowBody.vue'
 import type { Todo } from '../store'
 
-const props = defineProps<{ todo: Todo, overdue?: boolean }>()
+defineProps<{ todo: Todo, overdue?: boolean }>()
 const emit = defineEmits<{ toggle: [] }>()
 
-const PRIORITY_MARK: Record<Todo['priority'], string> = {
-  high: '‼️',
-  normal: '',
-  low: '',
-}
-
-const dueLabel = computed(() => {
-  const [, month, day] = props.todo.due.split('-')
-  return `${month}/${day}`
-})
-
 /**
- * The checkbox is a real `<button>` inside the row rather than a click
- * handler on the row itself, so it can be reached by keyboard and announces
- * its state. It stops propagation because the row around it is a
- * NavigationLink, and toggling done is not the same as opening the todo.
+ * Given a destination, the text half of the row becomes a NavigationLink
+ * and the checkbox stays outside it. That split is the reason this
+ * component owns the link rather than the screen: a focusable control
+ * inside a `role="button"` cannot be reached, because a button is a leaf
+ * to assistive technology and everything within it collapses into its
+ * name. Stopping the click from propagating hid that from a mouse and
+ * left it entirely in place for VoiceOver.
  */
-function toggle(event: Event) {
-  event.stopPropagation()
-  emit('toggle')
-}
+defineSlots<{ destination?: () => VNodeChild }>()
 </script>
 
 <template>
-  <HStack :spacing="12" :padding="[11, 16]" alignment="center" class="todo-row">
+  <HStack :spacing="0" alignment="center" class="todo-row">
     <button
       type="button"
       class="check"
       role="checkbox"
       :aria-checked="todo.done"
       :aria-label="todo.done ? `Mark ${todo.title} as not done` : `Mark ${todo.title} as done`"
-      @click="toggle"
+      @click="emit('toggle')"
     >
       <span aria-hidden="true">{{ todo.done ? '☑︎' : '☐' }}</span>
     </button>
 
-    <VStack :spacing="2" alignment="leading">
-      <Text :class="{ struck: todo.done }" :foreground-color="todo.done ? 'secondaryLabel' : 'label'">
-        {{ PRIORITY_MARK[todo.priority] }}{{ todo.title }}
-      </Text>
-      <Text v-if="todo.notes" font="footnote" foreground-color="secondaryLabel" :line-limit="1">
-        {{ todo.notes }}
-      </Text>
-    </VStack>
+    <NavigationLink
+      v-if="$slots.destination"
+      :destination-title="todo.title"
+      route="todo"
+      :param="todo.id"
+      :padding="[11, 16, 11, 0]"
+      class="todo-row-body"
+    >
+      <TodoRowBody :todo="todo" :overdue="overdue" />
+      <template #destination>
+        <slot name="destination" />
+      </template>
+    </NavigationLink>
 
-    <Spacer />
-
-    <Text v-if="todo.flagged" aria-label="Flagged">🚩</Text>
-    <Text font="footnote" :foreground-color="overdue ? 'red' : 'secondaryLabel'">
-      {{ dueLabel }}
-    </Text>
+    <!-- A completed todo has no detail screen, so the same body renders
+         plainly rather than as a link that leads nowhere. -->
+    <div v-else class="todo-row-body plain">
+      <TodoRowBody :todo="todo" :overdue="overdue" />
+    </div>
   </HStack>
 </template>
 
@@ -66,6 +60,18 @@ function toggle(event: Event) {
   /* The row sits on the list's own background; without this the swipe
      actions revealed underneath show through as the row slides. */
   background: var(--swift-background);
+}
+
+/* The link is the rest of the row, so the whole strip beside the checkbox
+   stays tappable — losing that to the restructure would have traded one
+   accessibility problem for a worse usability one. */
+.todo-row-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.plain {
+  padding: 11px 16px 11px 0;
 }
 
 .check {
@@ -79,11 +85,8 @@ function toggle(event: Event) {
   /* 44×44 is the iOS minimum, and a bare glyph is nowhere near it. */
   min-width: 44px;
   min-height: 44px;
-  /* the visual glyph stays where the text expects it */
-  margin-inline-start: -12px;
-}
-
-.struck {
-  text-decoration: line-through;
+  flex: none;
+  /* the glyph lines up with the 16px gutter the rest of the app uses */
+  margin-inline-start: 4px;
 }
 </style>

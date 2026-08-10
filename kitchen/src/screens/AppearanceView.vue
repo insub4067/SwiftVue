@@ -35,7 +35,7 @@ const SWATCHES = [
         <HStack :padding="[11, 16]" :spacing="12" data-testid="theme-row">
           <Text>Theme</Text>
           <Spacer />
-          <Picker v-model="selected" :options="OPTIONS" />
+          <Picker v-model="selected" :options="OPTIONS" label="Theme" />
         </HStack>
       </Section>
 

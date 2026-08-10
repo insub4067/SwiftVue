@@ -151,9 +151,13 @@
 
 /* --- Motion ------------------------------------------------------------ */
 
-/* withAnimation() drives these through the View Transitions API */
-::view-transition-old(root),
-::view-transition-new(root) {
+/* withAnimation() drives these through the View Transitions API. The `*`
+   reaches every group, not only `root`: a scoped call names its own element,
+   and that element's group has to pick up the same duration and easing or it
+   would animate at the browser default while the page-wide case did not. */
+::view-transition-group(*),
+::view-transition-old(*),
+::view-transition-new(*) {
   animation-duration: var(--swift-vt-duration, 250ms);
   animation-timing-function: var(--swift-vt-easing, ease);
 }
@@ -188,6 +192,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .swift-t-active { transition-duration: 0.01ms; }
-  ::view-transition-old(root),
-  ::view-transition-new(root) { animation-duration: 0.01ms; }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) { animation-duration: 0.01ms; }
 }

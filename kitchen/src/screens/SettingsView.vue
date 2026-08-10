@@ -55,7 +55,7 @@ function onReset(label: string) {
 
         <Section header="New todos">
           <FormRow title="Default priority">
-            <Picker v-model="settings.defaultPriority.value" :options="PRIORITIES" />
+            <Picker v-model="settings.defaultPriority.value" :options="PRIORITIES" label="Default priority" />
           </FormRow>
           <FormRow title="Remind me" :subtitle="`${settings.reminderLeadDays.value} day(s) before it is due`">
             <Stepper v-model="settings.reminderLeadDays.value" :min="0" :max="14" />
@@ -67,7 +67,7 @@ function onReset(label: string) {
                combobox on the page" would find one on whichever screen is
                underneath. Named, so it cannot. -->
           <FormRow title="Writing direction" data-testid="direction-row">
-            <Picker v-model="settings.direction.value" :options="DIRECTIONS" />
+            <Picker v-model="settings.direction.value" :options="DIRECTIONS" label="Writing direction" />
           </FormRow>
         </Section>
 

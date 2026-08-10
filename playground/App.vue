@@ -222,8 +222,8 @@ const samples: Record<string, { code: string; sources: string[] }> = {
   form: {
     code: `<Form @submit="save">
   <Section header="Details">
-    <TextField v-model="name" placeholder="Name" />
-    <DatePicker v-model="due" displayed-components="date" />
+    <TextField v-model="name" label="Name" />
+    <DatePicker v-model="due" label="Due" displayed-components="date" />
   </Section>
   <!-- every other button defaults to type="button" -->
   <Button type="submit" button-style="borderedProminent">Save</Button>
@@ -405,9 +405,17 @@ onSubmit(() => search(query.value))
     sources: ['src/components/feedback/ProgressView.vue', 'src/components/feedback/SVAlert.vue'],
   },
   animation: {
-    code: `// every visual difference the mutation causes animates
+    code: `// mark the animatable region once, like SwiftUI does implicitly...
+<Card v-animate :expanded="expanded" />
+
+// ...then a plain withAnimation animates only the marked views
+// the change touched — the rest of the screen stays put:
 withAnimation(() => { expanded.value = !expanded.value })
 withAnimation(() => items.value.sort(), Animations.spring)
+
+// or name the element at the call site, without a directive:
+withAnimation(() => { expanded.value = !expanded.value }, Animations.spring, { scope: card.value })
+
 // presets: default linear easeIn easeOut easeInOut
 //          spring smooth snappy bouncy
 
@@ -469,9 +477,10 @@ withAnimation(() => items.value.sort(), Animations.spring)
   { value: 'medium', label: 'M' },
 ]
 
-<Picker v-model="size" :options="sizes" picker-style="segmented" />
-<Picker v-model="fruit" :options="fruits" picker-style="menu" />
-<Picker :model-value="fruit" :options="fruits" disabled />`,
+<!-- label is the accessible name, not a drawn one -->
+<Picker v-model="size" :options="sizes" picker-style="segmented" label="Size" />
+<Picker v-model="fruit" :options="fruits" picker-style="menu" label="Fruit" />
+<Picker :model-value="fruit" :options="fruits" disabled label="Fruit" />`,
     sources: ['src/components/controls/Picker.vue'],
   },
   reactive: {
@@ -1040,7 +1049,7 @@ onUnmounted(() => {
                       <Button button-style="bordered" @tap="showBox = !showBox">
                         {{ showBox ? 'Hide' : 'Show' }}
                       </Button>
-                      <Picker v-model="boxTransition" :options="transitionOptions" picker-style="segmented" />
+                      <Picker v-model="boxTransition" :options="transitionOptions" picker-style="segmented" label="Transition" />
                     </HStack>
                     <div :style="{ minHeight: '76px' }">
                       <TransitionView :transition="boxTransition">
@@ -1063,7 +1072,11 @@ onUnmounted(() => {
                         Shuffle (bouncy)
                       </Button>
                     </HStack>
-                    <VStack :spacing="8" alignment="leading" :padding="16" background="secondaryBackground"
+                    <!-- v-animate marks the card as animatable; the buttons above call
+                         withAnimation with no scope, so only this card moves and the
+                         rest of the screen stays put — the way SwiftUI animates only
+                         the views that read the state. -->
+                    <VStack v-animate :spacing="8" alignment="leading" :padding="16" background="secondaryBackground"
                       :corner-radius="12" :frame="{ width: '100%' }">
                       <Text font="headline">Animated card</Text>
                       <Text v-if="expanded" font="subheadline" foreground-color="secondary">
@@ -1372,17 +1385,17 @@ onUnmounted(() => {
                   <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ maxWidth: '500px', width: '100%' }">
                     <VStack :spacing="8" alignment="leading" :frame="{ width: '100%' }">
                       <Text font="subheadline" foreground-color="secondary">Segmented</Text>
-                      <Picker v-model="selectedSize" :options="sizes" picker-style="segmented" />
+                      <Picker v-model="selectedSize" :options="sizes" picker-style="segmented" label="Size" />
                       <Text font="caption" foreground-color="secondary">Selected: {{ selectedSize }}</Text>
                     </VStack>
                     <VStack :spacing="8" alignment="leading" :frame="{ width: '100%' }">
                       <Text font="subheadline" foreground-color="secondary">Menu (Dropdown)</Text>
-                      <Picker v-model="selectedFruit" :options="fruits" picker-style="menu" />
+                      <Picker v-model="selectedFruit" :options="fruits" picker-style="menu" label="Fruit" />
                       <Text font="caption" foreground-color="secondary">Selected: {{ selectedFruit }}</Text>
                     </VStack>
                     <VStack :spacing="8" alignment="leading" :frame="{ width: '100%' }">
                       <Text font="subheadline" foreground-color="secondary">Disabled</Text>
-                      <Picker :model-value="'apple'" :options="fruits" picker-style="segmented" disabled />
+                      <Picker :model-value="'apple'" :options="fruits" picker-style="segmented" disabled label="Fruit" />
                     </VStack>
                     <CodeSample v-bind="samples.picker" />
                   </VStack>

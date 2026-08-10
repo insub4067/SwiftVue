@@ -44,6 +44,7 @@ import SVImage from './components/media/SVImage.vue'
 import AsyncImage from './components/media/AsyncImage.vue'
 
 import TransitionView from './components/motion/TransitionView.vue'
+import { vAnimate } from './motion/vAnimate'
 
 /** Registration name → component. SV-prefixed sources register under their SwiftUI names. */
 const components: Record<string, Component> = {
@@ -96,5 +97,9 @@ export const SwiftVuePlugin = {
     for (const [name, component] of Object.entries(components)) {
       app.component(prefix + name, component)
     }
+    // A directive, not a component, so it names the element it sits on and
+    // adds no DOM. Registered unprefixed: `v-animate` is not a tag that can
+    // collide the way a bare `<Text>` does.
+    app.directive('animate', vAnimate)
   },
 }
