@@ -11,24 +11,20 @@ import { registerAnimatable } from './withAnimation'
  * withAnimation(() => { todo.done = !todo.done })
  * ```
  *
- * A scopeless `withAnimation` names every marked element before it snapshots
- * the page, so the ones whose pixels changed animate and everything else —
- * marked or not — holds still. That is the SwiftUI behaviour: you change the
- * state and only the views that depend on it move, without naming an element
- * at the call site.
+ * A scopeless `withAnimation` measures every marked element before the change
+ * and after, and slides the ones whose position moved from where they were to
+ * where they landed — a FLIP, on the live element. Everything else, marked or
+ * not, holds still. That is the SwiftUI behaviour: you change the state and
+ * only the affected views move, without naming an element at the call site.
  *
- * It adds no DOM — it names the element it is placed on. Two things to know,
- * both from how the View Transitions API works:
+ * It adds no DOM — it marks the element it is placed on. Two things to know:
  *
  * - Place it on a single-root element or component. On a fragment (multiple
  *   root nodes) Vue has no single element to attach to, and the mark is lost.
- * - Nesting is allowed, and is how you animate children *within* a moving
- *   parent: a card marked to morph its size, with each row inside it marked
- *   to slide to a new place. The parent is captured with the marked children
- *   lifted out of its image, and each child animates on its own — a FLIP. The
- *   one thing to avoid is a marked child that does not fill its slot, since
- *   the hole it leaves in the parent's image then shows; mark elements that
- *   cover their own box.
+ * - Nesting is fine, and is how you slide children *within* a moving parent:
+ *   mark a list and each row in it, and a reorder slides the rows while the
+ *   list stays put. Only an element whose *position* changes is animated, so
+ *   marking one that never moves costs nothing.
  */
 export const vAnimate: Directive<HTMLElement> = {
   // A directive can be bound to the same element only once, so a single

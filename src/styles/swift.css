@@ -151,27 +151,11 @@
 
 /* --- Motion ------------------------------------------------------------ */
 
-/* withAnimation() drives these through the View Transitions API. The `*`
-   reaches every group, not only `root`: a scoped call names its own element,
-   and that element's group has to pick up the same duration and easing or it
-   would animate at the browser default while the page-wide case did not. */
-::view-transition-group(*),
-::view-transition-old(*),
-::view-transition-new(*) {
-  animation-duration: var(--swift-vt-duration, 250ms);
-  animation-timing-function: var(--swift-vt-easing, ease);
-}
-
-/* The flash, killed at its cause. The browser's default cross-fade dips the
-   outgoing snapshot's opacity to 0 while the incoming one rises from 0, and
-   at the midpoint both are translucent — so the page behind shows through,
-   and an opaque card over a dark page visibly blinks toward black. Instead
-   the outgoing snapshot holds fully opaque and the incoming one fades in over
-   it: their composite is opaque throughout, so nothing behind can show. Only
-   genuinely new area — a card that grew past the old one's edge — has no
-   outgoing pixels to hold there, and fades in on its own. */
-@keyframes swift-vt-hold-opaque { from { opacity: 1; } to { opacity: 1; } }
-::view-transition-old(*) { animation-name: swift-vt-hold-opaque; }
+/* withAnimation() no longer touches CSS: it moves the live element with the
+   Web Animations API (a FLIP), so there is nothing to style here. The View
+   Transitions rules that used to live at this spot were removed — they
+   snapshot the page and cross-fade it, and on real iOS Safari that washed the
+   whole screen toward its background mid-transition. */
 
 /* TransitionView presets. `-in` is the state entered FROM, `-out` the state
    left TO; .swift-t-active carries the shared timing. */
@@ -203,7 +187,4 @@
 
 @media (prefers-reduced-motion: reduce) {
   .swift-t-active { transition-duration: 0.01ms; }
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) { animation-duration: 0.01ms; }
 }

@@ -10,45 +10,35 @@ working code is called out under *Breaking* with the change you need to make.
 ## Unreleased
 
 An automated accessibility audit, the six defects it found, and a
-long-standing `withAnimation` flash.
+`withAnimation` reworked from the ground up after it flashed on a real phone.
 
 **Added**
 
 - **`v-animate` — mark a region animatable, the way every SwiftUI view is.**
-  SwiftUI animates only the views that read the value you changed, because it
-  holds the dependency graph. On the web that knowledge has to be supplied,
-  and this is the least intrusive way to supply it: put `v-animate` on the
-  regions that may animate, once, and a plain `withAnimation(() => …)` names
-  every marked element before it snapshots the page — so the ones whose
-  pixels changed move and everything else, marked or not, holds still. No
-  scope argument at the call site, and no DOM added: the directive names the
-  element it sits on. Mark single-root elements; nesting a mark inside a mark
-  is allowed and is how a child animates within a moving parent (a FLIP).
+  SwiftUI moves only the views a changed value drives, because it holds the
+  dependency graph. On the web the moved elements have to be named, and this
+  is the least intrusive way: put `v-animate` on the regions that may move,
+  once, and a plain `withAnimation(() => …)` slides the marked ones the change
+  moved. Everything else — an element that didn't move, an unmarked one —
+  holds still. No scope argument at the call site, and no DOM added. Mark
+  single-root elements; nesting a mark inside a list is fine and is how a
+  reorder slides the rows within a still list.
 
-**Fixed**
+**Changed**
 
-- **The cross-fade itself flashed, even scoped to one element.** Naming the
-  changing element stops the *whole page* from fading, but a named element
-  still cross-fades its own content, and the browser's default does that by
-  dipping the outgoing snapshot's opacity to zero while the incoming one
-  rises — at the midpoint both are translucent, so a dark page shows through
-  an opaque card and it blinks. The outgoing snapshot now holds fully opaque
-  and the incoming one fades in over it, so the composite is opaque
-  throughout and nothing behind can bleed. This is a real-device fix: it does
-  not show up in a unit test, only to an eye on a phone.
-- **`withAnimation` flashed the whole screen for a one-element change.** It
-  drives the View Transitions API, which — told nothing about what moved —
-  snapshots the entire page and cross-fades it, and that page-wide fade is a
-  visible flash even when a single card changed. It could not have known
-  better: SwiftUI animates only the views that depend on the value because
-  it has the dependency graph, and the web does not. So the knowledge is now
-  something you supply — `v-animate` on the regions that animate (above), or
-  `withAnimation(mutate, animation, { scope: el })` to name the element at
-  the call site. With neither, the whole-page transition is unchanged, which
-  is still right for a route or theme change. Overlapping calls on the same
-  element are reference-counted, so a rapid second animation cannot leave a
-  transition name stranded on it; a synchronous failure to start the
-  transition still applies the mutation and clears the name it set.
+- **`withAnimation` is a FLIP now, not a View Transition.** It first drove the
+  View Transitions API, which snapshots the page and cross-fades it — and on
+  real iOS Safari that washed the *whole screen* toward its background
+  mid-transition, because even an unchanged page goes translucent at the
+  crossfade's midpoint. Scoping and holding the outgoing snapshot opaque both
+  failed on the device. So it no longer snapshots anything: each animated
+  element is measured before the change and after, and slid from where it was
+  to where it landed with the Web Animations API, on the live element — the
+  same kind of thing a collapsing `Section` already did, and it cannot flash
+  because there is no snapshot to bleed. Only an element whose position
+  actually moved is animated; the `scope` option and the `v-animate` registry
+  choose which elements are measured, exactly as before. With neither, nothing
+  is measured and the change simply applies — no more whole-page transition.
 
 **Fixed (accessibility)**
 

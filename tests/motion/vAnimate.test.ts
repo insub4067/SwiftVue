@@ -1,27 +1,37 @@
 // The directive is the wire between a template mark and the animation
 // registry. Its whole job is a lifecycle one — register on mount, and
 // crucially deregister on unmount, or a removed element's stale reference
-// would be named in every later transition and rejected for pointing at
-// nothing. So the test drives it through a real mount and unmount.
+// would be measured on every later withAnimation and, worse, could be
+// animated after it is gone. So the test drives it through a real mount and
+// unmount, and checks the registry through the behaviour it drives: whether a
+// scopeless withAnimation animates the element.
 import { describe, it, expect, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { vAnimate } from '../../src/motion/vAnimate'
 import { withAnimation, Animations } from '../../src/motion/withAnimation'
 
-type VTDocument = Document & { startViewTransition?: (cb: () => Promise<void>) => { finished: Promise<void> } }
-const doc = document as VTDocument
+afterEach(() => { document.body.innerHTML = '' })
 
-afterEach(() => { delete doc.startViewTransition })
+/** Make an element report a move and record its animate() calls. */
+function instrument(el: HTMLElement) {
+  const rects = [{ left: 0, top: 0 }, { left: 40, top: 0 }]
+  let i = 0
+  el.getBoundingClientRect = (() => rects[Math.min(i++, 1)] as DOMRect)
+  const calls: unknown[] = []
+  el.animate = ((k: unknown, o: unknown) => {
+    calls.push({ k, o })
+    const a = { onfinish: null as null | (() => void), oncancel: null as null | (() => void) }
+    queueMicrotask(() => a.onfinish?.())
+    return a as unknown as Animation
+  }) as typeof el.animate
+  return calls
+}
 
-/** Whether a scopeless withAnimation names `el` — i.e. it is in the registry. */
+/** Whether a scopeless withAnimation animates `el` — i.e. it is in the registry. */
 async function isAnimated(el: HTMLElement): Promise<boolean> {
-  let named = false
-  doc.startViewTransition = (update) => {
-    named = !!el.style.getPropertyValue('view-transition-name')
-    return { finished: update() }
-  }
+  const calls = instrument(el)
   await withAnimation(() => {}, Animations.default)
-  return named
+  return calls.length > 0
 }
 
 describe('v-animate', () => {

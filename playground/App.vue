@@ -1080,9 +1080,9 @@ onUnmounted(() => {
                       :corner-radius="12" :frame="{ width: '100%' }">
                       <Text font="headline">Animated card</Text>
                       <Text v-if="expanded" font="subheadline" foreground-color="secondary">
-                        This extra content appears through the View Transitions API —
-                        every visual difference caused by the state change animates,
-                        exactly like SwiftUI's withAnimation.
+                        This extra content appears when the state changes. The marked
+                        swatches below slide to their new places — moved on the live
+                        element, so nothing snapshots or flashes, like SwiftUI's withAnimation.
                       </Text>
                       <!-- each swatch is marked too, so a shuffle slides them to
                            their new places (a FLIP) instead of cross-fading the
