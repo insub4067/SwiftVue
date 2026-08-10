@@ -79,11 +79,23 @@ test('Return in the title field saves, the same as the button', async ({ page })
 
 type Trace = { seen: string[], during: string[], landed: string }
 
-/** How far the row has been dragged, right now, as a plain number. */
-const offsetOf = (row: Locator) => row.locator('.swipe-content').evaluate((el) => {
-  const m = new DOMMatrixReadOnly(getComputedStyle(el).transform)
-  return Math.round(m.m41)
-})
+/**
+ * How far the row has been dragged, right now — or `gone` if it is no
+ * longer there, which is what a completed full swipe leaves behind.
+ *
+ * The count check is not a nicety. `evaluate` on a locator that matches
+ * nothing waits for it to appear, so a helper that reached straight for the
+ * element hung for the whole test budget in exactly the case it was written
+ * to detect.
+ */
+async function offsetOf(row: Locator): Promise<string> {
+  const content = row.locator('.swipe-content')
+  if (await content.count() === 0) return 'gone'
+  return String(await content.evaluate((el) => {
+    const m = new DOMMatrixReadOnly(getComputedStyle(el).transform)
+    return Math.round(m.m41)
+  }))
+}
 
 /**
  * A drag towards the leading edge, the way a finger does it — and a record
@@ -115,7 +127,7 @@ async function swipeRow(page: Page, row: Locator, distance: number): Promise<Tra
   const STEPS = 6
   for (let step = 1; step <= STEPS; step += 1) {
     await page.mouse.move(from - (distance * step) / STEPS, y)
-    during.push(String(await offsetOf(row).catch(() => 'gone')))
+    during.push(await offsetOf(row))
   }
   await page.mouse.up()
 
@@ -123,7 +135,7 @@ async function swipeRow(page: Page, row: Locator, distance: number): Promise<Tra
   // remaining candidates: gone means the first action ran, -168 means it
   // parked open, 0 means it decided the gesture was nothing.
   await page.waitForTimeout(400) // the settle animation is 250ms
-  const landed = await offsetOf(row).then(String, () => 'gone')
+  const landed = await offsetOf(row)
 
   const seen = await page.evaluate(() =>
     (window as unknown as { __swipe?: string[] }).__swipe ?? ['nothing recorded'])
