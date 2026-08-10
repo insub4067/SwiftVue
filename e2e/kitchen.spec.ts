@@ -77,7 +77,7 @@ test('Return in the title field saves, the same as the button', async ({ page })
   await expect(page.getByText('Book a table')).toBeVisible()
 })
 
-type Trace = { seen: string[], during: string[] }
+type Trace = { seen: string[], during: string[], landed: string }
 
 /** How far the row has been dragged, right now, as a plain number. */
 const offsetOf = (row: Locator) => row.locator('.swipe-content').evaluate((el) => {
@@ -119,13 +119,19 @@ async function swipeRow(page: Page, row: Locator, distance: number): Promise<Tra
   }
   await page.mouse.up()
 
+  // Where it lands says which branch of settle() ran, and those are the only
+  // remaining candidates: gone means the first action ran, -168 means it
+  // parked open, 0 means it decided the gesture was nothing.
+  await page.waitForTimeout(400) // the settle animation is 250ms
+  const landed = await offsetOf(row).then(String, () => 'gone')
+
   const seen = await page.evaluate(() =>
     (window as unknown as { __swipe?: string[] }).__swipe ?? ['nothing recorded'])
-  return { seen, during }
+  return { seen, during, landed }
 }
 
 const explain = (t: Trace, width: number) =>
-  `row ${Math.round(width)}px · events ${t.seen.join(' → ')} · followed the finger to ${t.during.join(', ')}`
+  `row ${Math.round(width)}px · events ${t.seen.join(' → ')} · followed the finger to ${t.during.join(', ')} · landed at ${t.landed}`
 
 test('a swipe parks the row open and the revealed action works', async ({ page }) => {
   await fresh(page)
