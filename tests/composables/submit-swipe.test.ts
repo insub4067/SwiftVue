@@ -235,7 +235,7 @@ describe('useSwipe', () => {
     expect(onCancel).toHaveBeenCalledOnce()
   })
 
-  it('claims the pointer so the drag cannot be lost', async () => {
+  it('claims the pointer once the press turns into a drag', async () => {
     const wrapper = mount(Swipeable({}))
     await nextTick()
     const el = wrapper.find('.target').element as HTMLElement & { setPointerCapture: unknown }
@@ -243,7 +243,28 @@ describe('useSwipe', () => {
     el.setPointerCapture = capture
 
     el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 300, clientY: 50, pointerId: 7 }))
+    expect(capture, 'a press on its own is not a drag').not.toHaveBeenCalled()
+
+    el.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 260, clientY: 50, pointerId: 7 }))
     expect(capture).toHaveBeenCalledWith(7)
+  })
+
+  // Capturing on the way down would also retarget the click a tap produces
+  // onto the capturing element, over the head of anything inside it — so a
+  // row that links somewhere would stop opening when tapped. Four browser
+  // tests failed exactly that way.
+  it('leaves a tap alone entirely', async () => {
+    const wrapper = mount(Swipeable({}))
+    await nextTick()
+    const el = wrapper.find('.target').element as HTMLElement & { setPointerCapture: unknown }
+    const capture = vi.fn()
+    el.setPointerCapture = capture
+
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 300, clientY: 50, pointerId: 7 }))
+    el.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 302, clientY: 51, pointerId: 7 }))
+    el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 302, clientY: 51, pointerId: 7 }))
+
+    expect(capture, 'an unsteady finger is still a tap').not.toHaveBeenCalled()
   })
 
   it('stops listening once unmounted', async () => {

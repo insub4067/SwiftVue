@@ -18,7 +18,10 @@ working code is called out under *Breaking* with the change you need to make.
   browser — the unit tests could not see it because nothing synthetic sends
   that leave. The gesture now captures the pointer, which is what pointer
   capture is for: the whole drag belongs to the element, and the release is
-  reported even when the finger lifts elsewhere.
+  reported even when the finger lifts elsewhere. Claimed on the first real
+  movement rather than on the press — a captured pointer also retargets the
+  click a *tap* produces onto the capturing element, which would stop a row
+  that links somewhere from opening when tapped.
 - **`allowsFullSwipe` did nothing on a phone.** A swipe past 60% of a row is
   supposed to run its first action outright. The 60% was measured against
   how far the *row* had moved, and a row only follows the finger as far as

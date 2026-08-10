@@ -55,6 +55,7 @@ export function useSwipe(target: Ref<HTMLElement | null>, options: SwipeOptions 
 
   let start: { x: number; y: number; t: number } | null = null
   let pointerId: number | null = null
+  let captured = false
   let el: HTMLElement | null = null
 
   function withinEdge(e: PointerEvent, box: DOMRect): boolean {
@@ -71,23 +72,38 @@ export function useSwipe(target: Ref<HTMLElement | null>, options: SwipeOptions 
     if (!withinEdge(e, box)) return
     start = { x: e.clientX, y: e.clientY, t: e.timeStamp }
     pointerId = e.pointerId
-    // The rest of this gesture belongs to this element, wherever the pointer
-    // goes. Without capture the browser keeps re-deciding what is under the
-    // pointer as the row slides, and reports the pointer as having left an
-    // element it never actually left — which killed the swipe mid-drag. It
-    // also means the release is always reported here, even when the finger
-    // lifts somewhere else entirely.
-    el?.setPointerCapture?.(e.pointerId)
+    captured = false
   }
 
   function releaseCapture() {
-    if (pointerId == null) return
+    if (!captured || pointerId == null) return
+    captured = false
     if (el?.hasPointerCapture?.(pointerId)) el.releasePointerCapture(pointerId)
   }
 
   function onPointerMove(e: PointerEvent) {
     if (!start || e.pointerId !== pointerId) return
-    opts.onMove?.({ x: e.clientX - start.x, y: e.clientY - start.y })
+    const x = e.clientX - start.x
+    const y = e.clientY - start.y
+
+    // Claimed on the first real movement, never on the way down.
+    //
+    // Once this element holds the pointer the whole drag belongs to it
+    // wherever the pointer goes — which is what stops the browser from
+    // reporting a leave the pointer never made as the row slides underneath
+    // it, and what makes the release come back even when the finger lifts
+    // somewhere else.
+    //
+    // Claiming it on `pointerdown` would do all that too, and would also
+    // retarget the click a *tap* produces onto this element, over the head
+    // of whatever is inside it. A row that links somewhere would stop
+    // opening when tapped. So: a press is left alone until it moves.
+    if (!captured && Math.hypot(x, y) > DRAG_NOT_A_TAP) {
+      captured = true
+      el?.setPointerCapture?.(e.pointerId)
+    }
+
+    opts.onMove?.({ x, y })
   }
 
   /**
