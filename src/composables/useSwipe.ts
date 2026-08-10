@@ -32,6 +32,13 @@ export interface SwipeOptions {
 const DEFAULTS = { threshold: 50, tolerance: 45, edgeWidth: 28 }
 
 /**
+ * Past this much movement the press was a drag, and the click the browser
+ * sends afterwards is not a tap the content should act on. Small enough that
+ * an unsteady finger on a real tap still gets through.
+ */
+const DRAG_NOT_A_TAP = 8
+
+/**
  * Pointer-driven swipe detection on one element.
  *
  * Pointer events rather than touch: one code path covers finger, trackpad
@@ -71,6 +78,28 @@ export function useSwipe(target: Ref<HTMLElement | null>, options: SwipeOptions 
     opts.onMove?.({ x: e.clientX - start.x, y: e.clientY - start.y })
   }
 
+  /**
+   * A drag is followed by a `click`, and the content underneath cannot tell
+   * it apart from a tap — so an iOS row swiped open would also open the
+   * screen it links to. Swallow that one click, in the capture phase, before
+   * anything inside the element sees it.
+   *
+   * The timeout is the escape hatch: if no click follows — the pointer went
+   * up somewhere else, the browser suppressed it — the listener must not sit
+   * there waiting to eat a real tap later on.
+   */
+  function swallowNextClick() {
+    const element = el
+    if (!element) return
+    const swallow = (e: Event) => {
+      e.stopPropagation()
+      e.preventDefault()
+      element.removeEventListener('click', swallow, true)
+    }
+    element.addEventListener('click', swallow, true)
+    setTimeout(() => element.removeEventListener('click', swallow, true), 0)
+  }
+
   function finish(e: PointerEvent) {
     if (!start || e.pointerId !== pointerId) return
     const dx = e.clientX - start.x
@@ -78,6 +107,11 @@ export function useSwipe(target: Ref<HTMLElement | null>, options: SwipeOptions 
     const elapsed = Math.max(1, e.timeStamp - start.t)
     start = null
     pointerId = null
+
+    // Judged on total movement rather than on whether the swipe qualified: a
+    // drag that fell short of the threshold is still a drag, and the row it
+    // dragged should not also be opened.
+    if (Math.hypot(dx, dy) > DRAG_NOT_A_TAP) swallowNextClick()
 
     const horizontal = Math.abs(dx) > Math.abs(dy)
     const along = horizontal ? dx : dy

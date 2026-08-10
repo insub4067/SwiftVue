@@ -261,6 +261,11 @@ describe('SwipeActions', () => {
   it('tapping a revealed action reports it and closes', async () => {
     const wrapper = mountRow()
     await drag(wrapper, -120)
+    // A drag swallows the click the browser sends straight after it, so
+    // that swiping a row does not also activate what is inside it. Let that
+    // input turn end first: nobody can tap again inside their own pointerup,
+    // and the row is still animating open at this point anyway.
+    await new Promise(resolve => setTimeout(resolve, 0))
     await wrapper.findAll('.swipe-action')[0].trigger('click')
 
     expect(wrapper.emitted('select')?.[0]).toEqual([trailing[0]])
@@ -330,5 +335,63 @@ describe('SwipeActions', () => {
     await wrapper.findAll('.swipe-fallback-button')[0].trigger('click')
     expect(wrapper.emitted('select')?.[0]).toEqual([trailing[0]])
     wrapper.unmount()
+  })
+
+  // A drag ends with the browser sending a `click`, and the content inside
+  // the row cannot tell it from a tap. On a list of NavigationLinks that
+  // meant swiping a row open also opened the screen behind it — which is the
+  // one thing swipe-to-reveal must never do. Found by driving Kitchen in a
+  // real browser: the pushed screen then covered the Delete button.
+  describe('a drag is not a tap', () => {
+    const mountLink = () => {
+      const opened = { count: 0 }
+      const wrapper = mount(SwipeActions, {
+        props: { trailing },
+        slots: { default: '<button class="row-link" type="button">Open</button>' },
+        attachTo: document.body,
+      })
+      wrapper.find('.row-link').element
+        .addEventListener('click', () => { opened.count += 1 })
+      return { wrapper, opened }
+    }
+
+    /** pointer sequence, then the click the browser would send after it */
+    const dragThenClick = async (wrapper: ReturnType<typeof mount>, dx: number) => {
+      await drag(wrapper, dx)
+      wrapper.find('.row-link').element
+        .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+      await wrapper.vm.$nextTick()
+    }
+
+    it('a swipe does not also activate what it swiped', async () => {
+      const { wrapper, opened } = mountLink()
+      await dragThenClick(wrapper, -120)
+      expect(opened.count, 'the row opened as well as swiping').toBe(0)
+      wrapper.unmount()
+    })
+
+    it('nor does a drag too small to count as a swipe', async () => {
+      const { wrapper, opened } = mountLink()
+      await dragThenClick(wrapper, -20) // under the 24px threshold
+      expect(opened.count).toBe(0)
+      wrapper.unmount()
+    })
+
+    it('but a tap still gets through', async () => {
+      const { wrapper, opened } = mountLink()
+      await dragThenClick(wrapper, -2) // an unsteady finger, not a drag
+      expect(opened.count, 'a tap must still open the row').toBe(1)
+      wrapper.unmount()
+    })
+
+    it('and a later tap is not eaten by an earlier drag', async () => {
+      const { wrapper, opened } = mountLink()
+      await dragThenClick(wrapper, -120)
+      await new Promise(resolve => setTimeout(resolve, 0)) // the escape hatch
+      wrapper.find('.row-link').element
+        .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+      expect(opened.count, 'the swallower outlived its one click').toBe(1)
+      wrapper.unmount()
+    })
   })
 })

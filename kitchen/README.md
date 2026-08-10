@@ -37,8 +37,14 @@ the way they do in a real project:
 
 **Finding bugs.** Kitchen is type-checked and linted alongside the library,
 and its screens are mounted in the unit suite — including a test that fails
-on any Vue warning. Building the first version turned up four library
+on any Vue warning. Building the first version turned up five library
 defects that a per-component test had no way to see:
+
+- **Swiping a row also opened it.** A drag ends with a `click`, and the
+  `NavigationLink` inside the row took it as a tap — so revealing Delete
+  pushed the todo's screen over the button you were reaching for. Only a
+  swipe on a row that links somewhere shows this, and only in a browser
+  that sends the click.
 
 - `padding` rejected the three-value CSS shorthand, so `[8, 0, 24]` — a
   screen leaving room for the tab bar — would not type-check.
@@ -52,9 +58,13 @@ defects that a per-component test had no way to see:
   solved this privately a year earlier and nobody had noticed the library
   never shipped it. `swift-app-fullscreen` does now.
 
-That last one is the argument for Kitchen in one item. Nothing was broken
-in any component; the library simply could not be assembled into an app
+The app shell is the argument for Kitchen in one item. Nothing was broken in
+any component; the library simply could not be assembled into an app
 without a piece it did not provide, and only building an app could show it.
+
+The swipe is the argument for the browser half. Every unit test of
+`SwipeActions` passed throughout, because happy-dom never sends the `click`
+that follows a drag. It took a real pointer on a real row.
 
 **Checking the things only a browser knows.** `e2e/kitchen.spec.ts` drives
 it in Chromium and WebKit: no horizontal overflow at 320–430px, a real

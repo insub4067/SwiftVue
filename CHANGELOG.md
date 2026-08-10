@@ -11,6 +11,12 @@ working code is called out under *Breaking* with the change you need to make.
 
 **Fixed**
 
+- **Swiping a row also opened it.** A drag ends with the browser sending a
+  `click`, and the content inside the row cannot tell that from a tap — so
+  on a list of `NavigationLink`s, swiping a row open pushed the screen it
+  linked to at the same time. Which is the one thing swipe-to-reveal must
+  never do: the row you were about to delete opens instead. A drag past 8px
+  now swallows that click, and only that one.
 - A tab you came back to was rebuilt from scratch. Only the selected tab
   rendered, so glancing at another one put a pushed screen back at its root
   and emptied a half-typed field. A tab is built the first time it is opened
