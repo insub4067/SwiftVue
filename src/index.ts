@@ -88,7 +88,7 @@ export {
   provideEnvironment,
   createEnvironmentKey,
 } from './composables/useEnvironment'
-export { useAppStorage } from './composables/useAppStorage'
+export { useAppStorage, removeAppStorage } from './composables/useAppStorage'
 export { useNavigation, navigationKey } from './composables/useNavigation'
 export { onAppear, onDisappear } from './composables/useLifecycle'
 export { onSubmit } from './composables/useSubmit'

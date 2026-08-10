@@ -1,4 +1,4 @@
-import { getCurrentScope, onScopeDispose, ref, watch, type Ref } from 'vue'
+import { getCurrentScope, nextTick, onScopeDispose, ref, watch, type Ref } from 'vue'
 
 /**
  * localStorage is absent during SSR and throws on access in sandboxed
@@ -17,7 +17,22 @@ function resolveStorage(): Storage | null {
 // SwiftUI's @AppStorage behaves as a single source of truth per key. The
 // fallback travels with the ref: when another tab deletes the key there is
 // no value to mirror, and each ref has to go back to its own default.
-interface Binding { state: Ref<unknown>; fallback: unknown }
+interface Binding {
+  state: Ref<unknown>
+  fallback: unknown
+  /**
+   * Set while a change is being applied *from* storage, so the watcher that
+   * normally writes through knows this one came the other way.
+   *
+   * Without it a delete undid itself: another tab removes a key, this tab's
+   * refs fall back to their defaults, and that mutation wakes the watcher,
+   * which writes the default straight back. The key returns holding the
+   * default — so "the key is gone" and "the key is empty" stop being
+   * different things, which for a token cleared at logout they very much
+   * are.
+   */
+  echo?: boolean
+}
 const bound = new Map<string, Set<Binding>>()
 
 function share(key: string, binding: Binding) {
@@ -36,8 +51,21 @@ function broadcast(key: string, value: unknown, from: Ref<unknown>) {
   }
 }
 
+/**
+ * Move a ref because storage said so, rather than the other way round.
+ *
+ * The flag is cleared on the next tick as well as by the watcher, because
+ * an incoming value equal to the one already held fires no watcher at all —
+ * and a flag left armed would swallow the next genuine write instead.
+ */
+function applyFromStorage(binding: Binding, value: unknown) {
+  binding.echo = true
+  binding.state.value = value
+  void nextTick(() => { binding.echo = false })
+}
+
 function resetAll(key: string) {
-  for (const binding of bound.get(key) ?? []) binding.state.value = binding.fallback
+  for (const binding of bound.get(key) ?? []) applyFromStorage(binding, binding.fallback)
 }
 
 let listening = false
@@ -69,8 +97,24 @@ function startTabSync() {
     } catch {
       return // another writer put something we cannot read; leave state alone
     }
-    for (const binding of refs) binding.state.value = next
+    for (const binding of refs) applyFromStorage(binding, next)
   })
+}
+
+/**
+ * Delete a key outright, here and in every other tab.
+ *
+ * Setting the ref to its default is not the same thing and never was: it
+ * leaves the key in storage holding an empty value, so anything that treats
+ * "absent" as the signal — a session token, a consent flag — still sees
+ * something. This is the delete half of the contract.
+ *
+ * Refs bound to the key fall back to their own defaults, without writing
+ * those defaults back.
+ */
+export function removeAppStorage(key: string) {
+  resolveStorage()?.removeItem(key)
+  resetAll(key)
 }
 
 /**
@@ -98,10 +142,18 @@ export function useAppStorage<T>(key: string, defaultValue: T): Ref<T> {
   const state = ref(initial) as Ref<T>
 
   if (storage) {
-    const release = share(key, { state: state as Ref<unknown>, fallback: defaultValue })
+    const binding: Binding = { state: state as Ref<unknown>, fallback: defaultValue }
+    const release = share(key, binding)
     startTabSync()
 
     watch(state, (value) => {
+      // This change came from storage, not from the app. Writing it back
+      // would undo a delete and echo a write that every bound ref already
+      // has.
+      if (binding.echo) {
+        binding.echo = false
+        return
+      }
       try {
         storage.setItem(key, JSON.stringify(value))
       } catch {

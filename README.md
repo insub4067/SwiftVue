@@ -560,9 +560,16 @@ All components accept SwiftUI-style modifier props:
 | `@State` | `useState(initial)` | `const count = useState(0)` |
 | `@Binding` | `useBinding(get, set)` | `const val = useBinding(() => x, v => x = v)` |
 | `@AppStorage` | `useAppStorage(key, default)` | `const theme = useAppStorage('theme', 'light')` |
+| — | `removeAppStorage(key)` | `removeAppStorage('session')` — deletes the key |
 | `@Environment` | `useEnvironment(key)` | `const config = useEnvironment(ConfigKey)` |
 | `@FocusState` | `useFocusState()` | `const focused = useFocusState<Field>()` |
 | `.preferredColorScheme()` | `usePreferredColorScheme()` | `scheme.value = 'dark'` |
+
+Setting an `useAppStorage` ref back to its default is not the same as
+deleting the key: the key stays in storage holding an empty value, so
+anything reading "is this key absent" — a session token, a consent flag —
+still finds something. `removeAppStorage(key)` is the delete, here and in
+every other tab; the refs bound to it fall back to their own defaults.
 
 ## Focus
 
