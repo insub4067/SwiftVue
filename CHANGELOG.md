@@ -22,10 +22,20 @@ long-standing `withAnimation` flash.
   every marked element before it snapshots the page — so the ones whose
   pixels changed move and everything else, marked or not, holds still. No
   scope argument at the call site, and no DOM added: the directive names the
-  element it sits on. Mark single-root elements, and do not nest marks.
+  element it sits on. Mark single-root elements; nesting a mark inside a mark
+  is allowed and is how a child animates within a moving parent (a FLIP).
 
 **Fixed**
 
+- **The cross-fade itself flashed, even scoped to one element.** Naming the
+  changing element stops the *whole page* from fading, but a named element
+  still cross-fades its own content, and the browser's default does that by
+  dipping the outgoing snapshot's opacity to zero while the incoming one
+  rises — at the midpoint both are translucent, so a dark page shows through
+  an opaque card and it blinks. The outgoing snapshot now holds fully opaque
+  and the incoming one fades in over it, so the composite is opaque
+  throughout and nothing behind can bleed. This is a real-device fix: it does
+  not show up in a unit test, only to an eye on a phone.
 - **`withAnimation` flashed the whole screen for a one-element change.** It
   drives the View Transitions API, which — told nothing about what moved —
   snapshots the entire page and cross-fades it, and that page-wide fade is a

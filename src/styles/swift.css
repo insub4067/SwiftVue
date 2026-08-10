@@ -162,6 +162,17 @@
   animation-timing-function: var(--swift-vt-easing, ease);
 }
 
+/* The flash, killed at its cause. The browser's default cross-fade dips the
+   outgoing snapshot's opacity to 0 while the incoming one rises from 0, and
+   at the midpoint both are translucent — so the page behind shows through,
+   and an opaque card over a dark page visibly blinks toward black. Instead
+   the outgoing snapshot holds fully opaque and the incoming one fades in over
+   it: their composite is opaque throughout, so nothing behind can show. Only
+   genuinely new area — a card that grew past the old one's edge — has no
+   outgoing pixels to hold there, and fades in on its own. */
+@keyframes swift-vt-hold-opaque { from { opacity: 1; } to { opacity: 1; } }
+::view-transition-old(*) { animation-name: swift-vt-hold-opaque; }
+
 /* TransitionView presets. `-in` is the state entered FROM, `-out` the state
    left TO; .swift-t-active carries the shared timing. */
 .swift-t-active {

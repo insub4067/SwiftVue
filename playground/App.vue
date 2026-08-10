@@ -1084,8 +1084,12 @@ onUnmounted(() => {
                         every visual difference caused by the state change animates,
                         exactly like SwiftUI's withAnimation.
                       </Text>
+                      <!-- each swatch is marked too, so a shuffle slides them to
+                           their new places (a FLIP) instead of cross-fading the
+                           whole card's colours in position. Nesting a mark inside
+                           a mark is how you morph children within a morphing box. -->
                       <HStack :spacing="8" wrap>
-                        <VStack v-for="n in shuffled" :key="n" :padding="[10, 14]" :corner-radius="8"
+                        <VStack v-for="n in shuffled" :key="n" v-animate :padding="[10, 14]" :corner-radius="8"
                           :style="{ background: colors[(n - 1) % colors.length].var }">
                           <Text font="caption" foreground-color="white" bold>{{ n }}</Text>
                         </VStack>
