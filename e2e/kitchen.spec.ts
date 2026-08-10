@@ -416,9 +416,17 @@ test('on a phone the sidebar comes over the detail and can be put away', async (
   await expect(scrim).toBeVisible()
 
   // Over the detail rather than beside it: both start at the same edge.
-  const menu = (await sidebar.boundingBox())!
-  const pane = (await page.locator('[role="tabpanel"]:visible .swift-split-detail').boundingBox())!
-  expect(menu.x).toBeCloseTo(pane.x, 0)
+  //
+  // Polled, because the sidebar slides in over 350ms and a single sample
+  // catches it partway — the first run of this read -241 and the retry
+  // -202, two frames of the same animation. A layout that is genuinely
+  // wrong never settles, so the gate is as strict either way.
+  const detail = page.locator('[role="tabpanel"]:visible .swift-split-detail')
+  await expect.poll(async () => {
+    const menu = await sidebar.boundingBox()
+    const pane = await detail.boundingBox()
+    return menu && pane ? Math.round(menu.x - pane.x) : null
+  }, { message: 'the menu comes to rest over the detail', timeout: 3_000 }).toBe(0)
 
   await scrim.click()
   await expect(scrim).toHaveCount(0)

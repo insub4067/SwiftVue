@@ -49,6 +49,7 @@ export { default as NavigationLink } from './components/navigation/NavigationLin
 export { default as NavigationSplitView } from './components/navigation/NavigationSplitView.vue'
 export { default as TabView } from './components/navigation/TabView.vue'
 export { default as Sheet } from './components/navigation/Sheet.vue'
+export { default as FullScreenCover } from './components/navigation/FullScreenCover.vue'
 
 // Feedback
 export { default as Alert } from './components/feedback/SVAlert.vue'
@@ -68,6 +69,7 @@ export type { ContextMenuProps } from './components/controls/ContextMenu.vue'
 export type { GaugeProps } from './components/feedback/Gauge.vue'
 export type { NavigationStackProps } from './components/navigation/NavigationStack.vue'
 export type { NavigationSplitViewProps, SplitViewVisibility } from './components/navigation/NavigationSplitView.vue'
+export type { FullScreenCoverProps } from './components/navigation/FullScreenCover.vue'
 export type { ListProps } from './components/data/SVList.vue'
 export type { TransitionPreset } from './components/motion/TransitionView.vue'
 

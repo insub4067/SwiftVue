@@ -129,6 +129,7 @@ const darkMode = useState(false)
 - `NavigationSplitView` — iPad sidebar beside a detail, an overlay when narrow (`columnVisibility`, `sidebarWidth`, `compactWidth`)
 - `TabView` — tab bar (`tabs`, `v-model`); a tab's `badge` draws the iOS pill
 - `Sheet` — bottom sheet (`v-model:isPresented`, `detents`)
+- `FullScreenCover` — a cover that replaces the screen, not a taller sheet (`v-model:isPresented`, `label`)
 
 ### Feedback
 - `Alert` — alert dialog (`v-model:isPresented`, `title`, `message`, `actions`)
@@ -372,6 +373,29 @@ exist here.
 
 The library draws the toggle only when the sidebar cannot be reached any
 other way. Set `hides-toggle` when your own toolbar has one.
+
+## Sheet or cover
+
+`Sheet` is `.sheet`: a card over a page you can still see, dismissed by
+reaching past it or dragging it down. `FullScreenCover` is
+`.fullScreenCover`: it replaces the screen.
+
+```vue
+<FullScreenCover v-model:is-presented="composing" label="New message">
+  <VStack :padding="16">
+    <Button @tap="composing = false">Done</Button>
+  </VStack>
+</FullScreenCover>
+```
+
+There is no backdrop to click, because nothing is left showing to dim, and
+no drag to dismiss — on iOS a cover is left deliberately, which is why
+SwiftUI makes you provide the way out. **Give it a visible close button.**
+
+One deliberate difference from iOS: **Escape closes it.** A modal that takes
+the keyboard and offers no way back is a keyboard trap, and that is not
+something the web gets to call a design decision. Escape is the floor, not
+the affordance.
 
 ## Images
 

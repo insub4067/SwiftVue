@@ -21,6 +21,12 @@ working code is called out under *Breaking* with the change you need to make.
 
 **Added**
 
+- **`FullScreenCover`** — SwiftUI's `.fullScreenCover`, which is not a
+  taller `Sheet`. A sheet is a card over a page you can still see and
+  dismiss by reaching past it; a cover replaces the screen, so it has no
+  backdrop and no drag to dismiss. One deliberate difference from iOS:
+  Escape closes it, because a modal that takes the keyboard and offers no
+  way back is a keyboard trap. Give it a visible close button anyway.
 - **`NavigationSplitView`** — SwiftUI's iPad shape: a sidebar beside the
   thing it chose, rather than a screen pushed over the one before it. Wide
   enough and it is a column; narrower and the same menu becomes an overlay

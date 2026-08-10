@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
   NavigationSplitView, ScrollView, Section, VStack, HStack, Spacer, Text,
   Divider, useState,
@@ -35,16 +35,20 @@ const shown = computed(() => {
 
 const title = computed(() => FILTERS.find(f => f.id === filter.value)?.label ?? 'All')
 
+const split = ref<{ isCompact: boolean } | null>(null)
+
 function choose(id: Filter) {
   filter.value = id
-  // On a phone the sidebar is over the content, so choosing something has
-  // to put it away — otherwise the answer is behind the question.
-  visibility.value = 'detailOnly'
+  // Only when the menu is over the content. There it hides the answer to
+  // the question just asked, so it has to go; as a column it hides nothing,
+  // and closing it would take away the list of filters for no reason.
+  if (split.value?.isCompact) visibility.value = 'detailOnly'
 }
 </script>
 
 <template>
   <NavigationSplitView
+    ref="split"
     v-model:column-visibility="visibility"
     label="Filters"
     :sidebar-width="260"
