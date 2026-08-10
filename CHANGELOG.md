@@ -7,7 +7,13 @@ SwiftVue is pre-1.0. While the major version is 0, a **minor** bump may
 change behaviour and a **patch** only fixes it. Anything that would break
 working code is called out under *Breaking* with the change you need to make.
 
-## Unreleased
+## 0.4.0
+
+Two components the iPad needed, and the delete that never deleted.
+
+Still beta. The gaps named in `docs/SUPPORT.md` are the same ones — no
+real-device gate, no automated accessibility audit, no screen reader has
+been used — and a version number does not close them.
 
 **Fixed**
 
