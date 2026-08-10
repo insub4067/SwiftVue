@@ -126,6 +126,7 @@ const darkMode = useState(false)
 ### Navigation
 - `NavigationStack` — push/pop stack with back button and edge-swipe back (`title`, `displayMode`, `browserBack`, `historyKey`)
 - `NavigationLink` — pushes its `#destination` slot; `route`/`param` name it for the URL; or `to` (router) / `@tap`
+- `NavigationSplitView` — iPad sidebar beside a detail, an overlay when narrow (`columnVisibility`, `sidebarWidth`, `compactWidth`)
 - `TabView` — tab bar (`tabs`, `v-model`); a tab's `badge` draws the iOS pill
 - `Sheet` — bottom sheet (`v-model:isPresented`, `detents`)
 
@@ -340,6 +341,37 @@ nav?.popToRoot()
 
 `NavigationLink` with a `to` prop still renders a `router-link` for
 vue-router projects.
+
+## iPad: a sidebar beside the detail
+
+SwiftUI's `NavigationSplitView`. Wide enough and the sidebar is a column;
+narrower and the same menu becomes an overlay with a scrim, a toggle,
+Escape and a focus trap — the switch iPadOS makes at its own portrait
+width, which is where `compactWidth` sits by default.
+
+```vue
+<NavigationSplitView v-model:column-visibility="visibility" :sidebar-width="260" label="Filters">
+  <template #sidebar>
+    <List list-style="sidebar">…</List>
+  </template>
+  <template #detail>
+    <NavigationStack title="Inbox">…</NavigationStack>
+  </template>
+</NavigationSplitView>
+```
+
+`columnVisibility` is `automatic` unless you say otherwise, which means
+"open when there is room, shut when there is not". It is resolved inside
+the component and never written back to your model: rotating an iPad is not
+the app changing its mind, and a rotation that mutated your state would be
+indistinguishable from one that did.
+
+Two columns rather than SwiftUI's three, so `doubleColumn` and `detailOnly`
+are the only explicit values — `all` would name a column that does not
+exist here.
+
+The library draws the toggle only when the sidebar cannot be reached any
+other way. Set `hides-toggle` when your own toolbar has one.
 
 ## Images
 

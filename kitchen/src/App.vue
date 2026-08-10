@@ -4,6 +4,7 @@ import { TabView, useState } from '@swiftvue'
 import { openTodos, settings } from './store'
 import TodosView from './screens/TodosView.vue'
 import SettingsView from './screens/SettingsView.vue'
+import LibraryView from './screens/LibraryView.vue'
 
 const tab = useState('todos')
 
@@ -11,6 +12,7 @@ const tabs = computed(() => [
   // SwiftUI's `.badge(_:)`. Zero shows nothing, as it does on iOS, so the
   // count can be passed straight through with no `v-if` around it.
   { id: 'todos', label: 'Todos', icon: '☑️', badge: openTodos.value.length },
+  { id: 'library', label: 'Library', icon: '🗂️' },
   { id: 'settings', label: 'Settings', icon: '⚙️' },
 ])
 
@@ -40,6 +42,7 @@ watchEffect(() => {
     -->
     <TabView v-model="tab" :tabs="tabs">
       <template #todos><TodosView /></template>
+      <template #library><LibraryView /></template>
       <template #settings><SettingsView /></template>
     </TabView>
   </div>

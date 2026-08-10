@@ -21,6 +21,18 @@ working code is called out under *Breaking* with the change you need to make.
 
 **Added**
 
+- **`NavigationSplitView`** — SwiftUI's iPad shape: a sidebar beside the
+  thing it chose, rather than a screen pushed over the one before it. Wide
+  enough and it is a column; narrower and the same menu becomes an overlay
+  with a scrim, a toggle, Escape and a focus trap. `columnVisibility` is a
+  v-model (`automatic` follows the width), `sidebarWidth` is
+  `.navigationSplitViewColumnWidth()`, and `compactWidth` is where the
+  switch happens — 768 by default, the iPad's portrait width.
+
+  Two columns rather than three, so `all` is not offered: a name promising
+  a column that does not exist would be a lie. `automatic` is resolved
+  internally and never written back to your model, because a rotation is
+  not the app changing its mind.
 - `removeAppStorage(key)` — the delete half of the contract, which was
   missing. Setting a ref to its default never removed anything; this takes
   the key out of storage, here and in every other tab, and falls every ref
