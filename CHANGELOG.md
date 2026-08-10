@@ -7,7 +7,16 @@ SwiftVue is pre-1.0. While the major version is 0, a **minor** bump may
 change behaviour and a **patch** only fixes it. Anything that would break
 working code is called out under *Breaking* with the change you need to make.
 
-## Unreleased
+## 0.3.0
+
+Seven defects, found by building an app out of the library rather than by
+looking at the library. Three of them are the same gesture: **swipe
+actions had never once worked in a browser**, and upgrading is worth it for
+that alone.
+
+A minor rather than a patch, because a tab now keeps its screen — see the
+note under that entry before upgrading if anything of yours searches the
+whole document for an element.
 
 **Fixed**
 
