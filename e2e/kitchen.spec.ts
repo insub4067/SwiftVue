@@ -145,38 +145,60 @@ async function swipeRow(page: Page, row: Locator, distance: number): Promise<Tra
 const explain = (t: Trace, width: number) =>
   `row ${Math.round(width)}px · events ${t.seen.join(' → ')} · followed the finger to ${t.during.join(', ')} · landed at ${t.landed}`
 
+/**
+ * The row, not the word.
+ *
+ * `getByText('Buy milk')` also matches the status line the list writes when
+ * something is deleted — `Deleted "Buy milk"` — so a test asserting the
+ * text was gone could never pass however well the gesture worked. It cost
+ * two rounds to notice that the thing being counted was the app's own
+ * announcement of the very deletion under test.
+ */
+const rowFor = (page: Page, title: string) =>
+  page.locator('.swipe-row').filter({ hasText: title })
+
 test('a swipe parks the row open and the revealed action works', async ({ page }) => {
   await fresh(page)
 
-  const row = page.locator('.swipe-row').filter({ hasText: 'Buy milk' }).first()
+  const row = rowFor(page, 'Buy milk').first()
   const box = await row.boundingBox()
   expect(box, 'the row is laid out').not.toBeNull()
 
   // Far enough to uncover both 84px actions, well short of the 60% of the
   // row that would run the first one outright.
   const trace = await swipeRow(page, row, 180)
+  const why = explain(trace, box!.width)
+
+  expect(trace.during.some(v => Number(v) < -50), `the row followed the finger — ${why}`).toBe(true)
+  expect(trace.landed, `parked open rather than deleted — ${why}`).toBe('-168')
 
   // By class, not by role: the drawn actions are `aria-hidden`, because a
   // screen reader gets the visually hidden fallback buttons instead. Asking
   // for "the Delete button" finds that fallback — which sits off-screen by
   // design, and is what the unit tests already cover.
   const del = row.locator('.swipe-action', { hasText: 'Delete' })
-  await expect(del, explain(trace, box!.width)).toBeVisible()
+  await expect(del, why).toBeVisible()
   await del.click()
-  await expect(page.getByText('Buy milk')).toHaveCount(0)
+
+  await expect(rowFor(page, 'Buy milk')).toHaveCount(0)
+  await expect(page.getByRole('status')).toContainText('Deleted "Buy milk"')
 })
 
 test('a swipe most of the way runs the first action outright', async ({ page }) => {
   await fresh(page)
 
-  const row = page.locator('.swipe-row').filter({ hasText: 'Buy milk' }).first()
+  const row = rowFor(page, 'Buy milk').first()
   const box = await row.boundingBox()
   expect(box).not.toBeNull()
 
   // SwiftUI's allowsFullSwipe: past 60% of the row, no tap needed. Measured
   // from the row rather than assumed, so the test does not encode a width.
   const trace = await swipeRow(page, row, Math.round(box!.width * 0.75))
-  await expect(page.getByText('Buy milk'), explain(trace, box!.width)).toHaveCount(0)
+  const why = explain(trace, box!.width)
+
+  expect(trace.during.some(v => Number(v) < -50), `the row followed the finger — ${why}`).toBe(true)
+  await expect(rowFor(page, 'Buy milk'), why).toHaveCount(0)
+  await expect(page.getByRole('status')).toContainText('Deleted "Buy milk"')
 })
 
 test('a deep link reopens the todo it names', async ({ page }) => {
