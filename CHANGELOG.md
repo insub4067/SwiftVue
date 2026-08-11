@@ -7,7 +7,7 @@ SwiftVue is pre-1.0. While the major version is 0, a **minor** bump may
 change behaviour and a **patch** only fixes it. Anything that would break
 working code is called out under *Breaking* with the change you need to make.
 
-## Unreleased
+## 0.5.0
 
 An automated accessibility audit, the six defects it found, and a
 `withAnimation` reworked from the ground up after it flashed on a real phone.

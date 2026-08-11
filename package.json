@@ -1,6 +1,6 @@
 {
   "name": "swiftvue",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "SwiftUI-style component library for Vue.js — build web apps with familiar iOS syntax",
   "type": "module",
   "main": "./dist/swiftvue.umd.cjs",
