@@ -6,6 +6,7 @@ import {
   NavigationStack, NavigationLink, Section, ScrollView, Button, Text, TextField,
   LazyVGrid, TransitionView, List,
   Image, AsyncImage, Form, DatePicker, Menu, ContextMenu, Gauge,
+  Overlay, Background,
   useFocusState, usePreferredColorScheme, useNavigation, onChange, publisher,
   onAppear, onDisappear, onSubmit, useSwipe, SwipeActions,
   withAnimation, Animations,
@@ -16,6 +17,7 @@ import {
   type FormProps, type DatePickerProps, type MenuAction, type NavigationStackProps,
   type ContextMenuProps, type GaugeProps, type RouteRef, type RouteFactory,
   type SwipeAction, type SwipeActionsProps, type SwipeSample, type SwipeDirection,
+  type OverlayProps, type OverlayAlignment, type BackgroundProps,
 } from 'swiftvue'
 
 // the option/action shapes users write by hand
@@ -38,9 +40,13 @@ const route: RouteRef = { id: 'user', param: '42' }
 const swipeActions: SwipeAction[] = [{ label: 'Delete', id: 'del', role: 'destructive' }]
 const swipeProps: SwipeActionsProps = { trailing: swipeActions, allowsFullSwipe: false }
 const buildRoute: RouteFactory = (param) => ({ title: `User ${param}`, content: () => h(Text, () => 'user') })
+const overlayAlign: OverlayAlignment = 'topTrailing'
+const overlayProps: OverlayProps = { alignment: overlayAlign, padding: 8 }
+const backgroundProps: BackgroundProps = { alignment: 'center', frame: { maxWidth: '100%' } }
 void [actions, options, tabs, preset, sectionProps, listProps,
      menuActions, imageProps, asyncProps, phase, formProps, dateProps, stackProps,
-     contextProps, gaugeProps, route, buildRoute, swipeActions, swipeProps]
+     contextProps, gaugeProps, route, buildRoute, swipeActions, swipeProps,
+     overlayProps, backgroundProps]
 
 // h()'s slots argument is loosely typed, so naming a slot there proves
 // nothing. Read the slot off the component's declared type instead — this
@@ -101,6 +107,8 @@ export default defineComponent({
       h(ContextMenu, contextProps, () => h(Text, () => 'long press me')),
       h(Gauge, gaugeProps),
       h(SwipeActions, swipeProps, () => h(Text, () => 'row')),
+      h(Overlay, overlayProps, { default: () => h(Text, () => 'base'), overlay: () => h(Text, () => 'badge') }),
+      h(Background, backgroundProps, { default: () => h(Text, () => 'fg'), background: () => h(Text, () => 'bg') }),
     ])
   },
 })

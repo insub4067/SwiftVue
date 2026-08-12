@@ -25,6 +25,8 @@ import ScrollView from '../../src/components/layout/ScrollView.vue'
 import LazyVGrid from '../../src/components/layout/LazyVGrid.vue'
 import LazyHGrid from '../../src/components/layout/LazyHGrid.vue'
 import Divider from '../../src/components/layout/Divider.vue'
+import Overlay from '../../src/components/layout/Overlay.vue'
+import Background from '../../src/components/layout/Background.vue'
 import SVText from '../../src/components/text/SVText.vue'
 import SVLabel from '../../src/components/text/SVLabel.vue'
 import SVTextField from '../../src/components/input/SVTextField.vue'
@@ -113,6 +115,8 @@ const COMPONENTS: Case[] = [
   ['LazyVGrid', LazyVGrid, { columns: 2 }],
   ['LazyHGrid', LazyHGrid, { rows: 2 }],
   ['Divider', Divider],
+  ['Overlay', Overlay, {}, { default: () => 'base', overlay: () => 'badge' }],
+  ['Background', Background, {}, { default: () => 'content', background: () => 'behind' }],
   ['Text', SVText, {}, { default: () => 'body' }],
   ['Label', SVLabel, { systemImage: '📁' }, { default: () => 'Docs' }],
   ['TextField', SVTextField, { label: 'Name' }],

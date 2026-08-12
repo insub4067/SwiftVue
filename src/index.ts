@@ -16,6 +16,10 @@ export { default as Divider } from './components/layout/Divider.vue'
 export { default as ScrollView } from './components/layout/ScrollView.vue'
 export { default as LazyVGrid } from './components/layout/LazyVGrid.vue'
 export { default as LazyHGrid } from './components/layout/LazyHGrid.vue'
+export { default as Overlay } from './components/layout/Overlay.vue'
+export { default as Background } from './components/layout/Background.vue'
+export type { OverlayAlignment, OverlayProps } from './components/layout/Overlay.vue'
+export type { BackgroundProps } from './components/layout/Background.vue'
 
 // Text
 export { default as Text } from './components/text/SVText.vue'

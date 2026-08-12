@@ -8,6 +8,8 @@ import ZStack from '../../src/components/layout/ZStack.vue'
 import ScrollView from '../../src/components/layout/ScrollView.vue'
 import LazyVGrid from '../../src/components/layout/LazyVGrid.vue'
 import LazyHGrid from '../../src/components/layout/LazyHGrid.vue'
+import Overlay from '../../src/components/layout/Overlay.vue'
+import Background from '../../src/components/layout/Background.vue'
 import SVText from '../../src/components/text/SVText.vue'
 import SVLabel from '../../src/components/text/SVLabel.vue'
 import SVTextField from '../../src/components/input/SVTextField.vue'
@@ -51,6 +53,8 @@ const CASES: Case[] = [
   ['ScrollView', ScrollView],
   ['LazyVGrid', LazyVGrid, { columns: 2 }],
   ['LazyHGrid', LazyHGrid, { rows: 2 }],
+  ['Overlay', Overlay, {}, { default: 'x' }],
+  ['Background', Background, {}, { default: 'x' }],
   ['Text', SVText, {}, { default: 'body' }],
   ['Label', SVLabel, { systemImage: '📁' }, { default: 'Docs' }],
   ['TextField', SVTextField],

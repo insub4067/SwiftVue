@@ -123,6 +123,16 @@ what has been checked.
   move to, where focus lands on the container rather than being left behind
   the overlay. Menu and ContextMenu close on Escape even when every item is
   disabled.
+- **Focus visibility.** Every control draws a `:focus-visible` ring, and a
+  test enforces that none of them re-introduces the inline `outline: none`
+  that used to override it — a keyboard user could not see what was focused
+  until that was fixed.
+- **Touch targets.** Button, TextField, SecureField, DatePicker and Picker
+  guarantee a 44px minimum height (Buttons 44px wide too), asserted per
+  control. It is a default, so a `frame` can still ask for smaller. This is
+  the 44×44 that Apple's HIG and WCAG 2.5.5 both call for; axe's own
+  `target-size` rule is WCAG 2.2, outside the tags the audit runs, so this is
+  checked directly rather than through axe.
 - **Writing direction.** A source scan over every `.vue` and `.css` file
   fails the build on a new `margin-left`, `padding-right`, `text-align:
   left` and the rest, where the logical property belongs — the one
@@ -131,11 +141,11 @@ what has been checked.
   tested by hand: the edge-swipe back gesture, the swipe-actions row, and
   the Toggle knob's travel.
 - **Reduced motion.** Under `prefers-reduced-motion: reduce`,
-  `withAnimation` skips the view transition and the state change still
-  lands — a reduced path that swallowed the mutation would be worse than
-  the animation. Seven components additionally drop their CSS transitions
-  in a `@media` block, which is not asserted: happy-dom does not evaluate
-  media queries.
+  `withAnimation` skips the movement and the state change still lands — a
+  reduced path that swallowed the mutation would be worse than the
+  animation. Seven components additionally drop their CSS transitions in a
+  `@media` block, which is not asserted: happy-dom does not evaluate media
+  queries.
 - **The modifier contract.** Twelve modifiers across thirty component
   configurations, including that `.hidden()` sets `display: none` and so
   removes a component from the accessibility tree rather than only from
@@ -193,10 +203,6 @@ look at first.
 - **No screen reader has been used.** Not VoiceOver, not NVDA, not TalkBack.
   Correct ARIA is not the same as a good announcement, and only one of those
   has been checked. This is now the largest gap by some distance.
-- **No focus-visible audit.** Focus rings are inherited from the browser in
-  most components rather than designed.
-- **Touch target sizes** are not measured against the 44×44 guidance. axe's
-  `target-size` rule is WCAG 2.2, outside the tags audited here.
 
 If you need a conformance statement for a procurement process, this
 document is the honest answer: not yet, and here is exactly what is

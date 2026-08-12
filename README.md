@@ -2,7 +2,9 @@
 
 **SwiftUI-style component library for Vue.js** — iOS 개발자가 익숙한 SwiftUI 문법으로 웹앱을 빠르게 개발할 수 있습니다.
 
-**[Live Demo](https://insub4067.github.io/SwiftVue/)** — every component, one
+[![npm](https://img.shields.io/npm/v/swiftvue.svg)](https://www.npmjs.com/package/swiftvue)
+
+**[npm](https://www.npmjs.com/package/swiftvue)** · **[Live Demo](https://insub4067.github.io/SwiftVue/)** — every component, one
 page each.
 
 **[Kitchen](https://insub4067.github.io/SwiftVue/kitchen/)** — a small real
@@ -98,6 +100,8 @@ const darkMode = useState(false)
 - `ScrollView` — scrollable area (`axes`, `showsIndicators`, `refreshable`)
 - `LazyVGrid` — grid flowing down (`columns`, `spacing`, `alignment`)
 - `LazyHGrid` — grid flowing sideways (`rows`, `spacing`, `alignment`)
+- `Overlay` — `.overlay(alignment:)`: draws its `#overlay` slot over the content, aligned, sized to the content (a badge on an avatar, a border, a spinner). Clicks fall through the empty areas to the content beneath.
+- `Background` — `.background(alignment:)`: the same, but the `#background` slot paints behind the content. The content decides the size in both.
 
 ### Text & Input
 - `Text` — text display (`font`, `bold`, `italic`, `lineLimit`, `foregroundColor`)

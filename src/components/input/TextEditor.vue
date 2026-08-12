@@ -41,7 +41,9 @@ const style = computed(() => composeStyle(modifierStyle.value, {
   border: '1px solid var(--swift-separator)',
   borderRadius: '8px',
   padding: modifierStyle.value.padding ?? '10px 12px',
-  outline: 'none',
+  // No inline outline (it would kill the focus-visible ring). Already well
+  // over 44px tall; border-box so width:100% includes the padding.
+  boxSizing: 'border-box',
   width: modifierStyle.value.width ?? '100%',
   minHeight: modifierStyle.value.minHeight ?? '120px',
   resize: 'vertical' as const,
@@ -69,6 +71,10 @@ function onInput(e: Event) {
 
 <style scoped>
 textarea:focus { border-color: var(--swift-primary) !important; }
+textarea:focus-visible {
+  outline: 2px solid var(--swift-primary);
+  outline-offset: 2px;
+}
 textarea::placeholder { color: var(--swift-tertiary-label); }
 textarea:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>

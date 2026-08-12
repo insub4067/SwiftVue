@@ -49,7 +49,11 @@ const style = computed(() => composeStyle(modifierStyle.value, {
   borderBottom: props.textFieldStyle === 'plain' ? '1px solid var(--swift-separator)' : undefined,
   borderRadius: props.textFieldStyle === 'roundedBorder' ? '8px' : '0',
   padding: modifierStyle.value.padding ?? (props.textFieldStyle === 'roundedBorder' ? '10px 12px' : '8px 0'),
-  outline: 'none',
+  // No inline `outline: none` — it would beat the scoped `:focus-visible`
+  // ring below. The 44px minimum touch target is the library's to keep, not
+  // the app's; border-box so the min includes the padding.
+  boxSizing: 'border-box',
+  minHeight: '44px',
   width: modifierStyle.value.width ?? '100%',
   transition: 'border-color var(--swift-transition)',
 }))
@@ -88,6 +92,13 @@ function onKeydown(e: KeyboardEvent) {
 <style scoped>
 input:focus {
   border-color: var(--swift-primary) !important;
+}
+/* The keyboard focus ring. A text field is treated as always focus-visible
+   because it takes typing, so this shows on click too — which is right: a
+   focused field should look focused. */
+input:focus-visible {
+  outline: 2px solid var(--swift-primary);
+  outline-offset: 2px;
 }
 input::placeholder {
   color: var(--swift-tertiary-label);

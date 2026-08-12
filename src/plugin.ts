@@ -8,6 +8,8 @@ import Divider from './components/layout/Divider.vue'
 import ScrollView from './components/layout/ScrollView.vue'
 import LazyVGrid from './components/layout/LazyVGrid.vue'
 import LazyHGrid from './components/layout/LazyHGrid.vue'
+import Overlay from './components/layout/Overlay.vue'
+import Background from './components/layout/Background.vue'
 
 import SVText from './components/text/SVText.vue'
 import SVLabel from './components/text/SVLabel.vue'
@@ -50,6 +52,7 @@ import { vAnimate } from './motion/vAnimate'
 const components: Record<string, Component> = {
   // Layout
   VStack, HStack, ZStack, Spacer, Divider, ScrollView, LazyVGrid, LazyHGrid,
+  Overlay, Background,
   // Text
   Text: SVText,
   Label: SVLabel,

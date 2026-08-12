@@ -51,7 +51,10 @@ const selectStyle = computed(() => composeStyle(modifierStyle.value, {
   border: '1px solid var(--swift-separator)',
   borderRadius: '8px',
   padding: '10px 12px',
-  outline: 'none',
+  // No inline outline — the scoped `select:focus-visible` ring handles it.
+  // 44px touch-target floor, border-box so it includes the padding.
+  boxSizing: 'border-box',
+  minHeight: '44px',
   width: modifierStyle.value.width ?? '100%',
   cursor: 'pointer',
 }))
@@ -99,22 +102,37 @@ function onChange(e: Event) {
 </template>
 
 <style scoped>
+select:focus-visible {
+  outline: 2px solid var(--swift-primary);
+  outline-offset: 2px;
+}
 select:disabled { opacity: 0.5; cursor: not-allowed; }
 .segment {
   font-family: inherit;
   font-size: 13px;
   font-weight: 500;
   padding: 6px 14px;
+  /* 44px touch-target floor on each segment, matching the other controls;
+     border-box so the padding counts inward instead of adding on top. */
+  box-sizing: border-box;
+  min-height: 44px;
+  min-width: 44px;
   border: none;
   border-radius: 6px;
   background: transparent;
   color: var(--swift-label);
   cursor: pointer;
-  transition: all var(--swift-transition);
+  /* Only what changes when a segment is picked or hovered — not `all`, which
+     would animate the layout of a re-flowed segment too. */
+  transition: background var(--swift-transition), box-shadow var(--swift-transition), color var(--swift-transition);
 }
 .segment.active {
   background: var(--swift-secondary-grouped-background);
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.segment:focus-visible {
+  outline: 2px solid var(--swift-primary);
+  outline-offset: 2px;
 }
 .segment:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
