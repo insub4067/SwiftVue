@@ -36,12 +36,24 @@ const style = computed(() => {
     fontWeight: '400',
     cursor: props.disabled ? 'not-allowed' : 'pointer',
     border: 'none',
-    outline: 'none',
+    // No inline `outline: none`. It beats the scoped `:focus-visible` rule
+    // below on specificity, so the keyboard focus ring never showed — the
+    // ring is handled entirely in CSS instead.
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '6px',
-    transition: 'all var(--swift-transition)',
+    // The 44×44 minimum touch target, guaranteed by the library rather than
+    // left to each app to patch. border-box so the min counts padding in,
+    // not on top of it. Overridable with `frame` for a deliberately smaller
+    // control.
+    boxSizing: 'border-box',
+    minHeight: '44px',
+    minWidth: '44px',
+    // Only what actually changes on hover/press/theme — not `all`, which
+    // would animate an unrelated width or position change too.
+    transition: 'background-color var(--swift-transition), color var(--swift-transition), '
+      + 'border-color var(--swift-transition), filter var(--swift-transition), transform var(--swift-transition)',
     width: props.fullWidth ? '100%' : modifierStyle.value.width,
   }
 

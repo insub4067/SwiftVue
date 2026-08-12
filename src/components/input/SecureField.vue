@@ -43,7 +43,10 @@ const style = computed(() => composeStyle(modifierStyle.value, {
   border: '1px solid var(--swift-separator)',
   borderRadius: '8px',
   padding: modifierStyle.value.padding ?? '10px 12px',
-  outline: 'none',
+  // See SVTextField: no inline outline (it would kill the focus-visible
+  // ring), and the 44px touch-target floor with border-box.
+  boxSizing: 'border-box',
+  minHeight: '44px',
   width: modifierStyle.value.width ?? '100%',
   transition: 'border-color var(--swift-transition)',
 }))
@@ -80,6 +83,10 @@ function onKeydown(e: KeyboardEvent) {
 
 <style scoped>
 input:focus { border-color: var(--swift-primary) !important; }
+input:focus-visible {
+  outline: 2px solid var(--swift-primary);
+  outline-offset: 2px;
+}
 input::placeholder { color: var(--swift-tertiary-label); }
 input:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>

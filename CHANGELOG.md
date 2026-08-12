@@ -9,6 +9,28 @@ working code is called out under *Breaking* with the change you need to make.
 
 ## Unreleased
 
+**Fixed**
+
+- **The keyboard focus ring never showed on the controls.** Button, TextField,
+  SecureField, TextEditor, DatePicker and Picker each set `outline: none` as an
+  inline style, and an inline style beats the scoped `:focus-visible` rule that
+  was meant to draw the ring — so a keyboard user could not see what was
+  focused. The inline outline is gone; the ring is drawn in CSS, where it
+  works. Two of these components already had the ring written and it had simply
+  never been visible.
+- **Some controls were under the 44px minimum touch target.** A plain
+  `TextField`, and `Button`s with tighter styles, came out shorter than the
+  44×44 Apple and WCAG both ask for, and an app had to patch it back globally.
+  Button, TextField, SecureField, DatePicker and Picker now guarantee a 44px
+  minimum (Buttons 44px wide too, for icon-only taps), with `box-sizing:
+  border-box` so the minimum counts the padding in rather than stacking on top
+  of it. It is a default: a `frame` with a smaller `minHeight` still wins.
+- **`Button` animated more than it meant to.** Its `transition: all` would
+  animate an incidental width, height or position change along with the colour
+  and press it was for. It now names only the properties that change on
+  hover/press/theme, so a layout shift is never swept into the animation. The
+  segmented `Picker` had the same `transition: all` and is narrowed the same way.
+
 **Added**
 
 - **`Overlay` and `Background`** — SwiftUI's `.overlay(alignment:)` and

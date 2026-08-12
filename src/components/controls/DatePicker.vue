@@ -43,7 +43,10 @@ const style = computed(() => composeStyle(modifierStyle.value, {
   border: 'none',
   borderRadius: '8px',
   padding: modifierStyle.value.padding ?? '7px 11px',
-  outline: 'none',
+  // The scoped `:focus-visible` ring already exists; the inline outline was
+  // overriding it. Gone now, plus the 44px touch-target floor.
+  boxSizing: 'border-box',
+  minHeight: '44px',
 }))
 
 function onInput(e: Event) {
