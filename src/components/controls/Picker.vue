@@ -112,6 +112,11 @@ select:disabled { opacity: 0.5; cursor: not-allowed; }
   font-size: 13px;
   font-weight: 500;
   padding: 6px 14px;
+  /* 44px touch-target floor on each segment, matching the other controls;
+     border-box so the padding counts inward instead of adding on top. */
+  box-sizing: border-box;
+  min-height: 44px;
+  min-width: 44px;
   border: none;
   border-radius: 6px;
   background: transparent;

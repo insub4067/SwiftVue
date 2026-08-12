@@ -30,6 +30,16 @@ describe('Overlay', () => {
     expect(w.element.lastElementChild?.classList.contains('swift-overlay-layer')).toBe(true)
   })
 
+  // Source order alone is not enough: content that carries its own z-index
+  // could climb over the overlay. The root opens a stacking context and each
+  // child gets an explicit level, so the overlay is above the base for good.
+  it('orders the layer above the content in an isolated stacking context', () => {
+    const w = mount(Overlay, { slots: { default: 'base', overlay: 'badge' } })
+    expect(style(w.element).isolation, 'a private stacking context').toBe('isolate')
+    expect(style(w.find('.swift-overlay-base').element).zIndex).toBe('0')
+    expect(style(w.find('.swift-overlay-layer').element).zIndex).toBe('1')
+  })
+
   const ALIGN: Array<[OverlayAlignment, string, string]> = [
     ['center', 'center', 'center'],
     ['topLeading', 'flex-start', 'flex-start'],
@@ -82,6 +92,15 @@ describe('Background', () => {
     // and the content wrapper is its own positioned level so order can't flip.
     expect(w.element.firstElementChild?.classList.contains('swift-background-layer')).toBe(true)
     expect(style(w.find('.swift-background-content').element).position).toBe('relative')
+  })
+
+  // The order is pinned by an isolated stacking context and explicit levels,
+  // not by source position — background at the floor, content above it.
+  it('orders the content above the background in an isolated stacking context', () => {
+    const w = mount(Background, { slots: { default: 'fg', background: 'bg' } })
+    expect(style(w.element).isolation).toBe('isolate')
+    expect(style(w.find('.swift-background-layer').element).zIndex).toBe('0')
+    expect(style(w.find('.swift-background-content').element).zIndex).toBe('1')
   })
 
   it('aligns the background the same way an overlay aligns', () => {

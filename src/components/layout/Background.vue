@@ -32,19 +32,27 @@ const modifierStyle = useModifiers(props)
 const style = computed(() => composeStyle(
   modifierStyle.value,
   { display: 'inline-block' },
-  { position: 'relative' as const },
+  // `isolation: isolate` opens a stacking context so the background and the
+  // content are ordered against each other alone, never against the page.
+  { position: 'relative' as const, isolation: 'isolate' as const },
 ))
 
 // The background layer is out of flow, so the content — not the background —
 // decides the size. That is SwiftUI's `.background`: the base view lays out as
-// if the background were not there, and the background fills behind it.
+// if the background were not there, and the background fills behind it. Pinned
+// to the lowest stacking level so nothing inside the content can slip under it.
 const layerStyle = computed(() => ({
   position: 'absolute' as const,
   inset: '0',
+  zIndex: 0,
   display: 'flex',
   pointerEvents: 'none' as const,
   ...alignMap[props.alignment],
 }))
+
+// The content sits one stacking level above the background, decided here rather
+// than by source order.
+const contentStyle = { position: 'relative' as const, zIndex: 1 }
 </script>
 
 <template>
@@ -54,6 +62,6 @@ const layerStyle = computed(() => ({
     </div>
     <!-- The content sits above the background in its own stacking level, so
          the two never fight over paint order regardless of source position. -->
-    <div class="swift-background-content" style="position: relative"><slot /></div>
+    <div class="swift-background-content" :style="contentStyle"><slot /></div>
   </div>
 </template>

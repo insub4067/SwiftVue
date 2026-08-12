@@ -40,8 +40,17 @@ const style = computed(() => composeStyle(
   { display: 'inline-block' },
   // The positioning context the overlay is placed against. Essential: without
   // it the absolute layer would escape to the nearest positioned ancestor.
-  { position: 'relative' as const },
+  // `isolation: isolate` opens a stacking context here so the two children are
+  // ordered against each other alone — never against the consumer's page, and
+  // never overridable by z-index that appears inside the slotted content.
+  { position: 'relative' as const, isolation: 'isolate' as const },
 ))
+
+// The base content and the overlay layer each get an explicit stacking level
+// so paint order is decided here, not left to source order — content styled
+// with its own `position`/`z-index` can no longer climb over the overlay, nor
+// the overlay sink beneath it.
+const contentStyle = { position: 'relative' as const, zIndex: 0 }
 
 // The layer fills the content's box and never contributes to its size (it is
 // out of flow), so the content alone decides how big the whole thing is —
@@ -49,6 +58,8 @@ const style = computed(() => composeStyle(
 const layerStyle = computed(() => ({
   position: 'absolute' as const,
   inset: '0',
+  // Above the base content's stacking level, always.
+  zIndex: 1,
   display: 'flex',
   // Clicks fall through the empty parts of the layer to the content beneath;
   // the overlay's own content takes them back (see the scoped rule below).
@@ -59,7 +70,7 @@ const layerStyle = computed(() => ({
 
 <template>
   <div :style="style">
-    <slot />
+    <div class="swift-overlay-base" :style="contentStyle"><slot /></div>
     <div class="swift-overlay-layer" :style="layerStyle">
       <div class="swift-overlay-content" style="pointer-events: auto"><slot name="overlay" /></div>
     </div>

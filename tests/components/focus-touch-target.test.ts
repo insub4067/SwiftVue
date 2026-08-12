@@ -81,6 +81,32 @@ describe('controls guarantee the 44px minimum touch target', () => {
     const s = inlineStyle(mount(SVButton, { props: { frame: { minHeight: 20 } }, slots: { default: 'x' } }).find('button').element)
     expect(s.minHeight).toBe('20px')
   })
+
+  // A segmented Picker renders its choices as <button class="segment"> whose
+  // sizing lives in scoped CSS, not inline — happy-dom does not compute that,
+  // so the floor is pinned by scanning the rule the buttons carry. Each segment
+  // is a tap target of its own and must clear 44px just like the select does.
+  it('each segment renders as a button and carries the class the floor is on', () => {
+    const w = mount(Picker, {
+      props: {
+        modelValue: 'a',
+        pickerStyle: 'segmented',
+        options: [{ label: 'A', value: 'a' }, { label: 'B', value: 'b' }],
+        label: 'p',
+      },
+    })
+    const segments = w.findAll('button.segment')
+    expect(segments.length).toBe(2)
+  })
+
+  it('the .segment rule guarantees a 44px min height and width, border-box', () => {
+    const src = readFileSync(resolve(process.cwd(), 'src/components/controls/Picker.vue'), 'utf8')
+    const rule = src.match(/\.segment\s*\{([^}]*)\}/)?.[1] ?? ''
+    expect(rule, 'segment sizing lives in this rule').not.toBe('')
+    expect(rule).toMatch(/min-height:\s*44px/)
+    expect(rule).toMatch(/min-width:\s*44px/)
+    expect(rule, 'border-box so the min includes padding, not adds to it').toMatch(/box-sizing:\s*border-box/)
+  })
 })
 
 describe('the button transitions only what changes, not `all`', () => {
