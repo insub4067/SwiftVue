@@ -100,6 +100,8 @@ const darkMode = useState(false)
 - `ScrollView` — scrollable area (`axes`, `showsIndicators`, `refreshable`)
 - `LazyVGrid` — grid flowing down (`columns`, `spacing`, `alignment`)
 - `LazyHGrid` — grid flowing sideways (`rows`, `spacing`, `alignment`)
+- `Overlay` — `.overlay(alignment:)`: draws its `#overlay` slot over the content, aligned, sized to the content (a badge on an avatar, a border, a spinner). Clicks fall through the empty areas to the content beneath.
+- `Background` — `.background(alignment:)`: the same, but the `#background` slot paints behind the content. The content decides the size in both.
 
 ### Text & Input
 - `Text` — text display (`font`, `bold`, `italic`, `lineLimit`, `foregroundColor`)

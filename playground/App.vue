@@ -529,6 +529,20 @@ const stop = publisher(searchText)
 </HStack>`,
     sources: ['src/components/layout/ZStack.vue', 'src/components/layout/Spacer.vue'],
   },
+  overlay: {
+    code: `<!-- the overlay sizes to the avatar and aligns within it -->
+<Overlay alignment="topTrailing">
+  <Avatar />
+  <template #overlay><Badge>3</Badge></template>
+</Overlay>
+
+<!-- the background paints behind; the content decides the size -->
+<Background>
+  <template #background><Gradient /></template>
+  <Text :padding="20">SwiftVue</Text>
+</Background>`,
+    sources: ['src/components/layout/Overlay.vue', 'src/components/layout/Background.vue'],
+  },
   lazyVGrid: {
     code: `<!-- a track count, or a GridItem[] -->
 <LazyVGrid :columns="3" :spacing="8">…</LazyVGrid>
@@ -1538,6 +1552,41 @@ onUnmounted(() => {
                       <Text foreground-color="purple">C</Text>
                     </HStack>
                     <CodeSample v-bind="samples.zstack" />
+                  </VStack>
+                </template>
+              </NavigationLink>
+
+              <NavigationLink route="overlay" destination-title="Overlay & Background">
+                <Label system-image="🏷️">Overlay & Background</Label>
+                <template #destination>
+                  <VStack :spacing="16" :padding="16" alignment="leading" :frame="{ width: '100%' }">
+                    <Text font="subheadline" foreground-color="secondary">.overlay — sized to the content, aligned within it</Text>
+                    <HStack :spacing="20" wrap>
+                      <Overlay alignment="topTrailing">
+                        <div :style="{ width: '72px', height: '72px', borderRadius: '50%', background: 'var(--swift-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
+                          <Text font="largeTitle">👤</Text>
+                        </div>
+                        <template #overlay>
+                          <div :style="{ minWidth: '22px', height: '22px', padding: '0 6px', borderRadius: '11px', background: 'var(--swift-red)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--swift-background)' }">
+                            <Text font="caption2" foreground-color="white" bold>3</Text>
+                          </div>
+                        </template>
+                      </Overlay>
+                      <Overlay alignment="bottomTrailing">
+                        <div :style="{ width: '72px', height: '72px', borderRadius: '16px', background: 'var(--swift-green)', opacity: 0.25 }" />
+                        <template #overlay><Text font="title2">✅</Text></template>
+                      </Overlay>
+                    </HStack>
+
+                    <Text font="subheadline" foreground-color="secondary">.background — behind the content, content sets the size</Text>
+                    <Background>
+                      <template #background>
+                        <div :style="{ width: '100%', height: '100%', borderRadius: '12px', background: 'linear-gradient(135deg, var(--swift-blue), var(--swift-purple))' }" />
+                      </template>
+                      <Text font="headline" foreground-color="white" :padding="[16, 28]">SwiftVue</Text>
+                    </Background>
+
+                    <CodeSample v-bind="samples.overlay" />
                   </VStack>
                 </template>
               </NavigationLink>

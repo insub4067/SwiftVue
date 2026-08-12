@@ -7,6 +7,21 @@ SwiftVue is pre-1.0. While the major version is 0, a **minor** bump may
 change behaviour and a **patch** only fixes it. Anything that would break
 working code is called out under *Breaking* with the change you need to make.
 
+## Unreleased
+
+**Added**
+
+- **`Overlay` and `Background`** — SwiftUI's `.overlay(alignment:)` and
+  `.background(alignment:)`. `Overlay` draws its `#overlay` slot over the
+  content; `Background` draws its `#background` slot behind it. In both, the
+  content decides the size and the layer is placed within it, aligned the way
+  SwiftUI names it (`center`, `topTrailing`, `leading`, and the rest — which
+  mirror in a right-to-left layout). An overlay lets clicks through its empty
+  areas to the content beneath, so a badge over an avatar is tappable without
+  the badge's corner swallowing taps meant for the avatar. This is what
+  `ZStack` could only approximate: a ZStack is sized by its largest child, so
+  a wide badge grew the stack; an overlay never changes the content's layout.
+
 ## 0.5.0
 
 An automated accessibility audit, the six defects it found, and a
