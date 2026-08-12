@@ -7,7 +7,11 @@ SwiftVue is pre-1.0. While the major version is 0, a **minor** bump may
 change behaviour and a **patch** only fixes it. Anything that would break
 working code is called out under *Breaking* with the change you need to make.
 
-## Unreleased
+## 0.5.1 — 2026-08-12
+
+The focus ring, the 44px floor and the transition narrowing an external
+project asked for, plus `.overlay`/`.background`, with the paint order and
+the segmented control's tap target pinned down.
 
 **Fixed**
 
@@ -24,7 +28,9 @@ working code is called out under *Breaking* with the change you need to make.
   Button, TextField, SecureField, DatePicker and Picker now guarantee a 44px
   minimum (Buttons 44px wide too, for icon-only taps), with `box-sizing:
   border-box` so the minimum counts the padding in rather than stacking on top
-  of it. It is a default: a `frame` with a smaller `minHeight` still wins.
+  of it. It is a default: a `frame` with a smaller `minHeight` still wins. The
+  segmented `Picker`'s individual segments are each a tap target of their own
+  and now clear 44px in both directions too.
 - **`Button` animated more than it meant to.** Its `transition: all` would
   animate an incidental width, height or position change along with the colour
   and press it was for. It now names only the properties that change on
@@ -43,6 +49,11 @@ working code is called out under *Breaking* with the change you need to make.
   the badge's corner swallowing taps meant for the avatar. This is what
   `ZStack` could only approximate: a ZStack is sized by its largest child, so
   a wide badge grew the stack; an overlay never changes the content's layout.
+  The content and the layer sit in an isolated stacking context with explicit
+  z-index, so the paint order holds even when the slotted content carries its
+  own positioning — an overlay stays on top, a background stays behind.
+  `OverlayProps`, `OverlayAlignment` and `BackgroundProps` are exported from
+  the package root for anyone typing a wrapper around them.
 
 ## 0.5.0
 
