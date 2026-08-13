@@ -3,6 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent, h, ref } from 'vue'
 import NavigationStack from '../../src/components/navigation/NavigationStack.vue'
 import NavigationLink from '../../src/components/navigation/NavigationLink.vue'
+import NavigationBackButton from '../../src/components/navigation/NavigationBackButton.vue'
 import TabView from '../../src/components/navigation/TabView.vue'
 import Sheet from '../../src/components/navigation/Sheet.vue'
 import { useNavigation } from '../../src/composables/useNavigation'
@@ -35,6 +36,21 @@ describe('NavigationStack', () => {
   })
 })
 
+describe('NavigationBackButton', () => {
+  it('is visible by default and emits back when clicked', async () => {
+    const wrapper = mount(NavigationBackButton)
+
+    expect(wrapper.find('[aria-label="Back"]').exists()).toBe(true)
+    await wrapper.trigger('click')
+    expect(wrapper.emitted('back')).toHaveLength(1)
+  })
+
+  it('renders no button when visible is false', () => {
+    const wrapper = mount(NavigationBackButton, { props: { visible: false } })
+    expect(wrapper.find('[aria-label="Back"]').exists()).toBe(false)
+  })
+})
+
 describe('NavigationStack push/pop', () => {
   // a child that pushes a detail view through useNavigation
   const Pusher = defineComponent({
@@ -47,14 +63,14 @@ describe('NavigationStack push/pop', () => {
     },
   })
 
-  function mountStack() {
+  function mountStack(props: { backButtonVisible?: boolean } = {}) {
     return mount(NavigationStack, {
-      props: { title: 'Home' },
+      props: { title: 'Home', ...props },
       slots: { default: () => h(Pusher) },
     })
   }
 
-  it('push shows the destination with its title and a back button', async () => {
+  it('push shows the destination with its title and a circular back button', async () => {
     const wrapper = mountStack()
     await wrapper.find('#go').trigger('click')
     await flushPromises()
@@ -64,7 +80,22 @@ describe('NavigationStack push/pop', () => {
 
     const back = wrapper.find('[aria-label="Back"]')
     expect(back.exists()).toBe(true)
-    expect(back.text()).toContain('Home') // back label names the previous view
+    expect(back.classes()).toContain('swift-navigation-back-button')
+    expect(back.text()).toBe('')
+  })
+
+  it('hides only the back button when backButtonVisible is false', async () => {
+    const wrapper = mountStack({ backButtonVisible: false })
+    await wrapper.find('#go').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[aria-label="Back"]').exists()).toBe(false)
+    expect(wrapper.find('h1').text()).toBe('Detail')
+    expect(wrapper.text()).toContain('detail-content')
+
+    wrapper.vm.pop()
+    await flushPromises()
+    expect(wrapper.find('h1').text()).toBe('Home')
   })
 
   it('the back button pops to the root', async () => {
@@ -84,7 +115,7 @@ describe('NavigationStack push/pop', () => {
     wrapper.vm.push({ title: 'B', content: () => h('p', 'b') })
     await flushPromises()
     expect(wrapper.find('h1').text()).toBe('B')
-    expect(wrapper.find('[aria-label="Back"]').text()).toContain('A')
+    expect(wrapper.find('[aria-label="Back"]').exists()).toBe(true)
 
     wrapper.vm.popToRoot()
     await flushPromises()

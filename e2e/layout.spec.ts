@@ -139,7 +139,8 @@ test('NavigationLink pushes and the back button pops', async ({ page }) => {
 
   const back = page.getByLabel('Back')
   await expect(back).toBeVisible()
-  await expect(back).toContainText('Components') // names the previous view
+  await expect(back).toHaveClass(/swift-navigation-back-button/)
+  await expect(back).toHaveText('')
   await back.click()
 
   await expect(page.getByText('Large Title')).toHaveCount(0)

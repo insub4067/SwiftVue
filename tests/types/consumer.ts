@@ -3,7 +3,7 @@
 // slot missing from the emitted declarations.
 import { defineComponent, h, ref } from 'vue'
 import {
-  NavigationStack, NavigationLink, Section, ScrollView, Button, Text, TextField,
+  NavigationStack, NavigationLink, NavigationBackButton, Section, ScrollView, Button, Text, TextField,
   LazyVGrid, TransitionView, List,
   Image, AsyncImage, Form, DatePicker, Menu, ContextMenu, Gauge,
   Overlay, Background,
@@ -15,6 +15,7 @@ import {
   type SectionProps, type ListProps,
   type ImageProps, type AsyncImageProps, type AsyncImagePhase,
   type FormProps, type DatePickerProps, type MenuAction, type NavigationStackProps,
+  type NavigationBackButtonProps,
   type ContextMenuProps, type GaugeProps, type RouteRef, type RouteFactory,
   type SwipeAction, type SwipeActionsProps, type SwipeSample, type SwipeDirection,
   type OverlayProps, type OverlayAlignment, type BackgroundProps,
@@ -33,7 +34,10 @@ const asyncProps: AsyncImageProps = { url: '/b.png', alt: 'B' }
 const phase: AsyncImagePhase = 'success'
 const formProps: FormProps = { spacing: 16 }
 const dateProps: DatePickerProps = { modelValue: '2026-08-09', displayedComponents: 'dateAndTime' }
-const stackProps: NavigationStackProps = { title: 'Home', browserBack: true, historyKey: 'app' }
+const stackProps: NavigationStackProps = {
+  title: 'Home', browserBack: true, historyKey: 'app', backButtonVisible: false,
+}
+const backButtonProps: NavigationBackButtonProps = { visible: false }
 const contextProps: ContextMenuProps = { actions: menuActions, longPressDelay: 400 }
 const gaugeProps: GaugeProps = { value: 0.5, min: 0, max: 1, gaugeStyle: 'circular', tint: 'green' }
 const route: RouteRef = { id: 'user', param: '42' }
@@ -44,7 +48,7 @@ const overlayAlign: OverlayAlignment = 'topTrailing'
 const overlayProps: OverlayProps = { alignment: overlayAlign, padding: 8 }
 const backgroundProps: BackgroundProps = { alignment: 'center', frame: { maxWidth: '100%' } }
 void [actions, options, tabs, preset, sectionProps, listProps,
-     menuActions, imageProps, asyncProps, phase, formProps, dateProps, stackProps,
+     menuActions, imageProps, asyncProps, phase, formProps, dateProps, stackProps, backButtonProps,
      contextProps, gaugeProps, route, buildRoute, swipeActions, swipeProps,
      overlayProps, backgroundProps]
 
@@ -90,6 +94,7 @@ export default defineComponent({
           destination: destinationSlot,
         }),
       ]),
+      h(NavigationBackButton, { onBack: () => {} }),
       h(TextField, { modelValue: text.value, focused: focused.value, focusValue: 'a' }),
       h(Button, { buttonStyle: 'borderedProminent', onTap: () => {} }, () => 'Tap'),
       h(LazyVGrid, { columns, spacing: 8 }, () => h(Text, () => 'cell')),

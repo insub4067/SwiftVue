@@ -35,6 +35,7 @@ import SwipeActions from './components/data/SwipeActions.vue'
 
 import NavigationStack from './components/navigation/NavigationStack.vue'
 import NavigationLink from './components/navigation/NavigationLink.vue'
+import NavigationBackButton from './components/navigation/NavigationBackButton.vue'
 import TabView from './components/navigation/TabView.vue'
 import Sheet from './components/navigation/Sheet.vue'
 
@@ -71,7 +72,7 @@ const components: Record<string, Component> = {
   Form,
   SwipeActions,
   // Navigation
-  NavigationStack, NavigationLink, TabView, Sheet,
+  NavigationStack, NavigationLink, NavigationBackButton, TabView, Sheet,
   // Feedback
   Alert: SVAlert,
   ProgressView,

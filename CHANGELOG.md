@@ -7,6 +7,22 @@ SwiftVue is pre-1.0. While the major version is 0, a **minor** bump may
 change behaviour and a **patch** only fixes it. Anything that would break
 working code is called out under *Breaking* with the change you need to make.
 
+## 0.5.2 — 2026-08-14
+
+**Added**
+
+- **`NavigationBackButton`** — the circular, floating-style back control used
+  by pushed `NavigationStack` screens is also available on its own. It is
+  visible by default, emits `back` when pressed, and can be hidden with
+  `visible="false"` without changing navigation state.
+
+**Changed**
+
+- **Pushed `NavigationStack` screens use the same circular back control.**
+  `backButtonVisible` defaults to `true`; setting it to `false` hides only the
+  button. Programmatic `pop()`, browser Back and the leading-edge swipe keep
+  working.
+
 ## 0.5.1 — 2026-08-12
 
 The focus ring, the 44px floor and the transition narrowing an external

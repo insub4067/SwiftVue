@@ -51,6 +51,7 @@ import SVImage from '../../src/components/media/SVImage.vue'
 import AsyncImage from '../../src/components/media/AsyncImage.vue'
 import NavigationStack from '../../src/components/navigation/NavigationStack.vue'
 import NavigationLink from '../../src/components/navigation/NavigationLink.vue'
+import NavigationBackButton from '../../src/components/navigation/NavigationBackButton.vue'
 import NavigationSplitView from '../../src/components/navigation/NavigationSplitView.vue'
 import TabView from '../../src/components/navigation/TabView.vue'
 import Sheet from '../../src/components/navigation/Sheet.vue'
@@ -146,6 +147,7 @@ const COMPONENTS: Case[] = [
   ['AsyncImage', AsyncImage, { url: 'a.png', alt: 'A' }],
   ['NavigationStack', NavigationStack, { title: 'Home' }, { default: () => 'body' }],
   ['NavigationLink', NavigationLink, {}, { default: () => 'Row' }],
+  ['NavigationBackButton', NavigationBackButton],
   ['NavigationSplitView', NavigationSplitView, { label: 'Menu' }, {
     sidebar: () => 'Side', default: () => 'Detail',
   }],

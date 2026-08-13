@@ -4,6 +4,7 @@ import type { ModifierProps } from '../../utils/modifiers'
 export interface NavigationStackProps extends ModifierProps {
   title?: string
   displayMode?: 'large' | 'inline'
+  backButtonVisible?: boolean
   /**
    * Give the browser's Back and Forward control of the stack, so the system
    * back gesture and the hardware back button pop instead of leaving the app.
@@ -56,6 +57,7 @@ import { useModifiers, composeStyle } from '../../utils/modifiers'
 import { warnDev } from '../../utils/warn'
 import { isRTL } from '../../utils/direction'
 import NavPane from './NavPane'
+import NavigationBackButton from './NavigationBackButton.vue'
 import {
   navigationKey,
   parseRoutes,
@@ -67,6 +69,7 @@ import {
 
 const props = withDefaults(defineProps<NavigationStackProps>(), {
   displayMode: 'large',
+  backButtonVisible: true,
 })
 
 const modifierStyle = useModifiers(props)
@@ -287,10 +290,6 @@ defineExpose({ push, pop, popToRoot, pushRoute, registerRoute, depth })
 
 const top = computed(() => stack.value[stack.value.length - 1]?.entry)
 const currentTitle = computed(() => top.value?.title ?? props.title)
-const backLabel = computed(() => {
-  if (depth.value > 1) return stack.value[depth.value - 2].entry.title ?? 'Back'
-  return props.title ?? 'Back'
-})
 // index 0 is the root slot; entries follow. A content closure ignoring its
 // arguments is a valid functional component.
 const panes = computed(() => [null, ...stack.value] as Array<Pane | null>)
@@ -331,10 +330,9 @@ const style = computed(() => composeStyle(modifierStyle.value, {
       v-if="currentTitle || depth > 0"
       :class="['nav-header', depth > 0 ? 'nav-header--inline nav-header--pushed' : `nav-header--${displayMode}`]"
     >
-      <button v-if="depth > 0" type="button" class="nav-back" aria-label="Back" @click="pop()">
-        <span class="nav-back-chevron" aria-hidden="true">‹</span>
-        <span class="nav-back-label">{{ backLabel }}</span>
-      </button>
+      <span v-if="depth > 0" class="nav-back-slot">
+        <NavigationBackButton :visible="backButtonVisible" @back="pop" />
+      </span>
       <h1>{{ currentTitle }}</h1>
       <span v-if="depth > 0" class="nav-back-balance" aria-hidden="true" />
     </header>
@@ -391,33 +389,12 @@ const style = computed(() => composeStyle(modifierStyle.value, {
   gap: 8px;
 }
 .nav-header--pushed h1 { min-width: 0; }
-.nav-back {
+.nav-back-slot {
   justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  max-width: 100%;
-  border: none;
-  background: none;
-  padding: 0;
-  font-family: inherit;
-  font-size: 17px;
-  color: var(--swift-primary);
-  cursor: pointer;
+  width: 44px;
+  height: 44px;
 }
-.nav-back:focus-visible {
-  outline: 2px solid var(--swift-primary);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-.nav-back-chevron { font-size: 26px; line-height: 1; margin-top: -3px; }
-[dir="rtl"] .nav-back-chevron { transform: scaleX(-1); }
-.nav-back-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.nav-back-balance { justify-self: end; }
+.nav-back-balance { justify-self: end; width: 44px; }
 
 .nav-content { flex: 1; position: relative; overflow: hidden; }
 .nav-pane {

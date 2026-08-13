@@ -8,7 +8,7 @@ const ALL_NAMES = [
   'TextField', 'SecureField', 'TextEditor',
   'Button', 'Toggle', 'Slider', 'Picker', 'Stepper', 'DatePicker', 'Menu',
   'ForEach', 'List', 'Section', 'Form',
-  'NavigationStack', 'NavigationLink', 'TabView', 'Sheet',
+  'NavigationStack', 'NavigationLink', 'NavigationBackButton', 'TabView', 'Sheet',
   'Alert', 'ProgressView',
   'TransitionView', 'Image', 'AsyncImage',
 ]
