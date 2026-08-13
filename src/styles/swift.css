@@ -27,6 +27,7 @@
   --swift-separator: #3C3C4349;
   --swift-fill: #78788033;
   --swift-secondary-fill: #78788028;
+  --swift-navigation-glass: rgb(242 242 247 / 50%);
 
   --swift-font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
     'Helvetica Neue', Arial, sans-serif;
@@ -69,6 +70,7 @@
     --swift-separator: #54545899;
     --swift-fill: #7878805C;
     --swift-secondary-fill: #78788051;
+    --swift-navigation-glass: rgb(44 44 46 / 50%);
   }
 }
 
@@ -101,6 +103,7 @@
   --swift-separator: #54545899;
   --swift-fill: #7878805C;
   --swift-secondary-fill: #78788051;
+  --swift-navigation-glass: rgb(44 44 46 / 50%);
 }
 
 *,

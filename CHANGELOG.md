@@ -11,10 +11,11 @@ working code is called out under *Breaking* with the change you need to make.
 
 **Added**
 
-- **`NavigationBackButton`** — the circular, floating-style back control used
-  by pushed `NavigationStack` screens is also available on its own. It is
-  visible by default, emits `back` when pressed, and can be hidden with
-  `visible="false"` without changing navigation state.
+- **`NavigationBackButton`** — the circular, theme-aware Liquid Glass back
+  control used by pushed `NavigationStack` screens is also available on its
+  own. It blurs and tints the content behind it, is visible by default, emits
+  `back` when pressed, and can be hidden with `visible="false"` without
+  changing navigation state.
 
 **Changed**
 

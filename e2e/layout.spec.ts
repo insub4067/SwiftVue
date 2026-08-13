@@ -147,6 +147,40 @@ test('NavigationLink pushes and the back button pops', async ({ page }) => {
   await expect(page.getByRole('button', { name: /Typography/ })).toBeVisible()
 })
 
+test('the back button uses theme-aware liquid glass', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+  await page.evaluate(() => document.documentElement.className = 'swift-light')
+  await push(page, /Typography/)
+
+  const back = page.getByLabel('Back')
+  const light = await back.evaluate((element) => {
+    const style = getComputedStyle(element)
+    return {
+      backdrop: style.backdropFilter || style.getPropertyValue('-webkit-backdrop-filter'),
+      background: style.backgroundColor,
+      color: style.color,
+      shadow: style.boxShadow,
+    }
+  })
+
+  expect(light.backdrop).toContain('blur(')
+  expect(light.background).toMatch(/^rgba\(.+, 0\.[1-9]\)$/)
+  expect(light.color).toBe('rgb(0, 0, 0)')
+  expect(light.shadow).toContain('inset')
+
+  await page.evaluate(() => document.documentElement.className = 'swift-dark')
+  await page.waitForTimeout(250)
+  const dark = await back.evaluate((element) => {
+    const style = getComputedStyle(element)
+    return { background: style.backgroundColor, color: style.color }
+  })
+
+  expect(dark.background).toMatch(/^rgba\(.+, 0\.[1-9]\)$/)
+  expect(dark.background).not.toBe(light.background)
+  expect(dark.color).toBe('rgb(255, 255, 255)')
+})
+
 // browser-back is a claim about the real browser, so only a real browser can
 // check it: Back pops instead of leaving the app, and Forward comes back.
 test('browser Back and Forward drive the stack', async ({ page }) => {

@@ -136,9 +136,9 @@ unnamed `<select>` looks entirely finished and announces as nothing but
 - `SwipeActions` — iOS swipe-to-reveal row (`leading`, `trailing`, `allowsFullSwipe`, `@select`)
 
 ### Navigation
-- `NavigationStack` — push/pop stack with a circular back button and edge-swipe back (`title`, `displayMode`, `backButtonVisible`, `browserBack`, `historyKey`)
+- `NavigationStack` — push/pop stack with a circular Liquid Glass back button and edge-swipe back (`title`, `displayMode`, `backButtonVisible`, `browserBack`, `historyKey`)
 - `NavigationLink` — pushes its `#destination` slot; `route`/`param` name it for the URL; or `to` (router) / `@tap`
-- `NavigationBackButton` — standalone circular back control (`visible`, `@back`)
+- `NavigationBackButton` — standalone, theme-aware Liquid Glass back control (`visible`, `@back`)
 - `NavigationSplitView` — iPad sidebar beside a detail, an overlay when narrow (`columnVisibility`, `sidebarWidth`, `compactWidth`)
 - `TabView` — tab bar (`tabs`, `v-model`); a tab's `badge` draws the iOS pill
 - `Sheet` — bottom sheet (`v-model:isPresented`, `detents`)
@@ -341,8 +341,8 @@ It is deliberately not a full FRP runtime — `computed` already covers
 </NavigationStack>
 ```
 
-The stack renders a circular back button by default, animates push/pop like
-iOS, and pops on an edge swipe. Hide only the button with
+The stack renders a theme-aware Liquid Glass back button by default, animates
+push/pop like iOS, and pops on an edge swipe. Hide only the button with
 `back-button-visible="false"`; `pop()`, browser Back and edge-swipe stay active.
 The same control can be used outside a stack:
 
