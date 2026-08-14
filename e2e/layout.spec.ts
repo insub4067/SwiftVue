@@ -234,6 +234,20 @@ test('the selected tab lens glides to its new tab', async ({ page }) => {
   expect(after!.x).toBeGreaterThan(before!.x)
 })
 
+test('hovering the selected tab does not stack another surface over its lens', async ({ page }) => {
+  await page.setViewportSize({ width: 768, height: 300 })
+  await page.goto('/')
+
+  const selected = page.getByRole('tab', { name: 'Components' })
+  await selected.hover()
+  await page.waitForTimeout(500)
+  const background = await selected.evaluate(element =>
+    getComputedStyle(element).backgroundColor,
+  )
+
+  expect(alphaChannel(background)).toBe(0)
+})
+
 test('the tab selection lens honors reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.setViewportSize({ width: 390, height: 780 })

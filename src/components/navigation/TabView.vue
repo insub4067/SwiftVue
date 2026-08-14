@@ -177,7 +177,7 @@ const style = computed(() => composeStyle(modifierStyle.value, {
   transition: color var(--swift-transition), background-color var(--swift-transition), transform var(--swift-transition);
   font-family: inherit;
 }
-.tab-item:hover { background-color: var(--swift-fill); }
+.tab-item:not(.active):hover { background-color: var(--swift-fill); }
 .tab-item:active { transform: scale(0.97); }
 .tab-item.active {
   color: var(--swift-primary);
