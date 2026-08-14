@@ -46,6 +46,12 @@ async function push(page: Page, row: string | RegExp) {
   await page.waitForTimeout(400) // push transition
 }
 
+function expectTranslucent(color: string) {
+  const alpha = Number(color.match(/,\s*([\d.]+)\)$/)?.[1])
+  expect(alpha, `${color} must have a translucent alpha channel`).toBeGreaterThan(0)
+  expect(alpha, `${color} must have a translucent alpha channel`).toBeLessThan(1)
+}
+
 for (const width of WIDTHS) {
   test(`no horizontal overflow on any tab root at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 780 })
@@ -165,7 +171,7 @@ test('the back button uses theme-aware liquid glass', async ({ page }) => {
   })
 
   expect(light.backdrop).toContain('blur(')
-  expect(light.background).toMatch(/^rgba\(.+, 0\.[1-9]\)$/)
+  expectTranslucent(light.background)
   expect(light.color).toBe('rgb(0, 0, 0)')
   expect(light.shadow).toContain('inset')
 
@@ -176,7 +182,7 @@ test('the back button uses theme-aware liquid glass', async ({ page }) => {
     return { background: style.backgroundColor, color: style.color }
   })
 
-  expect(dark.background).toMatch(/^rgba\(.+, 0\.[1-9]\)$/)
+  expectTranslucent(dark.background)
   expect(dark.background).not.toBe(light.background)
   expect(dark.color).toBe('rgb(255, 255, 255)')
 })
