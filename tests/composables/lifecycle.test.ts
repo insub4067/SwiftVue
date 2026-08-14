@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
-import { defineComponent, h, ref } from 'vue'
+import { defineComponent, h, ref, type Ref } from 'vue'
 import NavigationStack from '../../src/components/navigation/NavigationStack.vue'
-import { onAppear, onDisappear } from '../../src/composables/useLifecycle'
+import { onAppear, onDisappear, provideViewVisibility } from '../../src/composables/useLifecycle'
 
 /** A screen that reports every appearance and disappearance. */
 function tracked(appear: () => void, disappear: () => void) {
@@ -167,5 +167,93 @@ describe('onAppear / onDisappear inside a NavigationStack', () => {
     })
     expect(wrapper.find('.nav-pane').element.children).toHaveLength(1)
     expect(wrapper.find('.nav-pane > .row').exists()).toBe(true)
+  })
+
+  // Counts alone would pass an implementation that fired the pair out of order
+  // or dropped an appear it had already begun — an appear deferred to a
+  // microtask can be overtaken by a synchronous hide. The ordered log pins
+  // that an appear always precedes its disappear and none is lost.
+  it('appear and disappear stay ordered and balanced across push/pop', async () => {
+    const log: string[] = []
+    const wrapper = mountStack(() => log.push('appear'), () => log.push('disappear'))
+
+    expect(log).toEqual(['appear'])
+
+    wrapper.vm.push({ title: 'Detail', content: () => h('p', 'detail') })
+    await flushPromises()
+    expect(log).toEqual(['appear', 'disappear'])
+
+    wrapper.vm.pop()
+    await flushPromises()
+    expect(log).toEqual(['appear', 'disappear', 'appear'])
+  })
+})
+
+// A NavigationStack nested inside another stack's pane provides its own
+// visibility; without gating it on the outer pane, its active screen would
+// claim to be on screen while the whole nested stack sits covered under an
+// outer push. `provideViewVisibility` combines the two, so the inner screen
+// is visible only when both levels are.
+describe('nested view visibility is gated by the enclosing pane', () => {
+  function trackedScreen(appear: () => void, disappear: () => void) {
+    return defineComponent({
+      setup() {
+        onAppear(appear)
+        onDisappear(disappear)
+        return () => h('p', 'screen')
+      },
+    })
+  }
+
+  // outer → inner → screen, each level a provideViewVisibility layer.
+  function mountNested(outer: Ref<boolean>, inner: Ref<boolean>, appear: () => void, disappear: () => void) {
+    const Screen = trackedScreen(appear, disappear)
+    const Inner = defineComponent({
+      setup() {
+        provideViewVisibility(inner)
+        return () => h(Screen)
+      },
+    })
+    const Outer = defineComponent({
+      setup() {
+        provideViewVisibility(outer)
+        return () => h(Inner)
+      },
+    })
+    return mount(Outer)
+  }
+
+  it('appears only when both levels are visible', () => {
+    const appear = vi.fn()
+    const disappear = vi.fn()
+    mountNested(ref(false), ref(true), appear, disappear)
+    expect(appear, 'the outer pane is covered').not.toHaveBeenCalled()
+  })
+
+  it('a covered outer pane hides the inner screen even while its own pane is active', async () => {
+    const appear = vi.fn()
+    const disappear = vi.fn()
+    const outer = ref(true)
+    const inner = ref(true)
+    mountNested(outer, inner, appear, disappear)
+    expect(appear).toHaveBeenCalledOnce()
+
+    // Push over the OUTER stack — the inner pane never changed, yet the screen
+    // must disappear because its ancestor is no longer showing.
+    outer.value = false
+    await flushPromises()
+    expect(disappear).toHaveBeenCalledOnce()
+
+    // Toggling the inner pane while the outer stays covered changes nothing.
+    inner.value = false
+    await flushPromises()
+    inner.value = true
+    await flushPromises()
+    expect(appear, 'still covered by the outer push').toHaveBeenCalledOnce()
+
+    // Popping the outer stack back brings it on screen again.
+    outer.value = true
+    await flushPromises()
+    expect(appear).toHaveBeenCalledTimes(2)
   })
 })

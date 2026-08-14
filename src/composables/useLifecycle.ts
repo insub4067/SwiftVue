@@ -1,4 +1,5 @@
 import {
+  computed,
   inject,
   onBeforeUnmount,
   onMounted,
@@ -15,14 +16,33 @@ import {
  */
 export const viewVisibilityKey: InjectionKey<Ref<boolean>> = Symbol('swiftvue-view-visible')
 
+/**
+ * Provides a pane's on-screen state to its descendants, gated by any pane it
+ * is nested inside. A view is visible only when its own pane is the active
+ * one *and* every stack above it is showing the branch it sits in — so a
+ * NavigationStack pushed inside another stack's pane reports its active pane
+ * as hidden while that outer pane is covered, instead of firing `onAppear`
+ * for a screen the user cannot see.
+ */
 export function provideViewVisibility(visible: Ref<boolean>) {
-  provide(viewVisibilityKey, visible)
+  const parent = inject(viewVisibilityKey, null)
+  provide(
+    viewVisibilityKey,
+    parent ? computed(() => parent.value && visible.value) : visible,
+  )
 }
 
 /**
  * Tracks a view's own idea of being on screen, which is not the same as
  * being mounted: NavigationStack keeps a covered pane alive so popping back
  * restores it intact, and a covered pane has disappeared.
+ *
+ * `show`/`hide` are synchronous and guarded by `shown`, so an appear always
+ * precedes its disappear and neither fires twice — the ordering SwiftUI
+ * guarantees. The visibility watch runs `post` flush so a handler that reads
+ * the DOM sees the state the change produced, without deferring the call
+ * itself (a deferred appear could be overtaken by a synchronous hide and be
+ * dropped, leaving a disappear with no matching appear).
  */
 function useAppearance(onShow?: () => void, onHide?: () => void) {
   const visible = inject(viewVisibilityKey, null)
@@ -44,7 +64,9 @@ function useAppearance(onShow?: () => void, onHide?: () => void) {
     if (!visible || visible.value) show()
   })
 
-  if (visible) watch(visible, (isVisible) => (isVisible ? show() : hide()))
+  if (visible) {
+    watch(visible, (isVisible) => (isVisible ? show() : hide()), { flush: 'post' })
+  }
 
   // Before rather than after: a handler may still want to read the DOM it is
   // about to lose.

@@ -9,6 +9,18 @@ working code is called out under *Breaking* with the change you need to make.
 
 ## Unreleased
 
+**Fixed**
+
+- **`onAppear` fired for a screen buried under two levels of navigation.** A
+  `NavigationStack` nested inside another stack's pane reported its own active
+  screen as on-screen even while the outer stack had pushed a screen over the
+  whole nested stack — so a covered screen ran its `onAppear` refresh. A pane's
+  visibility is now gated by every pane it sits inside: the inner screen appears
+  only when its own pane is active *and* every stack above it is showing the
+  branch it belongs to. `onAppear`/`onDisappear` also stay strictly ordered and
+  balanced — an appear always precedes its disappear, and the visibility handler
+  runs after the DOM has updated so it reads the state the change produced.
+
 **Changed**
 
 - **Navigation chrome now shares one adaptive Liquid Glass material.**
