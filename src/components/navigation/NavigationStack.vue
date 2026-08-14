@@ -328,7 +328,7 @@ const style = computed(() => composeStyle(modifierStyle.value, {
   <div :style="style" @pointerdown="onPointerDown" @pointerup="onPointerUp">
     <header
       v-if="currentTitle || depth > 0"
-      :class="['nav-header', depth > 0 ? 'nav-header--inline nav-header--pushed' : `nav-header--${displayMode}`]"
+      :class="['nav-header', 'swift-navigation-edge', depth > 0 ? 'nav-header--inline nav-header--pushed' : `nav-header--${displayMode}`]"
     >
       <span v-if="depth > 0" class="nav-back-slot">
         <NavigationBackButton :visible="backButtonVisible" @back="pop" />
@@ -362,7 +362,16 @@ const style = computed(() => composeStyle(modifierStyle.value, {
 </template>
 
 <style scoped>
-.nav-header { padding: 0 16px; }
+.nav-header {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  padding: 0 16px;
+  background-color: var(--swift-navigation-edge);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  box-shadow: inset 0 -1px 0 var(--swift-glass-border);
+}
 .nav-header--large h1 {
   font-size: 34px;
   font-weight: 700;
@@ -371,7 +380,6 @@ const style = computed(() => composeStyle(modifierStyle.value, {
   color: var(--swift-label);
 }
 .nav-header--inline {
-  border-bottom: 1px solid var(--swift-separator);
   padding: 12px 16px;
 }
 .nav-header--inline h1 {
@@ -414,5 +422,17 @@ const style = computed(() => composeStyle(modifierStyle.value, {
 
 @media (prefers-reduced-motion: reduce) {
   .nav-pane { transition-duration: 0.01ms; }
+}
+
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .nav-header { background-color: var(--swift-secondary-background); }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .nav-header {
+    background-color: var(--swift-secondary-background);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 </style>

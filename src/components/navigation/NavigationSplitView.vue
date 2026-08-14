@@ -207,8 +207,11 @@ function mirrored(percent: number) {
     <aside
       :id="sidebarId"
       ref="sidebarEl"
-      class="swift-split-sidebar"
-      :class="{ 'swift-split-sidebar--overlaid': overlaid }"
+      class="swift-split-sidebar swift-liquid-glass swift-liquid-glass--prominent"
+      :class="{
+        'swift-split-sidebar--overlaid': overlaid,
+        'swift-split-sidebar--toggle-space': overlaid && !hidesToggle,
+      }"
       :style="sidebarStyle"
       :aria-label="label ?? 'Sidebar'"
       :aria-hidden="sidebarShown ? undefined : 'true'"
@@ -230,7 +233,7 @@ function mirrored(percent: number) {
       <button
         v-if="!hidesToggle && (compact || !sidebarShown)"
         type="button"
-        class="swift-split-toggle"
+        class="swift-split-toggle swift-liquid-glass swift-liquid-glass--circle"
         :aria-expanded="sidebarShown"
         :aria-controls="sidebarId"
         aria-label="Sidebar"
@@ -245,7 +248,6 @@ function mirrored(percent: number) {
 
 <style scoped>
 .swift-split-sidebar {
-  background: var(--swift-secondary-background);
   border-inline-end: 1px solid var(--swift-separator);
   overflow-y: auto;
   transition: margin var(--swift-transition), transform var(--swift-transition);
@@ -254,6 +256,8 @@ function mirrored(percent: number) {
 .swift-split-sidebar--overlaid {
   box-shadow: 0 0 24px rgba(0, 0, 0, 0.18);
 }
+
+.swift-split-sidebar--toggle-space { padding-block-start: 60px; }
 
 .swift-split-scrim {
   position: absolute;
@@ -278,16 +282,14 @@ function mirrored(percent: number) {
   z-index: 3;
   width: 44px;
   height: 44px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
   color: var(--swift-primary);
   font-size: 20px;
   line-height: 1;
   cursor: pointer;
   font-family: inherit;
 }
-.swift-split-toggle:hover { background: var(--swift-fill); }
+.swift-split-toggle:hover { background-color: var(--swift-navigation-glass-prominent); }
+.swift-split-toggle:active { transform: scale(0.96); }
 .swift-split-toggle:focus-visible {
   outline: 2px solid var(--swift-primary);
   outline-offset: -2px;

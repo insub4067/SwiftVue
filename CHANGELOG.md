@@ -7,6 +7,19 @@ SwiftVue is pre-1.0. While the major version is 0, a **minor** bump may
 change behaviour and a **patch** only fixes it. Anything that would break
 working code is called out under *Breaking* with the change you need to make.
 
+## Unreleased
+
+**Changed**
+
+- **Navigation chrome now shares one adaptive Liquid Glass material.**
+  `NavigationStack` headers blur the content boundary, `TabView` floats its
+  rounded tab bar above the page, and `NavigationSplitView` gives both its
+  sidebar and compact toggle the same optical edge as
+  `NavigationBackButton`. Light and dark appearances, reduced transparency,
+  increased contrast, forced colors, and browsers without backdrop filters
+  each retain a legible fallback. Navigation behavior and public props are
+  unchanged.
+
 ## 0.5.2 — 2026-08-14
 
 **Added**

@@ -139,8 +139,8 @@ unnamed `<select>` looks entirely finished and announces as nothing but
 - `NavigationStack` — push/pop stack with a circular Liquid Glass back button and edge-swipe back (`title`, `displayMode`, `backButtonVisible`, `browserBack`, `historyKey`)
 - `NavigationLink` — pushes its `#destination` slot; `route`/`param` name it for the URL; or `to` (router) / `@tap`
 - `NavigationBackButton` — standalone, theme-aware Liquid Glass back control (`visible`, `@back`)
-- `NavigationSplitView` — iPad sidebar beside a detail, an overlay when narrow (`columnVisibility`, `sidebarWidth`, `compactWidth`)
-- `TabView` — tab bar (`tabs`, `v-model`); a tab's `badge` draws the iOS pill
+- `NavigationSplitView` — Liquid Glass iPad sidebar beside a detail, an overlay with a circular Glass toggle when narrow (`columnVisibility`, `sidebarWidth`, `compactWidth`)
+- `TabView` — floating Liquid Glass tab bar (`tabs`, `v-model`); a tab's `badge` draws the iOS pill
 - `Sheet` — bottom sheet (`v-model:isPresented`, `detents`)
 - `FullScreenCover` — a cover that replaces the screen, not a taller sheet (`v-model:isPresented`, `label`)
 
@@ -344,6 +344,10 @@ It is deliberately not a full FRP runtime — `computed` already covers
 The stack renders a theme-aware Liquid Glass back button by default, animates
 push/pop like iOS, and pops on an edge swipe. Hide only the button with
 `back-button-visible="false"`; `pop()`, browser Back and edge-swipe stay active.
+Its title header uses a lighter scroll-edge material, while the tab bar and
+split-view controls use the same adaptive Glass tokens. Content surfaces,
+including navigation rows, sheets and full-screen covers, stay opaque so the
+functional layer remains distinct from the content underneath it.
 The same control can be used outside a stack:
 
 ```vue
@@ -394,7 +398,9 @@ are the only explicit values — `all` would name a column that does not
 exist here.
 
 The library draws the toggle only when the sidebar cannot be reached any
-other way. Set `hides-toggle` when your own toolbar has one.
+other way. It is a circular Liquid Glass control; the sidebar uses the more
+opaque regular material needed for text legibility. Set `hides-toggle` when
+your own toolbar has one.
 
 ## Sheet or cover
 

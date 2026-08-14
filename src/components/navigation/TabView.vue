@@ -69,6 +69,8 @@ const style = computed(() => composeStyle(modifierStyle.value, {
   display: 'flex',
   flexDirection: 'column' as const,
   height: modifierStyle.value.height ?? '100%',
+}, {
+  position: 'relative',
 }))
 </script>
 
@@ -94,7 +96,11 @@ const style = computed(() => composeStyle(modifierStyle.value, {
         </NavPane>
       </div>
     </div>
-    <nav class="tab-bar" role="tablist" aria-label="Tabs">
+    <nav
+      class="tab-bar tab-bar--floating swift-liquid-glass"
+      role="tablist"
+      aria-label="Tabs"
+    >
       <button
         type="button"
         v-for="tab in tabs"
@@ -123,6 +129,7 @@ const style = computed(() => composeStyle(modifierStyle.value, {
 .tab-content {
   flex: 1;
   overflow-y: auto;
+  padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px));
   /* A percentage height inside a panel used to resolve against this box,
      back when the tab's content was its only child. `min-height: 0` keeps
      the flex item from growing past the row, and the panel below restores
@@ -133,11 +140,17 @@ const style = computed(() => composeStyle(modifierStyle.value, {
   height: 100%;
 }
 .tab-bar {
+  position: absolute;
+  z-index: 3;
+  inset-inline-start: 50%;
+  bottom: max(8px, calc(env(safe-area-inset-bottom, 0px) * 0.5));
   display: flex;
-  border-top: 1px solid var(--swift-separator);
-  background: var(--swift-secondary-background);
-  padding: 4px 0;
-  padding-bottom: env(safe-area-inset-bottom, 4px);
+  width: min(calc(100% - 40px), 640px);
+  min-height: 64px;
+  overflow: hidden;
+  padding: 5px 6px;
+  border-radius: 32px;
+  transform: translateX(-50%);
 }
 .tab-item {
   flex: 1;
@@ -145,15 +158,23 @@ const style = computed(() => composeStyle(modifierStyle.value, {
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 4px 0;
+  min-width: 44px;
+  min-height: 52px;
+  padding: 4px 6px;
   border: none;
+  border-radius: 26px;
   background: none;
   cursor: pointer;
   color: var(--swift-secondary);
-  transition: color var(--swift-transition);
+  transition: color var(--swift-transition), background-color var(--swift-transition), transform var(--swift-transition);
   font-family: inherit;
 }
-.tab-item.active { color: var(--swift-primary); }
+.tab-item:hover { background-color: var(--swift-fill); }
+.tab-item:active { transform: scale(0.97); }
+.tab-item.active {
+  background-color: var(--swift-secondary-fill);
+  color: var(--swift-primary);
+}
 .tab-item:focus-visible {
   outline: 2px solid var(--swift-primary);
   outline-offset: -2px;

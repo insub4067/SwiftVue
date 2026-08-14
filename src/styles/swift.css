@@ -27,7 +27,12 @@
   --swift-separator: #3C3C4349;
   --swift-fill: #78788033;
   --swift-secondary-fill: #78788028;
-  --swift-navigation-glass: rgb(242 242 247 / 50%);
+  --swift-navigation-glass: rgb(242 242 247 / 54%);
+  --swift-navigation-glass-prominent: rgb(242 242 247 / 78%);
+  --swift-navigation-edge: rgb(242 242 247 / 42%);
+  --swift-glass-border: rgb(255 255 255 / 48%);
+  --swift-glass-highlight: rgb(255 255 255 / 58%);
+  --swift-glass-shadow: rgb(0 0 0 / 16%);
 
   --swift-font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
     'Helvetica Neue', Arial, sans-serif;
@@ -70,7 +75,12 @@
     --swift-separator: #54545899;
     --swift-fill: #7878805C;
     --swift-secondary-fill: #78788051;
-    --swift-navigation-glass: rgb(44 44 46 / 50%);
+    --swift-navigation-glass: rgb(44 44 46 / 52%);
+    --swift-navigation-glass-prominent: rgb(28 28 30 / 82%);
+    --swift-navigation-edge: rgb(28 28 30 / 44%);
+    --swift-glass-border: rgb(255 255 255 / 24%);
+    --swift-glass-highlight: rgb(255 255 255 / 26%);
+    --swift-glass-shadow: rgb(0 0 0 / 42%);
   }
 }
 
@@ -103,7 +113,12 @@
   --swift-separator: #54545899;
   --swift-fill: #7878805C;
   --swift-secondary-fill: #78788051;
-  --swift-navigation-glass: rgb(44 44 46 / 50%);
+  --swift-navigation-glass: rgb(44 44 46 / 52%);
+  --swift-navigation-glass-prominent: rgb(28 28 30 / 82%);
+  --swift-navigation-edge: rgb(28 28 30 / 44%);
+  --swift-glass-border: rgb(255 255 255 / 24%);
+  --swift-glass-highlight: rgb(255 255 255 / 26%);
+  --swift-glass-shadow: rgb(0 0 0 / 42%);
 }
 
 *,
@@ -119,6 +134,78 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.4;
+}
+
+/* Liquid Glass belongs to the floating navigation layer. Components choose
+   regular or prominent opacity by role while sharing the same optical edge. */
+.swift-liquid-glass {
+  --swift-glass-background: var(--swift-navigation-glass);
+  position: relative;
+  isolation: isolate;
+  border: 1px solid var(--swift-glass-border);
+  background-color: var(--swift-glass-background);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  box-shadow:
+    inset 0 1px 0 var(--swift-glass-highlight),
+    inset 0 -1px 0 rgb(0 0 0 / 8%),
+    0 6px 18px var(--swift-glass-shadow);
+}
+
+.swift-liquid-glass::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    145deg,
+    rgb(255 255 255 / 38%) 0%,
+    rgb(255 255 255 / 8%) 42%,
+    rgb(255 255 255 / 2%) 70%
+  );
+  content: '';
+  pointer-events: none;
+}
+
+.swift-liquid-glass--prominent {
+  --swift-glass-background: var(--swift-navigation-glass-prominent);
+}
+
+.swift-liquid-glass--circle { border-radius: 50%; }
+
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .swift-liquid-glass {
+    border-color: var(--swift-separator);
+    background-color: var(--swift-secondary-background);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .swift-liquid-glass {
+    border-color: var(--swift-separator);
+    background-color: var(--swift-secondary-background);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .swift-liquid-glass::before { content: none; }
+}
+
+@media (prefers-contrast: more) {
+  .swift-liquid-glass {
+    --swift-glass-background: var(--swift-navigation-glass-prominent);
+    border-color: currentColor;
+  }
+}
+
+@media (forced-colors: active) {
+  .swift-liquid-glass {
+    border-color: ButtonText;
+    background: Canvas;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+  .swift-liquid-glass::before { content: none; }
 }
 
 /*
