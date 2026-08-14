@@ -133,9 +133,9 @@ const style = computed(() => composeStyle(modifierStyle.value, {
 
 <style scoped>
 .tab-content {
+  --swift-tab-bar-clearance: calc(82px + env(safe-area-inset-bottom, 0px));
   flex: 1;
   overflow-y: auto;
-  padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px));
   /* A percentage height inside a panel used to resolve against this box,
      back when the tab's content was its only child. `min-height: 0` keeps
      the flex item from growing past the row, and the panel below restores

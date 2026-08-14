@@ -409,6 +409,7 @@ const style = computed(() => composeStyle(modifierStyle.value, {
   position: absolute;
   inset: 0;
   overflow-y: auto;
+  padding-bottom: var(--swift-tab-bar-clearance, 0px);
   background: var(--swift-grouped-background);
   /* class-driven: buried panes parallax to -28% and back on pop */
   transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);

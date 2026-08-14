@@ -205,6 +205,33 @@ test('the playground preserves the translucent tab bar material', async ({ page 
   expect(alpha, `${background} must remain visibly translucent`).toBeLessThan(0.8)
 })
 
+test('the floating tab bar overlays the tab content surface', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+  await page.evaluate(() => { document.documentElement.className = 'swift-light' })
+
+  const pane = page.locator('.nav-pane:visible')
+  const bar = page.locator('.tab-bar')
+  await pane.evaluate(element => { element.scrollTop = element.scrollHeight })
+
+  const finalContent = page.getByText(/이 화면 자체가 NavigationStack/)
+  const [contentBox, barBox] = await Promise.all([
+    finalContent.boundingBox(),
+    bar.boundingBox(),
+  ])
+  expect(contentBox, 'the final content must remain rendered').not.toBeNull()
+  expect(barBox, 'the floating bar must remain rendered').not.toBeNull()
+  expect(contentBox!.y + contentBox!.height, 'the final content must scroll clear of the bar')
+    .toBeLessThanOrEqual(barBox!.y + 1)
+
+  const paneContinuesBehindBar = await page.evaluate(() =>
+    document.elementsFromPoint(8, window.innerHeight - 30)
+      .some(element => element.classList.contains('nav-pane')),
+  )
+  expect(paneContinuesBehindBar, 'the content surface must paint behind the floating bar')
+    .toBe(true)
+})
+
 test('the selected tab lens glides to its new tab', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 780 })
   await page.goto('/')
