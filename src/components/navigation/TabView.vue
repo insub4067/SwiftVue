@@ -51,6 +51,10 @@ watch(() => props.tabs, (tabs) => {
 }, { deep: true })
 
 const panes = computed(() => props.tabs.filter(tab => opened.has(tab.id)))
+const tabBarStyle = computed(() => ({
+  '--swift-tab-count': String(Math.max(props.tabs.length, 1)),
+  '--swift-tab-index': String(Math.max(props.tabs.findIndex(tab => tab.id === activeTab.value), 0)),
+}))
 
 // iOS hides an empty badge rather than drawing a dot with nothing in it.
 function badgeOf(tab: TabItem): string | null {
@@ -100,7 +104,9 @@ const style = computed(() => composeStyle(modifierStyle.value, {
       class="tab-bar tab-bar--floating swift-liquid-glass"
       role="tablist"
       aria-label="Tabs"
+      :style="tabBarStyle"
     >
+      <span class="tab-selection-indicator" aria-hidden="true" />
       <button
         type="button"
         v-for="tab in tabs"
@@ -142,7 +148,7 @@ const style = computed(() => composeStyle(modifierStyle.value, {
 .tab-bar {
   position: absolute;
   z-index: 3;
-  inset-inline-start: 50%;
+  left: 50%;
   bottom: max(8px, calc(env(safe-area-inset-bottom, 0px) * 0.5));
   display: flex;
   width: min(calc(100% - 40px), 640px);
@@ -153,6 +159,8 @@ const style = computed(() => composeStyle(modifierStyle.value, {
   transform: translateX(-50%);
 }
 .tab-item {
+  position: relative;
+  z-index: 1;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -172,7 +180,6 @@ const style = computed(() => composeStyle(modifierStyle.value, {
 .tab-item:hover { background-color: var(--swift-fill); }
 .tab-item:active { transform: scale(0.97); }
 .tab-item.active {
-  background-color: var(--swift-secondary-fill);
   color: var(--swift-primary);
 }
 .tab-item:focus-visible {
@@ -182,6 +189,29 @@ const style = computed(() => composeStyle(modifierStyle.value, {
 .tab-icon-slot { position: relative; display: inline-flex; }
 .tab-icon { font-size: 24px; line-height: 1; }
 .tab-label { font-size: 10px; font-weight: 500; }
+
+.tab-selection-indicator {
+  position: absolute;
+  z-index: 0;
+  top: 5px;
+  bottom: 5px;
+  inset-inline-start: 6px;
+  width: calc((100% - 12px) / var(--swift-tab-count));
+  border-radius: 26px;
+  background-color: var(--swift-secondary-fill);
+  pointer-events: none;
+  transform: translateX(calc(var(--swift-tab-index) * 100%));
+  transition: transform 420ms cubic-bezier(0.22, 1.12, 0.36, 1);
+  will-change: transform;
+}
+
+.tab-selection-indicator:dir(rtl) {
+  transform: translateX(calc(var(--swift-tab-index) * -100%));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-selection-indicator { transition-duration: 0.01ms; }
+}
 
 /* Sits on the icon's trailing top corner, as it does on iOS. Reads left to
    right, so it grows away from the icon instead of over it. */

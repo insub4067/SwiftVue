@@ -46,8 +46,12 @@ async function push(page: Page, row: string | RegExp) {
   await page.waitForTimeout(400) // push transition
 }
 
+function alphaChannel(color: string) {
+  return Number(color.match(/(?:,|\/)\s*([\d.]+)\)$/)?.[1])
+}
+
 function expectTranslucent(color: string) {
-  const alpha = Number(color.match(/,\s*([\d.]+)\)$/)?.[1])
+  const alpha = alphaChannel(color)
   expect(alpha, `${color} must have a translucent alpha channel`).toBeGreaterThan(0)
   expect(alpha, `${color} must have a translucent alpha channel`).toBeLessThan(1)
 }
@@ -185,6 +189,87 @@ test('the back button uses theme-aware liquid glass', async ({ page }) => {
   expectTranslucent(dark.background)
   expect(dark.background).not.toBe(light.background)
   expect(dark.color).toBe('rgb(255, 255, 255)')
+})
+
+test('the playground preserves the translucent tab bar material', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+  await page.evaluate(() => document.documentElement.className = 'swift-light')
+
+  const background = await page.locator('.tab-bar').evaluate((element) =>
+    getComputedStyle(element).backgroundColor,
+  )
+  const alpha = alphaChannel(background)
+
+  expectTranslucent(background)
+  expect(alpha, `${background} must remain visibly translucent`).toBeLessThan(0.8)
+})
+
+test('the selected tab lens glides to its new tab', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+
+  const lens = page.locator('.tab-selection-indicator')
+  const target = page.getByRole('tab', { name: 'Layout' })
+  await expect(lens).toBeVisible()
+
+  const before = await lens.boundingBox()
+  await target.click()
+  await expect(target).toHaveAttribute('aria-selected', 'true')
+  await expect.poll(
+    () => lens.evaluate(element => element.getAnimations()
+      .filter(animation => animation.playState === 'running').length),
+    { message: 'the selection lens must animate between tabs', timeout: 300 },
+  ).toBeGreaterThan(0)
+
+  await expect.poll(async () => {
+    const [lensBox, targetBox] = await Promise.all([lens.boundingBox(), target.boundingBox()])
+    if (!lensBox || !targetBox) return Number.POSITIVE_INFINITY
+    const lensCenter = lensBox.x + lensBox.width / 2
+    const targetCenter = targetBox.x + targetBox.width / 2
+    return Math.abs(lensCenter - targetCenter)
+  }, { message: 'the lens must settle behind the selected tab' }).toBeLessThan(1)
+
+  const after = await lens.boundingBox()
+  expect(after!.x).toBeGreaterThan(before!.x)
+})
+
+test('the tab selection lens honors reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+
+  // The playground has its own broad reduced-motion safety net. Remove its
+  // host class so this assertion covers TabView's shipped component CSS.
+  await page.locator('.playground-shell').evaluate(element =>
+    element.classList.remove('playground-shell'),
+  )
+  const duration = await page.locator('.tab-selection-indicator').evaluate(element =>
+    getComputedStyle(element).transitionDuration,
+  )
+  const durationMs = duration.endsWith('ms')
+    ? Number.parseFloat(duration)
+    : Number.parseFloat(duration) * 1000
+
+  expect(durationMs).toBeLessThanOrEqual(0.01)
+})
+
+test('the tab selection lens follows RTL visual order', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 780 })
+  await page.goto('/')
+  await page.evaluate(() => { document.documentElement.dir = 'rtl' })
+
+  const lens = page.locator('.tab-selection-indicator')
+  const target = page.getByRole('tab', { name: 'Layout' })
+  await target.click()
+
+  await expect.poll(async () => {
+    const [lensBox, targetBox] = await Promise.all([lens.boundingBox(), target.boundingBox()])
+    if (!lensBox || !targetBox) return Number.POSITIVE_INFINITY
+    const lensCenter = lensBox.x + lensBox.width / 2
+    const targetCenter = targetBox.x + targetBox.width / 2
+    return Math.abs(lensCenter - targetCenter)
+  }, { message: 'the lens must settle behind the RTL-selected tab' }).toBeLessThan(1)
 })
 
 // browser-back is a claim about the real browser, so only a real browser can

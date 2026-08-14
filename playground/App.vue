@@ -1987,9 +1987,6 @@ html, body {
   z-index: 100;
   padding-top: 6px;
   padding-bottom: env(safe-area-inset-bottom, 8px);
-  background: color-mix(in srgb, var(--swift-secondary-background) 92%, transparent);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
 }
 
 .playground-shell .tab-item {
