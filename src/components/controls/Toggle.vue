@@ -36,6 +36,11 @@ const trackStyle = computed(() => composeStyle(
   },
 ))
 
+// The knob rests at the leading edge and is *moved* by a transform. Sliding it
+// with `inset-inline-start` looked right in a static screenshot and jumped in
+// motion: a transition names one property, and no browser animates the logical
+// property when the transition says `left`. A transform animates everywhere,
+// and the mirroring for right-to-left is one CSS rule below.
 const thumbStyle = computed(() => ({
   width: '27px',
   height: '27px',
@@ -44,9 +49,7 @@ const thumbStyle = computed(() => ({
   boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
   position: 'absolute' as const,
   top: '2px',
-  // the knob slides towards the trailing edge, whichever side that is
-  insetInlineStart: props.modelValue ? '22px' : '2px',
-  transition: 'left var(--swift-transition)',
+  insetInlineStart: '2px',
   pointerEvents: 'none' as const,
 }))
 
@@ -73,6 +76,31 @@ function onKeydown(e: KeyboardEvent) {
     @click="toggle"
     @keydown="onKeydown"
   >
-    <div :style="thumbStyle" />
+    <div
+      class="swift-toggle-knob"
+      :class="{ 'swift-toggle-knob--on': modelValue }"
+      :style="thumbStyle"
+    />
   </div>
 </template>
+
+<style scoped>
+.swift-toggle-knob {
+  transition: transform var(--swift-transition);
+}
+
+/* 51 wide, 27 across, 2 of padding on each side — the travel is what is left. */
+.swift-toggle-knob--on {
+  transform: translateX(20px);
+}
+
+[dir='rtl'] .swift-toggle-knob--on {
+  transform: translateX(-20px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swift-toggle-knob {
+    transition-duration: 0.01ms;
+  }
+}
+</style>

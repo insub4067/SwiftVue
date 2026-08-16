@@ -9,6 +9,15 @@ working code is called out under *Breaking* with the change you need to make.
 
 ## Unreleased
 
+**Fixed**
+
+- **The `Toggle` knob slides again instead of jumping.** It was moved by
+  `inset-inline-start` while the transition named `left`, so browsers had
+  nothing to animate — the track colour faded and the knob teleported. The
+  knob now rests at the leading edge and travels by a transform, which
+  animates everywhere and still mirrors under `dir="rtl"`. Nothing about the
+  props, events, or the switch's size changes.
+
 **Changed**
 
 - **Navigation chrome now shares one adaptive Liquid Glass material.**

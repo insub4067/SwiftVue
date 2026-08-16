@@ -118,10 +118,17 @@ describe('gestures mirror in a right-to-left layout', () => {
 describe('the Toggle knob travels along the inline axis', () => {
   const knob = (on: boolean) => {
     const wrapper = mount(Toggle, { props: { modelValue: on } })
-    return wrapper.element.firstElementChild!.getAttribute('style') ?? ''
+    return wrapper.element.firstElementChild!
   }
 
-  it.each([[false, '2px'], [true, '22px']])('modelValue=%s puts it at %s', (on, at) => {
-    expect(knob(on)).toContain(`inset-inline-start: ${at}`)
+  // It rests at the leading edge in both states and is moved by a transform,
+  // so the travel animates. The stylesheet mirrors that transform under
+  // `[dir='rtl']`, which is why the resting place stays logical.
+  it.each([[false], [true]])('modelValue=%s rests at the leading edge', (on) => {
+    expect(knob(on).getAttribute('style')).toContain('inset-inline-start: 2px')
+  })
+
+  it.each([[false, false], [true, true]])('modelValue=%s is travelled=%s', (on, travelled) => {
+    expect(knob(on).classList.contains('swift-toggle-knob--on')).toBe(travelled)
   })
 })
