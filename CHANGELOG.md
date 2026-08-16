@@ -9,6 +9,15 @@ working code is called out under *Breaking* with the change you need to make.
 
 ## Unreleased
 
+**Added**
+
+- **`TabView` tabs can draw their own icon through a `<id>-icon` slot.** A tab
+  whose mark is a logo or an inline SVG — not one of the glyphs a font happens
+  to carry — can now render it in the same place the glyph would sit, at the
+  same size, following the active colour. The slot is handed `{ tab, active }`;
+  with no slot the `icon` string renders exactly as before, so existing tab
+  bars are unchanged.
+
 **Fixed**
 
 - **The `Toggle` knob slides again instead of jumping.** It was moved by

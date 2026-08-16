@@ -315,6 +315,23 @@ describe('TabView', () => {
     const wrapper = mount(TabView, { props: { tabs } })
     expect(wrapper.find('[role="tabpanel"]').exists()).toBe(true)
   })
+
+  it('lets a tab draw its own icon through a `<id>-icon` slot', () => {
+    const wrapper = mount(TabView, {
+      props: { tabs, modelValue: 'settings' },
+      slots: {
+        'settings-icon': `<template #settings-icon="{ active }">
+          <svg class="gear" :data-active="active" />
+        </template>`,
+      },
+    })
+    const settings = wrapper.findAll('[role="tab"]')[1]
+    // The custom mark replaces the glyph, and the slot is told the tab is active.
+    expect(settings.find('svg.gear').exists()).toBe(true)
+    expect(settings.find('svg.gear').attributes('data-active')).toBe('true')
+    // The tab without a slot still renders its glyph.
+    expect(wrapper.findAll('[role="tab"]')[0].find('.tab-icon').text()).toBe('🏠')
+  })
 })
 
 // SwiftUI builds a tab the first time it is opened and keeps it from then

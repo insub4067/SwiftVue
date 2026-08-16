@@ -118,7 +118,16 @@ const style = computed(() => composeStyle(modifierStyle.value, {
         @click="activeTab = tab.id"
       >
         <span class="tab-icon-slot">
-          <span v-if="tab.icon" class="tab-icon" aria-hidden="true">{{ tab.icon }}</span>
+          <!--
+            A per-tab icon slot named `<id>-icon`, so a tab can draw its own
+            mark — an inline SVG, a logo — instead of a text glyph. The slot
+            hands back the tab and whether it is selected, so the custom icon
+            can follow the active colour like the glyph does. With no slot the
+            `icon` string renders as before, so existing tab bars are unchanged.
+          -->
+          <slot :name="`${tab.id}-icon`" :tab="tab" :active="activeTab === tab.id">
+            <span v-if="tab.icon" class="tab-icon" aria-hidden="true">{{ tab.icon }}</span>
+          </slot>
           <span
             v-if="badgeOf(tab)"
             class="tab-badge"
